@@ -30,7 +30,30 @@ if ($here -ne $Scripts) {
   exit $LASTEXITCODE
 }
 Set-Location $Base
+# Find Git even right after installing it (before PATH refreshes in this window).
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+  foreach ($g in "$env:ProgramFiles\Git\cmd", "${env:ProgramFiles(x86)}\Git\cmd", "$env:LOCALAPPDATA\Programs\Git\cmd") {
+    if (Test-Path (Join-Path $g 'git.exe')) { $env:Path = "$g;$env:Path"; break }
+  }
+}
 $hasGit = [bool](Get-Command git -ErrorAction SilentlyContinue)
+
+# Copy a fresh code tree over $Code in place (keeps node_modules, never deletes the folder).
+function Update-Code($src) {
+  New-Item -ItemType Directory -Force -Path $Code | Out-Null
+  robocopy $src $Code /E /XD node_modules data /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+  if ($LASTEXITCODE -ge 8) { Fail "Could not copy the new code into $Code (robocopy code $LASTEXITCODE). Close any windows or programs using that folder and try again." }
+  $global:LASTEXITCODE = 0
+}
+
+# Token check done here (not with a repo file) so it works with any version of the code.
+function Test-Token($tok) {
+  if (-not $tok -or -not (Test-Path $env:DATA_FILE)) { return $false }
+  $sha = [Security.Cryptography.SHA256]::Create()
+  $hash = -join ($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($tok)) | ForEach-Object { $_.ToString('x2') })
+  try { $store = Get-Content $env:DATA_FILE -Raw | ConvertFrom-Json } catch { return $false }
+  return [bool]($store.tokens.PSObject.Properties.Name -contains $hash)
+}
 
 # 1. Latest code
 Say "Getting the latest Fancy Bot code into $Code"
@@ -41,8 +64,14 @@ if (Test-Path (Join-Path $Code '.git')) {
   $ok = $true
 } elseif ($hasGit) {
   # Git Credential Manager pops up a GitHub sign-in the first time (the repo is private).
-  git clone --depth 1 $RepoUrl $Code
-  $ok = ($LASTEXITCODE -eq 0)
+  # Clone next to the code folder, then move it in place (an older ZIP copy may already be there).
+  $tmpClone = Join-Path $env:TEMP ("fancybot-git-" + [guid]::NewGuid())
+  git clone --depth 1 $RepoUrl $tmpClone
+  if ($LASTEXITCODE -eq 0) {
+    Update-Code $tmpClone
+    Remove-Item -Recurse -Force $tmpClone -ErrorAction SilentlyContinue
+    $ok = $true
+  }
 }
 if (-not $ok) {
   # No git, or no access: use a ZIP downloaded from GitHub (Code > Download ZIP).
@@ -50,16 +79,14 @@ if (-not $ok) {
   $zip = Get-ChildItem -Path $Base, $downloads -Filter 'Vernaculator*.zip' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
   if ($zip) {
     Write-Host "Using $($zip.FullName)"
+    if ($zip.LastWriteTime -lt (Get-Item $PSCommandPath).LastWriteTime) {
+      Write-Host "This ZIP is older than the setup script, so it may be missing recent changes. Download a fresh one from $RepoPage (Code > Download ZIP) or install Git for automatic updates." -ForegroundColor Yellow
+    }
     $tmp = Join-Path $env:TEMP ("fancybot-" + [guid]::NewGuid())
     Expand-Archive -Path $zip.FullName -DestinationPath $tmp -Force
     $manifest = Get-ChildItem -Path $tmp -Recurse -Filter manifest.json | Where-Object { $_.Directory.Name -eq 'extension' } | Select-Object -First 1
     $src = $manifest.Directory.Parent.FullName
-    # Update in place: copy new and changed files over the old ones, keep node_modules, never delete
-    # the folder (OneDrive or an open window may be holding files in it).
-    New-Item -ItemType Directory -Force -Path $Code | Out-Null
-    robocopy $src $Code /E /XD node_modules .git data /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
-    if ($LASTEXITCODE -ge 8) { Fail "Could not copy the new code into $Code (robocopy code $LASTEXITCODE). Close any windows or programs using that folder and try again." }
-    $global:LASTEXITCODE = 0
+    Update-Code $src
     Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
     Write-Host 'Tip: install Git for Windows (git-scm.com) so this script can download updates for you.' -ForegroundColor Yellow
   } else {
@@ -95,18 +122,14 @@ $env:DATA_FILE = Join-Path $Data 'store.json'
 $token = ''
 if (Test-Path $TokenFile) { $token = ([string](Get-Content $TokenFile -Raw)).Trim() }
 $valid = $false
-if ($token) {
-  node scripts/check-token.js $token | Out-Null
-  $valid = ($LASTEXITCODE -eq 0)
-}
+if ($token) { $valid = Test-Token $token }
 if (-not $valid) {
   Say 'Creating your sign-in token'
   $out = node scripts/create-token.js --plan pro
   $m = [regex]::Match(($out -join "`n"), 'vk_[A-Za-z0-9_-]+')
   if (-not $m.Success) { Fail "Could not create a token:`n$out" }
   [IO.File]::WriteAllText($TokenFile, $m.Value)
-  node scripts/check-token.js $m.Value | Out-Null
-  if ($LASTEXITCODE -ne 0) { Fail "The new token could not be saved in $($env:DATA_FILE)." }
+  if (-not (Test-Token $m.Value)) { Fail "The new token could not be saved in $($env:DATA_FILE)." }
 }
 $token = (Get-Content $TokenFile -Raw).Trim()
 try { Set-Clipboard -Value $token; $copied = ' (already copied to your clipboard)' } catch { $copied = '' }
