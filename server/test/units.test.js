@@ -11,6 +11,7 @@ import { JsonStore } from '../src/store.js';
 import { Gateway } from '../src/auth.js';
 import { loadConfig } from '../src/config.js';
 import { splitFrames } from '../src/tts/mp3.js';
+import { parseStyle, styleCatalog } from '../src/styles.js';
 
 const cfg = loadConfig();
 const personas = loadPersonas(cfg.personasFile);
@@ -33,12 +34,15 @@ test('guardrails replace profanity and keep clean text untouched', () => {
 test('personas.json loads, has plain URLs, and is validated', () => {
   assert.ok(personas.list.length >= 2);
   for (const p of personas.list) {
-    assert.match(p.visemeAssets.idleUrl, /^https:\/\/[^\s[\]()]+$/);
-    assert.match(p.visemeAssets.talkingUrl, /^https:\/\/[^\s[\]()]+$/);
+    for (const url of [p.visemeAssets.idleUrl, p.visemeAssets.talkingUrl]) {
+      assert.match(url, /^(https:\/\/[^\s[\]()]+|assets\/[\w./-]+)$/);
+      if (url.startsWith('assets/')) assert.ok(fs.existsSync(new URL(`../../extension/${url}`, import.meta.url)), `bundled sprite exists: ${url}`);
+    }
   }
   const bad = path.join(os.tmpdir(), `bad-personas-${process.pid}.json`);
   fs.writeFileSync(bad, JSON.stringify({ characters: [{ id: 'x', name: 'X', archetype: 'A', systemPromptRules: '', worldviewPerspective: '', intentKeywords: [], visemeAssets: { idleUrl: '[a](b)' } }] }));
   assert.throws(() => loadPersonas(bad), /not a plain URL/);
+  assert.equal(personas.defaultPersona().id, 'big_sal');
 });
 
 test('system prompt includes rules, worldview, guardrails and complexity scaling', () => {
@@ -47,13 +51,30 @@ test('system prompt includes rules, worldview, guardrails and complexity scaling
   assert.match(prompt, /1980s sports broadcaster/);
   assert.match(prompt, /competitive athletics/);
   assert.match(prompt, /zero profanity/);
-  assert.match(prompt, /Vocabulary level 1/);
+  assert.match(prompt, /READING LEVEL 1 of 5/);
+  assert.match(prompt, /Keep every number, dose/);
   assert.equal(effectiveComplexity(personas.get('elias_stillwater')), 5);
   assert.equal(effectiveComplexity(personas.get('elias_stillwater'), 'teen'), 3);
+  assert.equal(effectiveComplexity(personas.get('elias_stillwater'), 2), 2);
+  assert.equal(effectiveComplexity(personas.get('elias_stillwater'), '9'), 5, 'out-of-range level falls back to character default');
+});
+
+test('style add-ons stack on any character and reject unknown values', () => {
+  const p = personas.get('elias_stillwater');
+  const plain = buildSystemPrompt(p, { coreValues: [] });
+  assert.doesNotMatch(plain, /HUMOR:|PHILOSOPHY:|SPEAKING STYLE:/);
+  const all = buildSystemPrompt(p, { coreValues: [], readingLevel: 1, style: { humor: true, philosophy: true, accent: 'slow' } });
+  assert.match(all, /HUMOR:/);
+  assert.match(all, /PHILOSOPHY:/);
+  assert.match(all, /Slow and patient/);
+  assert.match(all, /classical ontology/, 'character world-view kept');
+  assert.deepEqual(parseStyle({ humor: 'yes', accent: '<script>' }), { humor: false, philosophy: false, accent: 'none' });
+  assert.ok(!/iq|intelligen/i.test(JSON.stringify(styleCatalog())), 'never framed as intelligence');
 });
 
 test('intent routing picks personas by keywords and falls back to default', async () => {
   assert.equal(scorePersonas('Who will win the game and what was the score?', personas.list)[0].id, 'big_play_ray');
+  assert.equal((await routeIntent('Can you explain what my doctor meant by this diagnosis?', personas)).personaId, 'big_sal');
   assert.equal((await routeIntent('My build fails with a weird error in the code', personas)).personaId, 'captain_ada_quill');
   const fallback = await routeIntent('Zzz qqq', personas);
   assert.equal(fallback.personaId, personas.defaultPersona().id);

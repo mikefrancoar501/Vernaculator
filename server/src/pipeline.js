@@ -5,14 +5,15 @@ import { routeIntent } from './intent.js';
 import { resolveVoiceId } from './config.js';
 import { FishSession } from './tts/fish.js';
 import { MockSession } from './tts/mock.js';
+import { parseReadingLevel, parseStyle, SPEAKING_STYLES } from './styles.js';
 
 const MAX_UTTERANCE_CHARS = 20000;
 
-export function createTtsSession(cfg, persona) {
+export function createTtsSession(cfg, persona, { speed = 1 } = {}) {
   if (cfg.tts.provider === 'fish') {
-    return new FishSession({ ...cfg.tts, voiceId: resolveVoiceId(cfg, persona) });
+    return new FishSession({ ...cfg.tts, voiceId: resolveVoiceId(cfg, persona), speed });
   }
-  return new MockSession();
+  return new MockSession({ speed });
 }
 
 /** 4-byte big-endian utterance sequence number prefixed to every binary audio frame. */
@@ -33,7 +34,8 @@ export class Utterance {
   constructor({ seq, user, opts, deps, send }) {
     this.seq = seq;
     this.user = user;
-    this.opts = opts; // { personaId: string | 'auto', readingLevel }
+    // { personaId: string | 'auto', readingLevel: 1-5 | null, style: { humor, philosophy, accent } }
+    this.opts = { ...opts, readingLevel: parseReadingLevel(opts.readingLevel), style: parseStyle(opts.style) };
     this.deps = deps; // { cfg, personas, coreValues, llm, gateway }
     this.send = send; // { json(obj), binary(buf) }
     this.chain = Promise.resolve();
@@ -76,10 +78,11 @@ export class Utterance {
       method = routed.method;
     }
     this.persona = persona;
-    this.system = buildSystemPrompt(persona, { coreValues: this.deps.coreValues, readingLevel: this.opts.readingLevel });
-    this.send.json({ type: 'utterance.persona', seq: this.seq, persona: publicPersona(persona), method });
+    const { readingLevel, style } = this.opts;
+    this.system = buildSystemPrompt(persona, { coreValues: this.deps.coreValues, readingLevel, style });
+    this.send.json({ type: 'utterance.persona', seq: this.seq, persona: publicPersona(persona), method, readingLevel, style });
 
-    this.tts = createTtsSession(cfg, persona);
+    this.tts = createTtsSession(cfg, persona, { speed: SPEAKING_STYLES[style.accent].speed });
     this.ttsDone = new Promise((resolve) => {
       this.tts.on('finish', resolve);
       this.tts.on('error', (err) => {

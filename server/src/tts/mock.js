@@ -23,8 +23,9 @@ const SEC_PER_CHAR = 0.065; // ~15 characters per second of speech
  * animates and the MediaSource path is exercised without a Fish Audio key.
  */
 export class MockSession extends EventEmitter {
-  constructor({ realtime = true } = {}) {
+  constructor({ realtime = true, speed = 1 } = {}) {
     super();
+    this.speed = speed;
     this.cursor = 0;
     this.queue = Promise.resolve();
     this.closed = false;
@@ -37,7 +38,7 @@ export class MockSession extends EventEmitter {
   }
 
   sendText(text) {
-    const n = Math.max(4, Math.round((text.length * SEC_PER_CHAR) / FRAME_SEC));
+    const n = Math.max(4, Math.round((text.length * SEC_PER_CHAR) / this.speed / FRAME_SEC));
     this.queue = this.queue.then(() => this.#emitFrames(n));
   }
 

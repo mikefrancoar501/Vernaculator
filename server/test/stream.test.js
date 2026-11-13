@@ -51,6 +51,9 @@ test('REST: health, personas, auth, transform', async () => {
   const personas = await (await fetch(`http://${base}/v1/personas`)).json();
   assert.ok(personas.characters.length >= 2);
   assert.ok(!('systemPromptRules' in personas.characters[0]), 'prompts stay server-side');
+  assert.equal(personas.defaultPersonaId, 'big_sal');
+  assert.equal(personas.styles.readingLevels['1'], 'Super simple');
+  assert.ok(personas.styles.speakingStyles.slow);
   assert.equal((await fetch(`http://${base}/v1/usage`)).status, 401);
   const res = await fetch(`http://${base}/v1/transform`, {
     method: 'POST',
@@ -68,13 +71,15 @@ test('WebSocket: streamed utterance yields persona, captions, audio and done', a
   c.ws.send(JSON.stringify({ type: 'auth', token }));
   await c.waitFor((e) => e.type === 'auth.ok');
 
-  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 7, personaId: 'auto' }));
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 7, personaId: 'auto', readingLevel: 1, style: { humor: true, accent: 'slow' } }));
   c.ws.send(JSON.stringify({ type: 'utterance.text', seq: 7, text: 'Science is fun. Space is huge and ' }));
   c.ws.send(JSON.stringify({ type: 'utterance.text', seq: 7, text: 'full of stars.' }));
   c.ws.send(JSON.stringify({ type: 'utterance.end', seq: 7 }));
 
   const persona = await c.waitFor((e) => e.type === 'utterance.persona');
   assert.equal(persona.persona.id, 'professor_pip');
+  assert.equal(persona.readingLevel, 1);
+  assert.deepEqual(persona.style, { humor: true, philosophy: false, accent: 'slow' });
   const done = await c.waitFor((e) => e.type === 'utterance.done');
   assert.ok(done.chars > 20);
   const captions = c.events.filter((e) => e.type === 'utterance.caption').map((e) => e.text);

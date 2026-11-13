@@ -66,10 +66,10 @@ const assert = (cond, msg) => {
   const box = await page.locator('#vernaculator-hud').boundingBox();
   await page.mouse.move(box.x + 120, box.y + 16);
   await page.mouse.down();
-  await page.mouse.move(box.x - 300, box.y - 250, { steps: 8 });
+  await page.mouse.move(box.x - 300, box.y - 120, { steps: 8 });
   await page.mouse.up();
   const box2 = await page.locator('#vernaculator-hud').boundingBox();
-  assert(Math.abs(box2.x - (box.x - 420)) < 3 && Math.abs(box2.y - (box.y - 266)) < 3, `HUD dragged (${Math.round(box.x)},${Math.round(box.y)}) -> (${Math.round(box2.x)},${Math.round(box2.y)})`);
+  assert(Math.abs(box2.x - (box.x - 420)) < 3 && Math.abs(box2.y - (box.y - 136)) < 3, `HUD dragged (${Math.round(box.x)},${Math.round(box.y)}) -> (${Math.round(box2.x)},${Math.round(box2.y)})`);
   await sleep(300);
   const saved = await sw.evaluate(() => chrome.storage.local.get('hudPos'));
   assert(saved.hudPos && Math.abs(saved.hudPos.x - box2.x) < 2, 'HUD position persisted');
@@ -135,6 +135,37 @@ const assert = (cond, msg) => {
   await sleep(2500);
   const cap = await inExt('Vern.debug.hud.caption.textContent');
   assert(/old reply/.test(cap), 'read-selection voiced the selected text');
+
+  console.log('Big Sal + plain-language controls');
+  await inExt(`Vern.settings.save({ personaId: 'big_sal', readingLevel: 1, humor: true, philosophy: false, accent: 'slow' }).then(() => true)`);
+  await sleep(400);
+  assert((await inExt('Vern.debug.hud.levelName.textContent')) === 'Super simple', 'reading-level slider shows "Super simple"');
+  assert((await inExt('Vern.debug.hud.styleSelect.options.length')) >= 5, 'speaking styles loaded from the server');
+  await inExt(`Vern.debug.speak('Your doctor says you have hypertension. Take 10 mg of lisinopril once daily and call your physician if you feel dizzy.'), true`);
+  let sal;
+  for (let i = 0; i < 40; i++) {
+    await sleep(250);
+    sal = await inExt(`({ who: Vern.debug.hud.who.textContent, src: Vern.debug.hud.img.src, applied: Vern.debug.current?.applied, playing: Vern.debug.player.playing, cap: Vern.debug.hud.caption.textContent })`);
+    if (sal.playing && sal.who === 'Big Sal') break;
+  }
+  assert(sal.who === 'Big Sal', 'Big Sal selected');
+  assert(/big_sal_(idle|talking)\.svg/.test(sal.src), 'Big Sal sprite shown');
+  assert(sal.applied?.readingLevel === 1 && sal.applied?.style?.humor === true && sal.applied?.style?.accent === 'slow', `server applied level + style (${JSON.stringify(sal.applied)})`);
+  assert(/10 mg/.test(sal.cap), 'facts like doses survive into the captions');
+  await inExt(`window.__salOpen = false; (function poll(){ if (/big_sal_talking/.test(Vern.debug.hud.img.src)) window.__salOpen = true; if (!window.__salOpen) requestAnimationFrame(poll); })(); true`);
+  await sleep(1500);
+  assert(await inExt('window.__salOpen'), "Big Sal's mouth moves with the audio");
+  await page.screenshot({ path: path.join(outDir, '4-big-sal.png') });
+  for (let i = 0; i < 80; i++) {
+    await sleep(250);
+    if (await inExt("Vern.debug.lastSession?.persona?.id === 'big_sal' && !Vern.debug.player.playing")) break;
+  }
+  const salDl = page.waitForEvent('download', { timeout: 60000 });
+  await inExt(`Vern.debug.hud.onAction('export'), true`);
+  const salFile = path.join(outDir, (await salDl).suggestedFilename());
+  await (await salDl).saveAs(salFile);
+  fs.writeFileSync(path.join(outDir, 'sal-export-path.txt'), salFile);
+  assert(fs.statSync(salFile).size > 20000, `Big Sal meme exported (${path.basename(salFile)})`);
 
   await page.screenshot({ path: path.join(outDir, '3-hud-final.png') });
   await ctx.close();

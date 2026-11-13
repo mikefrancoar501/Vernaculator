@@ -7,7 +7,7 @@
     .card {
       --bg: #ffffff; --fg: #1d1b26; --muted: #6c6880; --line: #e4e1ee; --accent: #6b4eff; --accent-fg: #fff; --chip: #f3f1fa;
       font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--fg); background: var(--bg);
-      width: 280px; border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+      width: 300px; border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
       box-shadow: 0 12px 32px rgba(20, 10, 60, .18), 0 2px 6px rgba(20, 10, 60, .08);
       user-select: none; -webkit-user-select: none;
     }
@@ -39,6 +39,15 @@
     .row.controls button { flex: 1; }
     label.field { display: grid; gap: 3px; flex: 1; font-size: 11px; color: var(--muted); }
     select { font: inherit; color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; width: 100%; }
+    .level { display: grid; gap: 2px; }
+    .level-head { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+    .level-head b { color: var(--fg); font-weight: 600; }
+    .level-ends { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+    input[type="range"] { width: 100%; accent-color: var(--accent); margin: 2px 0; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--chip); cursor: pointer; }
+    .chip:has(input:checked) { border-color: var(--accent); }
+    .chip input { margin: 0; accent-color: var(--accent); }
+    label.field.style-field { flex: 1 1 100%; }
     .toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
     .status { font-size: 11px; color: var(--muted); min-height: 1.2em; }
     progress { width: 100%; height: 6px; accent-color: var(--accent); }
@@ -64,18 +73,16 @@
           <button data-action="stop" title="Stop" aria-label="Stop">■</button>
           <button data-action="readSelection" title="Read selected text (or last reply)" aria-label="Read selection">❝</button>
         </div>
+        <label class="field">Character<select data-setting="personaId"></select></label>
+        <div class="level">
+          <div class="level-head"><span>Reading level</span><b class="level-name"></b></div>
+          <input type="range" min="1" max="5" step="1" data-setting="readingLevel" aria-label="Reading level, from super simple to expert">
+          <div class="level-ends"><span>Plain &amp; simple</span><span>Expert</span></div>
+        </div>
         <div class="row">
-          <label class="field">Character<select data-setting="personaId"></select></label>
-          <label class="field">Reading level
-            <select data-setting="readingLevel">
-              <option value="auto">Character default</option>
-              <option value="kid">Kid</option>
-              <option value="preteen">Preteen</option>
-              <option value="teen">Teen</option>
-              <option value="adult">Adult</option>
-              <option value="scholar">Scholar</option>
-            </select>
-          </label>
+          <label class="chip"><input type="checkbox" data-setting="humor"> Humor</label>
+          <label class="chip"><input type="checkbox" data-setting="philosophy"> Philosophy</label>
+          <label class="field style-field">Speaking style<select data-setting="accent"></select></label>
         </div>
         <div class="row">
           <label class="toggle"><input type="checkbox" data-setting="autoRead"> Auto-read replies</label>
@@ -114,6 +121,11 @@
       this.playBtn = $('[data-action="playpause"]');
       this.progress = $('progress');
       this.personaSelect = $('[data-setting="personaId"]');
+      this.levelInput = $('[data-setting="readingLevel"]');
+      this.levelName = $('.level-name');
+      this.styleSelect = $('[data-setting="accent"]');
+      this.levelLabels = { 1: 'Super simple', 2: 'Plain', 3: 'Everyday', 4: 'Detailed', 5: 'Expert' };
+      this.levelInput.addEventListener('input', () => this.#showLevel());
 
       this.root.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-action]');
@@ -123,7 +135,9 @@
       });
       this.root.addEventListener('change', (e) => {
         const el = e.target.closest('[data-setting]');
-        if (el) this.onSetting(el.dataset.setting, el.type === 'checkbox' ? el.checked : el.value);
+        if (!el) return;
+        const v = el.type === 'checkbox' ? el.checked : el.type === 'range' ? Number(el.value) : el.value;
+        this.onSetting(el.dataset.setting, v);
       });
 
       this.applySettings(settings);
@@ -136,8 +150,11 @@
         const v = s[el.dataset.setting];
         if (v === undefined) continue;
         if (el.type === 'checkbox') el.checked = !!v;
+        else if (el.type === 'range') el.value = String(v);
         else if ([...el.options].some((o) => o.value === v)) el.value = v;
+        else if (el.dataset.setting === 'accent') this.pendingAccent = v; // options arrive with the catalog
       }
+      this.#showLevel();
       if ('hudVisible' in s) this.host.style.display = s.hudVisible === false ? 'none' : '';
     }
 
@@ -147,6 +164,21 @@
         ...list.map((p) => new Option(`${p.name} · ${p.archetype}`, p.id)),
       );
       this.personaSelect.value = list.some((p) => p.id === selectedId) ? selectedId : 'auto';
+    }
+
+    /** Server-provided labels for reading levels and speaking styles. */
+    setStyleCatalog(catalog) {
+      if (catalog?.readingLevels) this.levelLabels = catalog.readingLevels;
+      const styles = catalog?.speakingStyles || { none: "Character's own" };
+      const want = this.pendingAccent ?? this.styleSelect.value ?? 'none';
+      this.styleSelect.replaceChildren(...Object.entries(styles).map(([k, label]) => new Option(label, k)));
+      this.styleSelect.value = Object.hasOwn(styles, want) ? want : 'none';
+      this.pendingAccent = undefined;
+      this.#showLevel();
+    }
+
+    #showLevel() {
+      this.levelName.textContent = this.levelLabels[this.levelInput.value] || '';
     }
 
     setActivePersona(p) {

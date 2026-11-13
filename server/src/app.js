@@ -8,6 +8,7 @@ import { createLLM } from './llm.js';
 import { routeIntent } from './intent.js';
 import { sanitize } from './guardrails.js';
 import { Utterance } from './pipeline.js';
+import { styleCatalog } from './styles.js';
 
 const AUTH_TIMEOUT_MS = 10_000;
 const MAX_JSON_BYTES = 64 * 1024;
@@ -43,7 +44,7 @@ export function createApp(cfg, { store, llm } = {}) {
         return json(res, 200, { ok: true, llm: cfg.llm.provider, tts: cfg.tts.provider });
       }
       if (req.method === 'GET' && url.pathname === '/v1/personas') {
-        return json(res, 200, { defaultPersonaId: personas.defaultPersona().id, characters: personas.list.map(publicPersona) });
+        return json(res, 200, { defaultPersonaId: personas.defaultPersona().id, characters: personas.list.map(publicPersona), styles: styleCatalog() });
       }
 
       const user = gateway.authenticate(bearer(req));
@@ -65,7 +66,7 @@ export function createApp(cfg, { store, llm } = {}) {
           persona = personas.get(routed.personaId);
           method = routed.method;
         }
-        const system = buildSystemPrompt(persona, { coreValues, readingLevel: body.readingLevel });
+        const system = buildSystemPrompt(persona, { coreValues, readingLevel: body.readingLevel, style: body.style });
         let out = '';
         for await (const d of llm.stream({ system, text })) out += d;
         const { clean, flagged } = sanitize(out);
@@ -125,7 +126,7 @@ export function createApp(cfg, { store, llm } = {}) {
           current = new Utterance({
             seq,
             user,
-            opts: { personaId: msg.personaId || 'auto', readingLevel: msg.readingLevel },
+            opts: { personaId: msg.personaId || 'auto', readingLevel: msg.readingLevel, style: msg.style },
             deps,
             send,
           });

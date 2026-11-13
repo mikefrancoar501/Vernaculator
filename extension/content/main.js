@@ -58,7 +58,10 @@
     if (!persona) return { ...FALLBACK, hue: 0 };
     if (!spriteCache.has(persona.id)) {
       spriteCache.set(persona.id, (async () => {
-        const { idleUrl, talkingUrl } = persona.visemeAssets || {};
+        // personas.json may point at https URLs or at sprites bundled in this extension (assets/...).
+        const resolve = (u) => (!u ? '' : /^https:\/\//.test(u) ? u : Vern.assetUrl(u));
+        const idleUrl = resolve(persona.visemeAssets?.idleUrl);
+        const talkingUrl = resolve(persona.visemeAssets?.talkingUrl);
         const ok = idleUrl && talkingUrl && (await canLoad(idleUrl)) && (await canLoad(talkingUrl));
         return ok ? { idle: idleUrl, talking: talkingUrl, hue: 0 } : { ...FALLBACK, hue: hueFor(persona.id) };
       })());
@@ -77,6 +80,7 @@
     try {
       const data = await Vern.fetchJson(`${Vern.settings.values.backendUrl.replace(/\/+$/, '')}/v1/personas`);
       personas = data.characters;
+      hud.setStyleCatalog(data.styles);
       hud.setPersonas(personas, Vern.settings.values.personaId);
       const selected = personas.find((p) => p.id === Vern.settings.values.personaId);
       showPersona(selected || null);
@@ -94,9 +98,9 @@
     hud.setCaption('');
     hud.setStatus('Thinking in character...', 'busy');
     player.begin(seq);
-    const { personaId, readingLevel } = Vern.settings.values;
+    const { personaId, readingLevel, humor, philosophy, accent } = Vern.settings.values;
     try {
-      await conn.send({ type: 'utterance.start', seq, personaId, readingLevel: readingLevel === 'auto' ? undefined : readingLevel, text, final });
+      await conn.send({ type: 'utterance.start', seq, personaId, readingLevel, style: { humor, philosophy, accent }, text, final });
     } catch (err) {
       hud.setStatus(err.message, 'err');
       current = null;
@@ -133,6 +137,7 @@
     switch (msg.type) {
       case 'utterance.persona':
         current.persona = msg.persona;
+        current.applied = { readingLevel: msg.readingLevel, style: msg.style }; // what the server actually used
         current.sprites = await showPersona(msg.persona);
         hud.setStatus(`${msg.persona.name}${msg.method !== 'manual' ? ' (auto-picked)' : ''}`, 'busy');
         break;
@@ -219,5 +224,5 @@
   });
 
   // Exposed for debugging from DevTools (isolated world): Vern.debug.speak('hello')
-  Vern.debug = { speak, player, conn, observer, hud, get lastSession() { return lastSession; } };
+  Vern.debug = { speak, player, conn, observer, hud, get lastSession() { return lastSession; }, get current() { return current; } };
 })();

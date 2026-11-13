@@ -6,8 +6,11 @@
 const DEFAULTS = {
   backendUrl: 'http://localhost:8787',
   token: '',
-  personaId: 'auto',
-  readingLevel: 'auto',
+  personaId: 'big_sal',
+  readingLevel: 2,
+  humor: false,
+  philosophy: false,
+  accent: 'none',
   autoRead: true,
   hudVisible: true,
 };
