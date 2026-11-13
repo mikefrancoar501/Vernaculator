@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="400" height="400" role="img" aria-label="Rusty Peter (talking)">
+  <g transform="translate(19.50 8.00) scale(1.1500)">
+<g class="body"><path d="M24 160 q4 -30 46 -32 q42 2 46 32 z" fill="#4A6FA5"/><path d="M56 130 l14 22 l14 -22 z" fill="#fff"/><path d="M56 130 l14 22 l-10 8 l-12 -26 z M84 130 l-14 22 l10 8 l12 -26 z" fill="#38537c"/><g fill="#8FA9C9"><circle cx="54" cy="150" r="2.5"/><circle cx="86" cy="150" r="2.5"/><circle cx="52" cy="158" r="2.5"/><circle cx="88" cy="158" r="2.5"/></g><g transform="translate(86 140) rotate(10)"><path d="M0 0 h18 l-2 16 h-16 z" fill="#FFFFFF" stroke="#17161F" stroke-width="1"/><path d="M3 5 h11 M3 9 h8 M3 13 h10" stroke="#3A7BD5" stroke-width="1.2"/></g></g>
+  <g class="head">
+    <rect x="58" y="116" width="24" height="16" fill="#F2C9A5"/>
+    <path d="M22 70 q0 -44 48 -46 q48 2 48 46 q0 34 -14 48 q-14 12 -34 12 q-20 0 -34 -12 q-14 -14 -14 -48 z" fill="#F2C9A5"/>
+    <path d="M30 104 q8 22 40 24 q32 -2 40 -24 q-4 18 -20 24 q-20 6 -40 0 q-16 -6 -20 -24 z" fill="#c6a587" opacity=".55"/>
+    <ellipse cx="22" cy="76" rx="6" ry="10" fill="#F2C9A5"/><ellipse cx="118" cy="76" rx="6" ry="10" fill="#F2C9A5"/>
+    
+    
+    <path d="M18 52 q2 -42 52 -44 q50 2 52 44 z" fill="#5A6B3A"/><path d="M10 50 h120 v10 h-120 z" fill="#3f4b29"/><circle cx="70" cy="30" r="9" fill="#C8501E"/>
+    <path d="M32 52 l32 10 l-2 6 l-32 -8 z M108 52 l-32 10 l2 6 l32 -8 z" fill="#D9B86A"/>
+    <g class="eyes"><ellipse cx="50" cy="69" rx="8" ry="7" fill="#fff"/><ellipse cx="90" cy="69" rx="8" ry="7" fill="#fff"/><circle cx="52" cy="70" r="4" fill="#17161F"/><circle cx="88" cy="70" r="4" fill="#17161F"/></g>
+    <path d="M62 64 q-14 14 -10 26 q8 9 18 9 q10 0 18 -9 q4 -12 -10 -26 z" fill="#d0ad8e"/>
+    <g class="m2"><ellipse cx="70" cy="117" rx="15" ry="12" fill="#5A1010"/><path d="M57 109 h26" stroke="#fff" stroke-width="3.5"/><ellipse cx="70" cy="124" rx="8" ry="4.5" fill="#D9536A"/></g>
+    <path d="M24 82 q0 56 46 58 q46 -2 46 -58 q-6 40 -46 44 q-40 -4 -46 -44 z" fill="#B89A5A" opacity=".28"/>
+    
+    
+    
+    
+  </g>
+  </g>
+</svg>
