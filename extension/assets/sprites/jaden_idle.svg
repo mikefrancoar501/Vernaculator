@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="400" height="400" role="img" aria-label="Jayden (idle)">
+  <g transform="translate(19.50 8.00) scale(1.1500)">
+<g class="body"><path d="M24 160 q4 -30 46 -32 q42 2 46 32 z" fill="#7B3FE4"/><path d="M40 136 q30 -16 60 0 q-8 14 -30 14 q-22 0 -30 -14 z" fill="#6232b6"/><path d="M62 148 v10 M78 148 v10" stroke="#fff" stroke-width="2"/></g>
+  <g class="head">
+    <rect x="58" y="116" width="24" height="16" fill="#F2C9A5"/>
+    <path d="M22 70 q0 -44 48 -46 q48 2 48 46 q0 34 -14 48 q-14 12 -34 12 q-20 0 -34 -12 q-14 -14 -14 -48 z" fill="#F2C9A5"/>
+    <path d="M30 104 q8 22 40 24 q32 -2 40 -24 q-4 18 -20 24 q-20 6 -40 0 q-16 -6 -20 -24 z" fill="#c6a587" opacity=".55"/>
+    <ellipse cx="22" cy="76" rx="6" ry="10" fill="#F2C9A5"/><ellipse cx="118" cy="76" rx="6" ry="10" fill="#F2C9A5"/>
+    
+    <path d="M20 66 q-4 -26 8 -36 l-2 -12 l12 8 l6 -14 l8 12 l10 -14 l6 14 l12 -12 l2 14 l12 -8 l-2 14 q14 12 8 34 q-8 -22 -22 -26 q-28 -8 -56 0 q-14 4 -22 26 z" fill="#7A4A23"/>
+    
+    <path d="M38 58 q12 -8 24 -2 M78 56 q12 -6 24 2" stroke="#7A4A23" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <g class="eyes"><ellipse cx="50" cy="69" rx="8" ry="7" fill="#fff"/><ellipse cx="90" cy="69" rx="8" ry="7" fill="#fff"/><circle cx="52" cy="70" r="4" fill="#17161F"/><circle cx="88" cy="70" r="4" fill="#17161F"/></g>
+    <path d="M62 64 q-14 14 -10 26 q8 9 18 9 q10 0 18 -9 q4 -12 -10 -26 z" fill="#d0ad8e"/>
+    <g class="m0"><path d="M56 113 q14 5 28 0" stroke="#5A1010" stroke-width="3.5" fill="none" stroke-linecap="round"/></g>
+    
+    
+    
+    
+    <path d="M18 74 q-4 -66 52 -66 q56 0 52 66" stroke="#22222B" stroke-width="6" fill="none"/><rect x="10" y="66" width="14" height="24" rx="6" fill="#22222B"/><rect x="116" y="66" width="14" height="24" rx="6" fill="#22222B"/><path d="M20 88 q4 26 30 26" stroke="#22222B" stroke-width="3" fill="none"/><circle cx="52" cy="114" r="4.5" fill="#22222B"/>
+  </g>
+  </g>
+</svg>

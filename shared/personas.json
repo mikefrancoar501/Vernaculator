@@ -104,8 +104,8 @@
         "sad"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/elias_idle.png",
-        "talkingUrl": "https://cdn.example.com/elias_talking.png"
+        "idleUrl": "assets/sprites/elias_stillwater_idle.svg",
+        "talkingUrl": "assets/sprites/elias_stillwater_talking.svg"
       },
       "writersRoomRole": "escalate"
     },
@@ -130,8 +130,8 @@
         "coach"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/ray_idle.png",
-        "talkingUrl": "https://cdn.example.com/ray_talking.png"
+        "idleUrl": "assets/sprites/big_play_ray_idle.svg",
+        "talkingUrl": "assets/sprites/big_play_ray_talking.svg"
       },
       "writersRoomRole": "setup"
     },
@@ -159,8 +159,8 @@
         "install"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/ada_idle.png",
-        "talkingUrl": "https://cdn.example.com/ada_talking.png"
+        "idleUrl": "assets/sprites/default_idle.svg",
+        "talkingUrl": "assets/sprites/default_talking.svg"
       },
       "writersRoomRole": "setup"
     },
@@ -187,8 +187,8 @@
         "home"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/marigold_idle.png",
-        "talkingUrl": "https://cdn.example.com/marigold_talking.png"
+        "idleUrl": "assets/sprites/default_idle.svg",
+        "talkingUrl": "assets/sprites/default_talking.svg"
       },
       "writersRoomRole": "closer"
     },
@@ -215,8 +215,8 @@
         "experiment"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/pip_idle.png",
-        "talkingUrl": "https://cdn.example.com/pip_talking.png"
+        "idleUrl": "assets/sprites/default_idle.svg",
+        "talkingUrl": "assets/sprites/default_talking.svg"
       },
       "writersRoomRole": "escalate"
     },
@@ -243,8 +243,8 @@
         "plan"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/reginald_idle.png",
-        "talkingUrl": "https://cdn.example.com/reginald_talking.png"
+        "idleUrl": "assets/sprites/default_idle.svg",
+        "talkingUrl": "assets/sprites/default_talking.svg"
       },
       "writersRoomRole": "escalate"
     },
@@ -270,8 +270,8 @@
         "change"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/rusty_idle.png",
-        "talkingUrl": "https://cdn.example.com/rusty_talking.png"
+        "idleUrl": "assets/sprites/rusty_peters_idle.svg",
+        "talkingUrl": "assets/sprites/rusty_peters_talking.svg"
       },
       "writersRoomRole": "escalate",
       "arc": "redemption",
@@ -299,8 +299,8 @@
         "calculus"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/dash_idle.png",
-        "talkingUrl": "https://cdn.example.com/dash_talking.png"
+        "idleUrl": "assets/sprites/default_idle.svg",
+        "talkingUrl": "assets/sprites/default_talking.svg"
       },
       "writersRoomRole": "escalate",
       "voiceSpeed": 1.7
@@ -321,8 +321,8 @@
         "friends"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/jaden_idle.png",
-        "talkingUrl": "https://cdn.example.com/jaden_talking.png"
+        "idleUrl": "assets/sprites/jaden_idle.svg",
+        "talkingUrl": "assets/sprites/jaden_talking.svg"
       }
     },
     {
@@ -341,8 +341,8 @@
         "history"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/jack_midnight_idle.png",
-        "talkingUrl": "https://cdn.example.com/jack_midnight_talking.png"
+        "idleUrl": "assets/sprites/jack_midnight_idle.svg",
+        "talkingUrl": "assets/sprites/jack_midnight_talking.svg"
       }
     },
     {
@@ -363,8 +363,8 @@
         "adventure"
       ],
       "visemeAssets": {
-        "idleUrl": "https://cdn.example.com/pirate_idle.png",
-        "talkingUrl": "https://cdn.example.com/pirate_talking.png"
+        "idleUrl": "assets/sprites/pirate_idle.svg",
+        "talkingUrl": "assets/sprites/pirate_talking.svg"
       }
     }
   ]
