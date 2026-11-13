@@ -51,7 +51,7 @@
     "message": "Reading level"
   },
   "hudLevelLow": {
-    "message": "Plain & simple"
+    "message": "Super simple"
   },
   "hudLevelHigh": {
     "message": "Expert"
@@ -189,7 +189,7 @@
     "message": "Your name"
   },
   "optNameHint": {
-    "message": "Characters will use it, e.g. \"Sergio, basically what Claude is telling you is...\""
+    "message": "Characters will use it, e.g. \"Alex, basically what Claude is telling you is...\""
   },
   "optAbout": {
     "message": "About me"
@@ -393,7 +393,7 @@
     "message": "🎧 Listening to answers"
   },
   "helpListenBody": {
-    "message": "Ask Claude, Grok or Gemini anything. When the answer finishes, your character reads it out loud. Use the reading level slider: 1 is super simple, 5 is expert. Pick a voice style too."
+    "message": "Ask Claude, Grok or Gemini anything. Your character starts reading while the answer is still coming in. Use the reading level slider: 1 is super simple, 5 is expert. Pick a voice style too."
   },
   "helpGesturesTitle": {
     "message": "👆 Gestures"
@@ -417,7 +417,7 @@
     "message": "🏘️ The town"
   },
   "helpTownBody": {
-    "message": "Pick a few characters and they each take a part of the answer, like a little town meeting. Big Sal, Old Oakley, Big Play Ray and Elias are the core crew."
+    "message": "Pick up to 6 characters and they each take a part of the answer, like a little town meeting. Big Sal, Old Oakley, Big Play Ray and Elias are the core crew."
   },
   "helpSocialTitle": {
     "message": "📱 Social posts"
@@ -441,12 +441,30 @@
     "message": "🎞️ Meme video"
   },
   "helpVideoBody": {
-    "message": "After a narration, tap Video to download a clip with the character and captions, ready for you to upload."
+    "message": "After a narration, tap 🎬 Meme to download a clip with the character and captions, ready for you to upload."
   },
   "helpSettingsTitle": {
     "message": "👤 Settings"
   },
   "helpSettingsBody": {
     "message": "Tap the person icon to set your name, a little about you, your age range and language. Answers get tailored to you."
+  },
+  "hudTownLimit": {
+    "message": "Pick up to 6 characters."
+  },
+  "controlsHint": {
+    "message": "Press and hold Sal for controls"
+  },
+  "optReplaceCompanion": {
+    "message": "Replace Grok's companion"
+  },
+  "optReplaceCompanionHint": {
+    "message": "On grok.com, sit in place of Grok's own animated companion. Turn this off to keep Grok's companion visible."
+  },
+  "optSocialPill": {
+    "message": "Show Crib notes button on X/Facebook/Instagram"
+  },
+  "optSocialPillHint": {
+    "message": "Shows a Crib notes button on posts. Turn this off if you don't want the button on those sites."
   }
 }

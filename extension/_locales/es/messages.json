@@ -51,7 +51,7 @@
     "message": "Nivel de lectura"
   },
   "hudLevelLow": {
-    "message": "Claro y sencillo"
+    "message": "Muy sencillo"
   },
   "hudLevelHigh": {
     "message": "Experto"
@@ -189,7 +189,7 @@
     "message": "Tu nombre"
   },
   "optNameHint": {
-    "message": "Los personajes lo usarán, p. ej. \"Sergio, básicamente lo que Claude te está diciendo es...\""
+    "message": "Los personajes lo usarán, p. ej. \"Álex, básicamente lo que Claude te está diciendo es...\""
   },
   "optAbout": {
     "message": "Sobre mí"
@@ -393,7 +393,7 @@
     "message": "🎧 Escuchar respuestas"
   },
   "helpListenBody": {
-    "message": "Pregúntale lo que quieras a Claude, Grok o Gemini. Cuando termine la respuesta, tu personaje la lee en voz alta. Usa el control de nivel de lectura: 1 es muy sencillo, 5 es experto. También puedes elegir un estilo de voz."
+    "message": "Pregúntale lo que quieras a Claude, Grok o Gemini. Tu personaje empieza a leer mientras la respuesta todavía está llegando. Usa el control de nivel de lectura: 1 es muy sencillo, 5 es experto. También puedes elegir un estilo de voz."
   },
   "helpGesturesTitle": {
     "message": "👆 Gestos"
@@ -417,7 +417,7 @@
     "message": "🏘️ El pueblo"
   },
   "helpTownBody": {
-    "message": "Elige algunos personajes y cada uno cuenta una parte de la respuesta, como una pequeña reunión del pueblo. Big Sal, Old Oakley, Big Play Ray y Elias son el equipo principal."
+    "message": "Elige hasta 6 personajes y cada uno cuenta una parte de la respuesta, como una pequeña reunión del pueblo. Big Sal, Old Oakley, Big Play Ray y Elias son el equipo principal."
   },
   "helpSocialTitle": {
     "message": "📱 Publicaciones sociales"
@@ -441,12 +441,30 @@
     "message": "🎞️ Video meme"
   },
   "helpVideoBody": {
-    "message": "Después de una narración, toca Video para descargar un clip con el personaje y los subtítulos, listo para que lo subas."
+    "message": "Después de una narración, toca 🎬 Meme para descargar un clip con el personaje y los subtítulos, listo para que lo subas."
   },
   "helpSettingsTitle": {
     "message": "👤 Ajustes"
   },
   "helpSettingsBody": {
     "message": "Toca el icono de persona para poner tu nombre, algo sobre ti, tu rango de edad y tu idioma. Las respuestas se adaptan a ti."
+  },
+  "hudTownLimit": {
+    "message": "Elige hasta 6 personajes."
+  },
+  "controlsHint": {
+    "message": "Mantén pulsado a Sal para ver los controles"
+  },
+  "optReplaceCompanion": {
+    "message": "Sustituir al compañero de Grok"
+  },
+  "optReplaceCompanionHint": {
+    "message": "En grok.com, ocupa el lugar del compañero animado de Grok. Desactívalo si quieres dejar visible al compañero de Grok."
+  },
+  "optSocialPill": {
+    "message": "Mostrar el botón Resumen en X/Facebook/Instagram"
+  },
+  "optSocialPillHint": {
+    "message": "Muestra un botón Resumen en las publicaciones. Desactívalo si no quieres ver el botón en esos sitios."
   }
 }

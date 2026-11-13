@@ -19,8 +19,9 @@
     hudVisible: true,
     hudCollapsed: false,
     hudPos: null,
-    hudSize: 'S', // compact by default; long-press the character for M / L / custom
+    hudSize: 'M', // shows the control bar; compact S is still available via long-press
     hudScale: 1,
+    controlsHintSeen: false,
     muted: false,
     replaceCompanion: true, // on grok.com, sit in place of Grok's own companion avatar
     townEnabled: false,
@@ -41,6 +42,12 @@
       // Migrate the old named reading levels to the 1-5 slider.
       const named = { kid: 1, preteen: 2, teen: 3, adult: 4, scholar: 5 };
       if (typeof this.values.readingLevel !== 'number') this.values.readingLevel = named[this.values.readingLevel] ?? DEFAULTS.readingLevel;
+      // New installs default to M so the controls are visible. A size the user already
+      // saved is left alone. On very narrow screens, start compact (S) so the widget fits.
+      if (stored.hudSize === undefined) {
+        const narrow = typeof window !== 'undefined' && window.innerWidth < 360;
+        this.values.hudSize = narrow ? 'S' : 'M';
+      }
       return this.values;
     },
     async save(patch) {
@@ -86,5 +93,6 @@
   };
   const assetUrl = (p) => chrome.runtime.getURL(p);
 
-  window.Vern = { DEFAULTS, settings, log, assetUrl, t, profile, browserLanguage };
+  const MAX_TOWN = 6; // keep in sync with server/src/town.js
+  window.Vern = { DEFAULTS, settings, log, assetUrl, t, profile, browserLanguage, MAX_TOWN };
 })();

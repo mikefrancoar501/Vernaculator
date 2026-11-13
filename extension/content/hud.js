@@ -59,8 +59,25 @@
     .town-box { display: grid; gap: 6px; }
     .town-members { display: flex; flex-wrap: wrap; gap: 4px; }
     .town-members .chip { font-size: 11px; padding: 3px 7px; }
-    .town-box:has([data-setting="townEnabled"]:not(:checked)) .town-members { display: none; }
+    .town-box:has([data-setting="townEnabled"]:not(:checked)) .town-members,
+    .town-box:has([data-setting="townEnabled"]:not(:checked)) .town-limit { display: none; }
     .hint { font-size: 11px; color: var(--muted); }
+    .town-limit { margin: 0; }
+    .controls-hint {
+      position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%);
+      width: max-content; max-width: min(230px, calc(100vw - 16px));
+      background: var(--accent); color: #fff; font: 12px/1.35 system-ui, sans-serif;
+      padding: 8px 10px; border-radius: 10px; box-shadow: 0 8px 20px rgba(20,10,60,.25);
+      z-index: 3; text-align: center;
+    }
+    .controls-hint::after {
+      content: ''; position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
+      border: 6px solid transparent; border-top-color: var(--accent);
+    }
+    @media (max-width: 359px) {
+      .card, .card[data-size="M"] { width: min(300px, calc(100vw - 8px)); }
+      .card[data-size="L"] { width: min(380px, calc(100vw - 8px)); }
+    }
     .quick button { flex: 1 1 auto; font-size: 12px; }
     .quick .oak { flex-basis: 100%; background: #2f4a26; color: #fff7c2; border-color: transparent; }
     form.ask { display: grid; gap: 6px; }
@@ -153,7 +170,7 @@
           <div class="level">
             <div class="level-head"><span data-i18n="hudReadingLevel">Reading level</span><b class="level-name"></b></div>
             <input type="range" min="1" max="5" step="1" data-setting="readingLevel" data-i18n-aria="hudReadingLevel" aria-label="Reading level">
-            <div class="level-ends"><span data-i18n="hudLevelLow">Plain &amp; simple</span><span data-i18n="hudLevelHigh">Expert</span></div>
+            <div class="level-ends"><span data-i18n="hudLevelLow">Super simple</span><span data-i18n="hudLevelHigh">Expert</span></div>
           </div>
           <div class="row">
             <label class="chip strong"><input type="checkbox" data-setting="paraphrase"> <span data-i18n="hudParaphrase">Paraphrase</span></label>
@@ -164,6 +181,7 @@
           <div class="town-box">
             <label class="chip strong"><input type="checkbox" data-setting="townEnabled"> <span data-i18n="hudTown">Town panel</span></label>
             <div class="town-members" data-i18n-aria="hudTownMembers" aria-label="Town members"></div>
+            <p class="hint town-limit" data-i18n="hudTownLimit">Pick up to 6 characters.</p>
           </div>
           <div class="row">
             <label class="toggle"><input type="checkbox" data-setting="autoRead"> <span data-i18n="hudAutoRead">Auto-read replies</span></label>
@@ -239,15 +257,15 @@
     <div class="pop help" hidden>
       <div class="pop-title" data-i18n="helpTitle">How Fancy Bot works</div>
       <p class="help-intro" data-i18n="helpIntro">I read AI answers out loud in fun voices and help you understand them. Tap a topic:</p>
-      <details><summary data-i18n="helpListenTitle">🎧 Listening to answers</summary><p data-i18n="helpListenBody">Ask Claude, Grok or Gemini anything. When the answer finishes, your character reads it out loud. Use the reading level slider: 1 is super simple, 5 is expert. Pick a voice style too.</p></details>
+      <details><summary data-i18n="helpListenTitle">🎧 Listening to answers</summary><p data-i18n="helpListenBody">Ask Claude, Grok or Gemini anything. Your character starts reading while the answer is still coming in. Use the reading level slider: 1 is super simple, 5 is expert. Pick a voice style too.</p></details>
       <details><summary data-i18n="helpGesturesTitle">👆 Gestures</summary><p data-i18n="helpGesturesBody">Drag me by the top bar. Long-press me for the menu (size, characters, mute). Double-tap me to open the helper. Tap me fast or rub me to tickle me.</p></details>
       <details><summary data-i18n="helpHelperTitle">💬 Helper commands</summary><p data-i18n="helpHelperBody">Double-tap and type or say things like "switch to Old Oakley", "talk slower", "simpler please" or "talk like a genius". I change the setting for you.</p></details>
       <details><summary data-i18n="helpAskTitle">❓ Ask tab</summary><p data-i18n="helpAskBody">Key points gives the short version. Paraphrase says it in plain words. Oakley adds a wise thought. Ask a follow-up, or Expound to go deeper.</p></details>
-      <details><summary data-i18n="helpTownTitle">🏘️ The town</summary><p data-i18n="helpTownBody">Pick a few characters and they each take a part of the answer, like a little town meeting. Big Sal, Old Oakley, Big Play Ray and Elias are the core crew.</p></details>
+      <details><summary data-i18n="helpTownTitle">🏘️ The town</summary><p data-i18n="helpTownBody">Pick up to 6 characters and they each take a part of the answer, like a little town meeting. Big Sal, Old Oakley, Big Play Ray and Elias are the core crew.</p></details>
       <details><summary data-i18n="helpSocialTitle">📱 Social posts</summary><p data-i18n="helpSocialBody">On X, Facebook and Instagram, tap the "Crib notes" pill on a post. Get crib notes (a witty summary) or a draft reply. Then copy it, make a video, or open the reply box. I never post for you: you choose what to post.</p></details>
       <details><summary data-i18n="helpRoomTitle">🎬 Writers' room</summary><p data-i18n="helpRoomBody">Pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Jokes are about ideas, never people.</p></details>
       <details><summary data-i18n="helpHotTitle">🔥 What's hot</summary><p data-i18n="helpHotBody">Turn it on to rank the posts already on your screen by likes and shared topics. Pick one to riff on.</p></details>
-      <details><summary data-i18n="helpVideoTitle">🎞️ Meme video</summary><p data-i18n="helpVideoBody">After a narration, tap Video to download a clip with the character and captions, ready for you to upload.</p></details>
+      <details><summary data-i18n="helpVideoTitle">🎞️ Meme video</summary><p data-i18n="helpVideoBody">After a narration, tap 🎬 Meme to download a clip with the character and captions, ready for you to upload.</p></details>
       <details><summary data-i18n="helpSettingsTitle">👤 Settings</summary><p data-i18n="helpSettingsBody">Tap the person icon to set your name, a little about you, your age range and language. Answers get tailored to you.</p></details>
     </div>
     <div class="pop assistant" hidden>
@@ -261,6 +279,7 @@
       </form>
       <div class="asst-reply" aria-live="polite"></div>
     </div>
+    <div class="controls-hint" hidden data-i18n="controlsHint">Press and hold Sal for controls</div>
     </div>
   `;
 
@@ -307,6 +326,7 @@
         const q = this.asstForm.q.value.trim();
         if (q) this.onAction('assistant', q);
       });
+      this.root.addEventListener('pointerdown', () => this.dismissControlsHint());
       this.root.addEventListener('click', (e) => {
         const size = e.target.closest('[data-size-pick]');
         if (size) {
@@ -370,7 +390,10 @@
           return this.onSetting('sceneCast', ids);
         }
         if (e.target.dataset?.townMember) {
-          const ids = [...this.root.querySelectorAll('[data-town-member]:checked')].map((i) => i.dataset.townMember);
+          const boxes = [...this.root.querySelectorAll('[data-town-member]')];
+          const max = Vern.MAX_TOWN || 6;
+          let ids = boxes.filter((i) => i.checked).map((i) => i.dataset.townMember);
+          if (ids.length > max) { e.target.checked = false; ids = ids.filter((id) => id !== e.target.dataset.townMember); }
           return this.onSetting('townMembers', ids);
         }
         const el = e.target.closest('[data-setting]');
@@ -451,6 +474,7 @@
     }
 
     openMenu(personas, currentId) {
+      this.dismissControlsHint();
       this.personaList.replaceChildren(...personas.map((p) => {
         const b = document.createElement('button');
         b.dataset.personaPick = p.id;
@@ -544,8 +568,9 @@
     }
 
     #syncTownMembers(ids) {
-      this.townMembers = ids;
-      for (const i of this.root.querySelectorAll('[data-town-member]')) i.checked = ids.includes(i.dataset.townMember);
+      const max = Vern.MAX_TOWN || 6;
+      this.townMembers = (ids || []).slice(0, max);
+      for (const i of this.root.querySelectorAll('[data-town-member]')) i.checked = this.townMembers.includes(i.dataset.townMember);
     }
 
     showTab(name, focus = true) {
@@ -672,6 +697,21 @@
       this.stage.classList.remove('giggle');
       void this.stage.offsetWidth; // restart animation
       this.stage.classList.add('giggle');
+    }
+
+    showControlsHint() {
+      const el = this.root.querySelector('.controls-hint');
+      if (!el) return;
+      el.hidden = false;
+      clearTimeout(this._hintTimer);
+      this._hintTimer = setTimeout(() => this.dismissControlsHint(), 10000);
+    }
+
+    dismissControlsHint() {
+      const el = this.root.querySelector('.controls-hint');
+      if (el) el.hidden = true;
+      clearTimeout(this._hintTimer);
+      if (!Vern.settings.values.controlsHintSeen) this.onSetting('controlsHintSeen', true);
     }
 
     setCollapsed(c, persist) {
