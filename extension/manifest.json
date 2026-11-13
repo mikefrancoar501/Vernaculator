@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "The Vernaculator",
+  "short_name": "Vernaculator",
+  "version": "0.1.0",
+  "description": "Reads AI chat replies aloud in the voice and vernacular of a family-friendly character.",
+  "minimum_chrome_version": "126",
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Show / hide the Vernaculator"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options/options.html",
+  "permissions": ["storage"],
+  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
+  "optional_host_permissions": ["https://*/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://claude.ai/*", "https://grok.com/*", "https://gemini.google.com/*"],
+      "js": [
+        "content/ns.js",
+        "content/platforms.js",
+        "content/observer.js",
+        "content/connection.js",
+        "content/player.js",
+        "content/viseme.js",
+        "content/tickle.js",
+        "content/meme.js",
+        "content/hud.js",
+        "content/main.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/sprites/*", "assets/audio/*"],
+      "matches": ["https://claude.ai/*", "https://grok.com/*", "https://gemini.google.com/*"]
+    }
+  ]
+}

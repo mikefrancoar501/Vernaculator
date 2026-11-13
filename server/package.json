@@ -1,0 +1,21 @@
+{
+  "name": "vernaculator-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Vernaculator middleware: auth/metering gateway, persona style-transfer, and Fish Audio TTS streaming proxy.",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/index.js",
+    "dev": "node --env-file-if-exists=.env --watch src/index.js",
+    "token:create": "node --env-file-if-exists=.env scripts/create-token.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "@msgpack/msgpack": "^3.1.3",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Vernaculator settings</title>
+  <style>
+    :root { color-scheme: light dark; font: 14px/1.5 system-ui, sans-serif; }
+    body { max-width: 520px; margin: 32px auto; padding: 0 16px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p.sub { margin: 0 0 24px; opacity: .7; }
+    label { display: block; font-weight: 600; margin: 16px 0 4px; }
+    input, select { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #8886; font: inherit; }
+    .row { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+    .row input { width: auto; }
+    button { margin-top: 24px; padding: 8px 16px; border-radius: 8px; border: 0; background: #6b4eff; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+    #status { margin-left: 12px; }
+    .hint { font-size: 12px; opacity: .7; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h1>The Vernaculator</h1>
+  <p class="sub">Connect the extension to your Vernaculator middleware.</p>
+
+  <label for="backendUrl">Middleware URL</label>
+  <input id="backendUrl" type="url" placeholder="http://localhost:8787">
+  <div class="hint">Use https:// in production; the extension connects over wss:// to /v1/stream.</div>
+
+  <label for="token">Session token</label>
+  <input id="token" type="password" placeholder="vk_...">
+  <div class="hint">Create one on the server with <code>npm run token:create</code>.</div>
+
+  <div class="row"><input id="autoRead" type="checkbox"><span>Auto-read new replies</span></div>
+
+  <button id="save">Save</button><span id="status"></span>
+  <script src="options.js"></script>
+</body>
+</html>

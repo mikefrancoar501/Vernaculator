@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Fake claude.ai (test harness)</title>
+  <style>
+    body { font: 15px/1.5 system-ui; margin: 0; background: #f7f5ef; }
+    main { max-width: 720px; margin: 0 auto; padding: 32px 16px 200px; }
+    .user { background: #e8e4da; padding: 10px 14px; border-radius: 12px; margin: 16px 0; }
+    .font-claude-response { padding: 4px 0; }
+  </style>
+</head>
+<body>
+  <main id="thread">
+    <div class="user">An older question</div>
+    <div data-is-streaming="false"><div class="font-claude-response"><p>This is an old reply that should not be auto-read.</p></div></div>
+  </main>
+  <script>
+    // Simulates claude.ai streaming an assistant reply token by token.
+    window.streamReply = async (text, { delay = 15 } = {}) => {
+      const thread = document.getElementById('thread');
+      const u = document.createElement('div');
+      u.className = 'user';
+      u.textContent = 'New question';
+      thread.appendChild(u);
+      const wrap = document.createElement('div');
+      wrap.setAttribute('data-is-streaming', 'true');
+      wrap.innerHTML = '<div class="font-claude-response"><p></p></div>';
+      thread.appendChild(wrap);
+      const p = wrap.querySelector('p');
+      for (const word of text.split(/(\s+)/)) {
+        p.textContent += word;
+        await new Promise((r) => setTimeout(r, delay));
+      }
+      wrap.setAttribute('data-is-streaming', 'false');
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "_note": "PLACEHOLDER. The spec references '15 core values' without listing them. Replace these with the real list; they are injected into every persona's system prompt.",
+  "values": [
+    "Honesty",
+    "Kindness",
+    "Respect",
+    "Responsibility",
+    "Gratitude",
+    "Courage",
+    "Perseverance",
+    "Humility",
+    "Generosity",
+    "Patience",
+    "Fairness",
+    "Curiosity",
+    "Self-control",
+    "Teamwork",
+    "Joyful humor"
+  ]
+}

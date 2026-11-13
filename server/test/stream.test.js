@@ -1,0 +1,112 @@
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
+import WebSocket from 'ws';
+import { loadConfig } from '../src/config.js';
+import { createApp } from '../src/app.js';
+import { JsonStore } from '../src/store.js';
+
+let app, base, token, store;
+
+before(async () => {
+  const cfg = loadConfig({ port: 0 });
+  cfg.llm.provider = 'mock';
+  cfg.tts.provider = 'mock';
+  cfg.quotas = { free: 5000, pro: 50000 };
+  store = new JsonStore(path.join(os.tmpdir(), `stream-${process.pid}-${Date.now()}.json`));
+  token = store.createUser({ plan: 'free' }).token;
+  app = createApp(cfg, { store });
+  await new Promise((r) => app.server.listen(0, r));
+  base = `localhost:${app.server.address().port}`;
+});
+
+after(() => app.server.close());
+
+function connect(origin) {
+  const ws = new WebSocket(`ws://${base}/v1/stream`, origin ? { origin } : {});
+  const events = [];
+  const audio = [];
+  ws.on('message', (data, isBinary) => {
+    if (isBinary) audio.push(data);
+    else events.push(JSON.parse(data.toString()));
+  });
+  const waitFor = (pred, ms = 8000) =>
+    new Promise((resolve, reject) => {
+      const t0 = Date.now();
+      const tick = () => {
+        const hit = events.find(pred);
+        if (hit) return resolve(hit);
+        if (Date.now() - t0 > ms) return reject(new Error(`timeout; events: ${JSON.stringify(events)}`));
+        setTimeout(tick, 20);
+      };
+      tick();
+    });
+  return { ws, events, audio, waitFor, opened: new Promise((r, j) => { ws.on('open', r); ws.on('error', j); }) };
+}
+
+test('REST: health, personas, auth, transform', async () => {
+  const health = await (await fetch(`http://${base}/health`)).json();
+  assert.equal(health.ok, true);
+  const personas = await (await fetch(`http://${base}/v1/personas`)).json();
+  assert.ok(personas.characters.length >= 2);
+  assert.ok(!('systemPromptRules' in personas.characters[0]), 'prompts stay server-side');
+  assert.equal((await fetch(`http://${base}/v1/usage`)).status, 401);
+  const res = await fetch(`http://${base}/v1/transform`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: 'Who will win the big game tonight?', personaId: 'auto' }),
+  });
+  const body = await res.json();
+  assert.equal(body.persona.id, 'big_play_ray');
+  assert.match(body.text, /Big Play Ray here/);
+});
+
+test('WebSocket: streamed utterance yields persona, captions, audio and done', async () => {
+  const c = connect();
+  await c.opened;
+  c.ws.send(JSON.stringify({ type: 'auth', token }));
+  await c.waitFor((e) => e.type === 'auth.ok');
+
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 7, personaId: 'auto' }));
+  c.ws.send(JSON.stringify({ type: 'utterance.text', seq: 7, text: 'Science is fun. Space is huge and ' }));
+  c.ws.send(JSON.stringify({ type: 'utterance.text', seq: 7, text: 'full of stars.' }));
+  c.ws.send(JSON.stringify({ type: 'utterance.end', seq: 7 }));
+
+  const persona = await c.waitFor((e) => e.type === 'utterance.persona');
+  assert.equal(persona.persona.id, 'professor_pip');
+  const done = await c.waitFor((e) => e.type === 'utterance.done');
+  assert.ok(done.chars > 20);
+  const captions = c.events.filter((e) => e.type === 'utterance.caption').map((e) => e.text);
+  assert.ok(captions.length >= 2, `captions: ${captions}`);
+  assert.ok(c.audio.length > 0, 'received audio frames');
+  for (const frame of c.audio) {
+    assert.equal(frame.readUInt32BE(0), 7, 'audio frames carry the utterance seq');
+    assert.equal(frame[4], 0xff, 'payload starts on an MP3 frame');
+  }
+  assert.ok(done.usage.usedChars >= done.chars);
+  c.ws.close();
+});
+
+test('WebSocket: rejects bad token and disallowed origin', async () => {
+  const c = connect();
+  await c.opened;
+  c.ws.send(JSON.stringify({ type: 'auth', token: 'bad' }));
+  await c.waitFor((e) => e.type === 'auth.error');
+
+  const evil = new WebSocket(`ws://${base}/v1/stream`, { origin: 'https://evil.example' });
+  await assert.rejects(new Promise((r, j) => { evil.on('open', r); evil.on('error', j); }), /403/);
+});
+
+test('WebSocket: quota exceeded cancels utterance', async () => {
+  const { user, token: t2 } = store.createUser({ plan: 'free' });
+  store.addUsage(user.id, 4990);
+  const c = connect('https://claude.ai');
+  await c.opened;
+  c.ws.send(JSON.stringify({ type: 'auth', token: t2 }));
+  await c.waitFor((e) => e.type === 'auth.ok');
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 1, text: 'This sentence is definitely longer than ten characters.', final: true }));
+  const err = await c.waitFor((e) => e.type === 'error');
+  assert.equal(err.code, 'quota_exceeded');
+  c.ws.close();
+});
