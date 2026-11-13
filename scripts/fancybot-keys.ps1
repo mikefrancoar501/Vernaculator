@@ -33,12 +33,11 @@ if ($vals['ANTHROPIC_API_KEY'] -and $vals['ANTHROPIC_API_KEY'] -notmatch '^sk-an
 Write-Host "`n2) Fish Audio (the voices): fish.audio > sign in > API keys (in your account menu) > create a key." -ForegroundColor Cyan
 Ask-Secret '   Fish Audio API key' 'FISH_API_KEY'
 
-Write-Host "`n3) Default voice: on fish.audio open any voice you like; its ID is the long code at the end of the page address" -ForegroundColor Cyan
-Write-Host '   (fish.audio/m/THIS-PART). Every character uses it until it gets its own voice.' -ForegroundColor Cyan
-Ask-Plain '   Default voice ID' 'FISH_DEFAULT_VOICE_ID'
-
-Write-Host "`n4) Optional: a separate voice for Big Sal (same kind of ID). Press Enter to skip." -ForegroundColor Cyan
-Ask-Plain '   Big Sal voice ID' 'FISH_VOICE_BIG_SAL'
+Write-Host "`n3) Optional: a fallback voice for characters that do not have their own yet (Rusty, Dash, ...)." -ForegroundColor Cyan
+Write-Host '   Big Sal, Old Oakley, Big Play Ray, Elias, Jaden, Jack Midnight and The Pirate already have theirs.' -ForegroundColor Cyan
+Write-Host '   Press Enter to use Big Sal''s voice as the fallback.' -ForegroundColor Cyan
+Ask-Plain '   Fallback voice ID' 'FISH_DEFAULT_VOICE_ID'
+if (-not $vals['FISH_DEFAULT_VOICE_ID']) { $vals['FISH_DEFAULT_VOICE_ID'] = '5edadba5962c47ae9a72df3046f1b039' }
 
 # Turn on the real services for whatever is filled in.
 $vals['LLM_PROVIDER'] = if ($vals['ANTHROPIC_API_KEY']) { 'anthropic' } else { 'mock' }
@@ -49,6 +48,5 @@ $lines = @('# Fancy Bot keys. Private: do not share or upload this file.') + ($v
 
 Write-Host "`nSaved to $KeysFile" -ForegroundColor Green
 Write-Host "  Words: $($vals['LLM_PROVIDER'])   Voices: $($vals['TTS_PROVIDER'])   (mock = test mode)" -ForegroundColor Green
-if ($vals['TTS_PROVIDER'] -eq 'mock' -and $vals['FISH_API_KEY']) { Write-Host '  Voices stay in test mode until you add a default voice ID.' -ForegroundColor Yellow }
 Write-Host "`nNow close any Fancy Bot server window and double-click fancybot-setup.bat to restart with your keys." -ForegroundColor Green
 Read-Host 'Press Enter to close'
