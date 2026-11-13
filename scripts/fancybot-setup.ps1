@@ -1,5 +1,6 @@
 # Fancy Bot: get the latest code, install, and start the local server (Windows).
-# Double-click fancybot-setup.bat (it runs this file). Everything lives in Documents\FancyBot.
+# Double-click fancybot-setup.bat (it runs this file). Everything lives in Documents\FancyBot
+# (the real Documents folder, including when OneDrive moves it). Works with Chrome, Brave or Edge.
 # Close the window to stop the server.
 $ErrorActionPreference = 'Stop'
 $RepoUrl  = 'https://github.com/mikefrancoar501/Vernaculator.git'
@@ -93,7 +94,7 @@ Write-Host @"
  Your token$copied`:
    $token
 
- First time only, in Chrome:
+ First time only, in Chrome or Brave:
    1. Go to chrome://extensions   (opening it now)
    2. Turn on "Developer mode" (top right)
    3. Click "Load unpacked" and choose this folder:
@@ -105,7 +106,12 @@ Write-Host @"
  Keep this window open while you test. Close it to stop Fancy Bot.
 ====================================================================
 "@ -ForegroundColor Green
-try { Start-Process 'chrome.exe' 'chrome://extensions' } catch { Write-Host 'Open Chrome and go to chrome://extensions' }
+# Works with Chrome or Brave (Brave also accepts chrome://extensions).
+$opened = $false
+foreach ($b in 'chrome.exe', 'brave.exe', 'msedge.exe') {
+  if (-not $opened) { try { Start-Process $b 'chrome://extensions'; $opened = $true } catch { } }
+}
+if (-not $opened) { Write-Host 'Open your browser and go to chrome://extensions' }
 Start-Process explorer.exe $ext
 
 # 6. Start the server (stop an older Fancy Bot server first: it would use a different token list)
