@@ -12,7 +12,7 @@ import { Gateway } from '../src/auth.js';
 import { loadConfig } from '../src/config.js';
 import { splitFrames } from '../src/tts/mp3.js';
 import { parseStyle, styleCatalog } from '../src/styles.js';
-import { parseProfile } from '../src/tasks.js';
+import { parseProfile, userMessage } from '../src/tasks.js';
 import { parseTown, planTown, townPrompt } from '../src/town.js';
 import { ruleAssistant, sanitizeAction, runAssistant } from '../src/assistant.js';
 import { resolveVoiceId } from '../src/config.js';
@@ -139,6 +139,20 @@ test('task prompts: key points, follow-up question, expound', () => {
   assert.match(ask, /Never invent facts/);
   assert.match(buildSystemPrompt(p, { coreValues: [], task: 'expound' }), /TASK: EXPOUND/);
   assert.doesNotMatch(buildSystemPrompt(p, { coreValues: [], task: 'bogus' }), /TASK:/);
+});
+
+test('social tasks: crib notes and reply drafts treat the post as a person\'s, not an AI\'s', () => {
+  const p = personas.get('big_play_ray');
+  const crib = buildSystemPrompt(p, { coreValues: [], task: 'crib', source: 'x' });
+  assert.match(crib, /TASK: CRIB NOTES/);
+  assert.match(crib, /social media post on X/);
+  assert.match(crib, /never at the person/);
+  assert.match(crib, /Under 280 characters/);
+  assert.doesNotMatch(crib, /an AI assistant\. When it helps/);
+  const reply = buildSystemPrompt(p, { coreValues: [], task: 'reply', source: 'instagram' });
+  assert.match(reply, /TASK: DRAFT A REPLY/);
+  assert.match(reply, /posted by them, after they review it/);
+  assert.match(userMessage({ task: 'reply', text: 'Post body', question: 'agree with them' }), /<post>\nPost body\n<\/post>[\s\S]*<question>\nagree with them/);
 });
 
 test('voice resolution prefers a language-specific voice', () => {

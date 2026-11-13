@@ -46,6 +46,18 @@ Levels and styles live in `server/src/styles.js` and are served to the HUD with 
 
 Turn on *Town* in the HUD and pick 2 to 6 characters. They sit in a strip along the top of the screen (scrolls sideways on phones, respects the notch). The server splits the answer by paragraphs, gives each part to the member whose interests fit it best (`server/src/town.js`), and each member speaks their part in their own voice with a short handoff to the next. The speaking member is highlighted and their mouth moves; tap a member to make them your main character.
 
+## Social media crib notes (X, Facebook, Instagram)
+
+On x.com, facebook.com and instagram.com the extension does not watch for AI replies. Instead:
+
+- Hover or tap a post and a **🎭 Crib notes** pill appears on it. Tap it and the character sums the post up in 2 or 3 witty lines (under 280 characters, key facts kept, jokes about ideas never about the person, and no jokes on serious topics). The HUD's **Post** tab (it replaces Ask on these sites) also has *Crib notes* for the post on screen.
+- **Comedic voice** defaults to Big Play Ray and can be any character (or "same as my character").
+- **💬 Draft reply** writes a short reply in that voice, optionally following "your angle".
+- Then **📋 Copy text**, **🎬 Make video** (the same MP4 export, with the character's voice and moving mouth) or **↩ Open reply box**, which copies the text and clicks the site's own reply button.
+- **Nothing is ever posted or typed for the user.** They paste the text, attach the video and press post themselves, which keeps the extension within the platforms' automation rules.
+
+Server side these are the `crib` and `reply` tasks (`server/src/tasks.js`) with sources `x`, `facebook` and `instagram`; the prompt treats the text as a real person's post, not an AI answer. Post selectors in `platforms.js` are placeholders to verify on the live sites.
+
 ## Repository layout
 
 | Path | What it is |
@@ -105,7 +117,7 @@ Requests to `claude-opus-5-5` enable server-side refusal fallbacks (`fallbacks: 
 
 ### Wire protocol (`/v1/stream`)
 
-Client → server JSON: `auth {token}`, `utterance.start {seq, personaId|'auto', readingLevel?: 1-5, style?: {paraphrase, humor, philosophy, accent}, task?: speak|keypoints|ask|expound, question?, profile?: {name, about, ageGroup, language}, source?: claude|grok|gemini, town?: [personaIds], text?, final?}`, `utterance.text {seq, text}`, `utterance.end {seq}`, `utterance.cancel {seq}`.
+Client → server JSON: `auth {token}`, `utterance.start {seq, personaId|'auto', readingLevel?: 1-5, style?: {paraphrase, humor, philosophy, accent}, task?: speak|keypoints|ask|expound|crib|reply, question?, profile?: {name, about, ageGroup, language}, source?: claude|grok|gemini|x|facebook|instagram, town?: [personaIds], text?, final?}`, `utterance.text {seq, text}`, `utterance.end {seq}`, `utterance.cancel {seq}`.
 Server → client JSON: `auth.ok`, `utterance.persona`, `utterance.status`, `utterance.segment`, `town.plan`, `utterance.caption`, `utterance.sources`, `utterance.done {text, usage}`, `utterance.cancelled`, `error {code}`.
 Server → client binary: `[uint32 big-endian seq][MP3 bytes]`.
 
@@ -121,14 +133,14 @@ REST: `GET /health`, `GET /v1/personas` (public), `GET /v1/usage` and `POST /v1/
 ## Testing
 
 ```bash
-cd server && npm test                      # 21 unit/integration tests (mock providers, fake Fish server)
+cd server && npm test                      # 23 unit/integration tests (mock providers, fake Fish server)
 
 # Extension end to end (real Chromium, unpacked extension, fake claude.ai page):
 npm start &                                # in server/, mock mode
 node extension/test/e2e.cjs <token> /tmp/vern-e2e
 ```
 
-The e2e test checks HUD injection, dragging and persistence, auto-read of a streamed reply (intent routing, captions, MediaSource playback), amplitude-driven sprite swaps, tickle → giggle without interrupting TTS, MP4 export, read-selection, and a Big Sal run at reading level 1 with humor and the slow style (sprite, mouth movement, server-applied settings, MP4 export), paraphrase with a name and profile, Old Oakley, key points, ask, expound with sources, long-press menu and sizes, double-tap assistant without triggering a tickle, triple-tap tickle, assistant-driven character switch, and a three-member town panel with handoffs.
+The e2e test checks HUD injection, dragging and persistence, auto-read of a streamed reply (intent routing, captions, MediaSource playback), amplitude-driven sprite swaps, tickle → giggle without interrupting TTS, MP4 export, read-selection, and a Big Sal run at reading level 1 with humor and the slow style (sprite, mouth movement, server-applied settings, MP4 export), paraphrase with a name and profile, Old Oakley, key points, ask, expound with sources, long-press menu and sizes, double-tap assistant without triggering a tickle, triple-tap tickle, assistant-driven character switch, a three-member town panel with handoffs, and on a fake X timeline: the Crib notes pill, crib notes in Big Play Ray's voice, a reply draft, Open reply box (copies, never types), and the reply video.
 
 ## Open decisions (need the product owner)
 
@@ -138,5 +150,5 @@ The e2e test checks HUD injection, dragging and persistence, auto-read of a stre
 4. **User accounts and billing.** Tokens are minted with a CLI today. A real sign-up flow (and how plans map to quotas) is still open.
 5. **The 15 core values** (`shared/core-values.json` is a placeholder) and the **real character roster** ("over a hundred"), voices (Fish reference IDs, starting with Big Sal's) and final sprite art.
 6. **Meme branding** (watermark, aspect ratio for each platform).
-7. **Grok companion selector and live-site checks.** All three sites were tested against a fake page only; the selectors in `platforms.js` need a pass on the real sites.
+7. **Grok companion selector and live-site checks.** All sites (including X, Facebook, Instagram) were tested against a fake page only; the selectors in `platforms.js` need a pass on the real sites.
 8. **More UI languages** beyond English and Spanish (add a folder under `extension/_locales/`).

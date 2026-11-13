@@ -44,7 +44,40 @@
         return !!node.closest('[aria-busy="true"]');
       },
     },
+    // Social sites: no AI replies to watch. The user picks a post and asks for crib notes or a
+    // reply draft; nothing is ever posted for them. Placeholder selectors: verify on the live sites.
+    {
+      id: 'x',
+      social: true,
+      host: /(^|\.)(x|twitter)\.com$/,
+      postSelector: 'article[data-testid="tweet"], article[role="article"]',
+      textSelector: '[data-testid="tweetText"]',
+      replySelector: '[data-testid="reply"]',
+    },
+    {
+      id: 'facebook',
+      social: true,
+      host: /(^|\.)facebook\.com$/,
+      postSelector: '[role="article"]',
+      textSelector: '[data-ad-preview="message"], [data-ad-comet-preview="message"], [data-testid="post_message"]',
+      replySelector: '[aria-label="Leave a comment" i], [aria-label="Comment" i]',
+    },
+    {
+      id: 'instagram',
+      social: true,
+      host: /(^|\.)instagram\.com$/,
+      postSelector: 'article',
+      textSelector: 'h1, ul li span[dir="auto"]',
+      replySelector: '[aria-label="Comment" i]',
+    },
   ];
+
+  /** Visible text of a social post: the platform's text node if found, else the whole post. */
+  Vern.postText = (platform, el) => {
+    const parts = platform.textSelector ? [...el.querySelectorAll(platform.textSelector)].map((n) => n.innerText) : [];
+    const text = (parts.join('\n').trim() || el.innerText || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    return text.slice(0, 5000);
+  };
 
   Vern.platformFor = (hostname = location.hostname) => PLATFORMS.find((p) => p.host.test(hostname)) || null;
   Vern.PLATFORMS = PLATFORMS;

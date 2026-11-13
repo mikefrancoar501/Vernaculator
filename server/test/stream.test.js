@@ -149,6 +149,25 @@ test('WebSocket: key points and follow-up questions about the last answer', asyn
   c.ws.close();
 });
 
+test('WebSocket: crib notes and a reply draft for a social media post', async () => {
+  const c = connect();
+  await c.opened;
+  c.ws.send(JSON.stringify({ type: 'auth', token }));
+  await c.waitFor((e) => e.type === 'auth.ok');
+  const post = 'Our city council voted to replace every streetlight with LEDs this spring. It will cost 2 million dollars. They say it pays for itself in six years.';
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 41, personaId: 'big_play_ray', task: 'crib', source: 'x', text: post, final: true }));
+  const crib = await c.waitFor((e) => e.type === 'utterance.done' && e.seq === 41);
+  assert.match(crib.text, /^Crib notes: Our city council/);
+  assert.match(crib.text, /six years/);
+  assert.equal(c.events.find((e) => e.type === 'utterance.persona' && e.seq === 41).task, 'crib');
+  assert.ok(c.audio.some((a) => a.readUInt32BE(0) === 41), 'crib notes are voiced (for the video)');
+
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 42, personaId: 'big_play_ray', task: 'reply', question: 'Bright idea', source: 'x', text: post, final: true }));
+  const reply = await c.waitFor((e) => e.type === 'utterance.done' && e.seq === 42);
+  assert.match(reply.text, /Bright idea\./);
+  c.ws.close();
+});
+
 test('WebSocket: town panel voices each section with its own character', async () => {
   const c = connect();
   await c.opened;

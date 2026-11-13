@@ -216,7 +216,37 @@
   let lastAnswer = '';
   const answerText = () => lastAnswer || observer.latestText();
 
-  const observer = new Vern.MessageObserver(platform, {
+  // --- Social sites (X, Facebook, Instagram) ---------------------------------------
+  // No AI replies to watch: the user picks a post. The character writes crib notes or a reply
+  // draft; the user copies it, makes a video, and posts it themselves. We never post for them.
+  let lastPost = null; // { el, text }
+  const social = platform.social ? new Vern.SocialOverlay(platform, { onCrib: (el) => socialTask('crib', el) }) : null;
+  if (social) {
+    social.mount();
+    hud.setSocial(true);
+  }
+  function socialTask(task, el, angle) {
+    const post = el || (lastPost?.el?.isConnected && task === 'reply' ? lastPost.el : null) || social.postInView();
+    const text = post ? Vern.postText(platform, post) : '';
+    if (!text) return hud.setStatus(Vern.t('socialNoPost', 'No post found. Scroll a post into view or tap 🎭 on one.'), 'idle');
+    lastPost = { el: post, text };
+    hud.setSocialResult(false);
+    hud.showTab('social', false);
+    if (hud.card.dataset.size === 'S') hud.applySettings({ hudSize: 'M' }); // show the result, without changing the saved size
+    speak(text, { task, question: angle || undefined, personaId: Vern.settings.values.cribPersonaId || undefined });
+  }
+  async function copyResult() {
+    const text = lastSession?.text;
+    if (!text) return false;
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  const observer = social ? { start() {}, latestText: () => lastPost?.text || '' } : new Vern.MessageObserver(platform, {
     onStart(id) {
       if (Vern.settings.values.autoRead) startUtterance({ sourceId: id });
     },
@@ -241,7 +271,7 @@
         hud.setStatus(`${msg.persona.name}${msg.method !== 'manual' ? ` (${Vern.t('statusAutoPicked', 'auto-picked')})` : ''}`, 'busy');
         break;
       case 'utterance.status': {
-        const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'] };
+        const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'], crib: ['statusCrib', 'Writing crib notes...'], reply: ['statusReply', 'Drafting a reply...'] };
         const [k, fb] = labels[msg.status] || ['', msg.status];
         hud.setStatus(Vern.t(k, fb), 'busy');
         break;
@@ -263,8 +293,9 @@
       case 'utterance.done':
         current.done = true;
         player.end(msg.seq);
-        lastSession = { chunks: player.chunks, text: msg.text, persona: current.persona, sprites: current.sprites, segments: current.segments };
-        hud.setStatus(Vern.t('statusCharsLeft', '$1 characters left this month').replace('$1', msg.usage.remainingChars.toLocaleString()), 'ok');
+        lastSession = { chunks: player.chunks, text: msg.text, persona: current.persona, sprites: current.sprites, segments: current.segments, task: current.task };
+        if (current.task === 'crib' || current.task === 'reply') hud.setSocialResult(true);
+        hud.setStatus((() => { const n = msg.usage.remainingChars.toLocaleString(); return Vern.t('statusCharsLeft', `${n} characters left this month`, [n]); })(), 'ok');
         break;
       case 'utterance.cancelled':
         if (msg.reason !== 'superseded' && msg.reason !== 'client') hud.setStatus(`Stopped (${msg.reason})`, 'idle');
@@ -346,6 +377,26 @@
       case 'expound':
         speak(answerText(), { task: 'expound', question: arg || undefined });
         break;
+      case 'crib':
+        socialTask('crib');
+        break;
+      case 'reply':
+        socialTask('reply', null, arg);
+        break;
+      case 'copyText':
+        hud.setStatus((await copyResult()) ? Vern.t('socialCopied', 'Copied. Paste it wherever you like.') : Vern.t('socialCopyFailed', 'Could not copy; select the caption text instead.'), 'ok');
+        break;
+      case 'openReply': {
+        const copied = await copyResult();
+        const opened = social?.openReply(lastPost?.el);
+        hud.setStatus(
+          opened
+            ? Vern.t('socialReplyOpened', 'Reply box opened. Paste the text and attach your video, then post it yourself.')
+            : Vern.t('socialReplyNotFound', 'Could not find the reply button on this post.') + (copied ? ` ${Vern.t('socialCopied', 'Copied. Paste it wherever you like.')}` : ''),
+          opened ? 'ok' : 'idle',
+        );
+        break;
+      }
       case 'playpause':
         if (player.playing) player.pause();
         else if (player.audio.currentSrc && !player.audio.ended) player.resume();
@@ -404,5 +455,5 @@
   });
 
   // Exposed for debugging from DevTools (isolated world): Vern.debug.speak('hello')
-  Vern.debug = { speak, player, conn, observer, hud, get lastSession() { return lastSession; }, get current() { return current; }, get lastAssistant() { return lastAssistant; }, town };
+  Vern.debug = { speak, player, conn, observer, hud, get lastSession() { return lastSession; }, get current() { return current; }, get lastAssistant() { return lastAssistant; }, town, social, get lastPost() { return lastPost; } };
 })();

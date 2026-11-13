@@ -100,6 +100,8 @@
     .asst-reply { font-size: 12px; min-height: 1.2em; color: var(--fg); }
     .pop .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .pop label.field { display: grid; gap: 3px; font-size: 11px; color: var(--muted); }
+    .social-out { display: grid; gap: 6px; padding: 8px; border: 1px dashed var(--line); border-radius: 12px; }
+    form.angle input { font: inherit; color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; user-select: text; -webkit-user-select: text; }
     [hidden] { display: none !important; }
   `;
 
@@ -129,6 +131,7 @@
         <div class="tabs" role="tablist">
           <button role="tab" data-tab="listen" aria-selected="true" data-i18n="hudTabListen">Listen</button>
           <button role="tab" data-tab="ask" aria-selected="false" data-i18n="hudTabAsk">Ask</button>
+          <button role="tab" data-tab="social" aria-selected="false" data-i18n="hudTabPost" hidden>Post</button>
         </div>
         <section data-panel="listen">
           <label class="field"><span data-i18n="hudCharacter">Character</span><select data-setting="personaId"></select></label>
@@ -167,6 +170,23 @@
               <button type="button" data-action="expound" data-i18n-title="hudExpoundTitle" title="Go deeper, with research" data-i18n="hudExpound">Expound</button>
             </div>
           </form>
+        </section>
+        <section data-panel="social" hidden>
+          <div class="hint" data-i18n="socialHint">Tap 🎭 on any post, or use the post on screen:</div>
+          <label class="field"><span data-i18n="socialVoice">Comedic voice</span><select data-setting="cribPersonaId"></select></label>
+          <div class="row quick">
+            <button data-action="crib" data-i18n="socialCrib">🎭 Crib notes</button>
+            <button data-action="reply" data-i18n="socialReply">💬 Draft reply</button>
+          </div>
+          <form class="angle"><input type="text" name="q" maxlength="200" autocomplete="off" data-i18n-placeholder="socialAngle" placeholder="Your angle for the reply (optional)"></form>
+          <div class="social-out" hidden>
+            <div class="row quick">
+              <button data-action="copyText" data-i18n="socialCopy">📋 Copy text</button>
+              <button data-action="export" data-i18n="socialVideo">🎬 Make video</button>
+              <button data-action="openReply" data-i18n="socialOpenReply">↩ Open reply box</button>
+            </div>
+            <div class="hint" data-i18n="socialYouPost">You review it and post it yourself.</div>
+          </div>
         </section>
         <progress hidden max="1" value="0"></progress>
         <div class="status"></div>
@@ -272,7 +292,15 @@
         tab.addEventListener('click', () => this.showTab(tab.dataset.tab));
       }
       // Keep typing in the Ask box from triggering the host page's keyboard shortcuts.
+      this.angleForm = $('form.angle');
+      this.angleForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.onAction('reply', this.angleForm.q.value.trim());
+      });
+      this.socialOut = $('.social-out');
+      this.cribSelect = $('[data-setting="cribPersonaId"]');
       for (const ev of ['keydown', 'keyup', 'keypress']) {
+        this.angleForm.addEventListener(ev, (e) => e.stopPropagation());
         this.askForm.addEventListener(ev, (e) => e.stopPropagation());
         this.asstForm.addEventListener(ev, (e) => e.stopPropagation());
       }
@@ -282,7 +310,8 @@
         const btn = e.target.closest('button[data-action]');
         if (!btn) return;
         if (btn.dataset.action === 'collapse') return this.setCollapsed(!this.collapsed, true);
-        this.onAction(btn.dataset.action, btn.dataset.action === 'expound' ? this.askForm.q.value.trim() : undefined);
+        const arg = { expound: () => this.askForm.q.value.trim(), reply: () => this.angleForm.q.value.trim() }[btn.dataset.action];
+        this.onAction(btn.dataset.action, arg ? arg() : undefined);
       });
       this.root.addEventListener('change', (e) => {
         if (e.target.dataset?.townMember) {
@@ -411,10 +440,24 @@
       for (const i of this.root.querySelectorAll('[data-town-member]')) i.checked = ids.includes(i.dataset.townMember);
     }
 
-    showTab(name) {
+    showTab(name, focus = true) {
       for (const t of this.root.querySelectorAll('[data-tab]')) t.setAttribute('aria-selected', String(t.dataset.tab === name));
       for (const p of this.root.querySelectorAll('[data-panel]')) p.hidden = p.dataset.panel !== name;
-      if (name === 'ask') this.askForm.q.focus();
+      if (name === 'ask' && focus) this.askForm.q.focus();
+      requestAnimationFrame(() => this.#apply(this.pos));
+    }
+
+    /** On social sites the Post tab replaces Ask (there is no AI answer to ask about). */
+    setSocial(on) {
+      this.root.querySelector('[data-tab="social"]').hidden = !on;
+      this.root.querySelector('[data-tab="ask"]').hidden = on;
+      this.caption.dataset.placeholder = on ? Vern.t('socialPlaceholder', 'Tap 🎭 Crib notes on a post.') : this.caption.dataset.placeholder;
+      if (on) this.showTab('social', false);
+    }
+
+    /** Show Copy / Make video / Open reply once there is something to share. */
+    setSocialResult(has) {
+      this.socialOut.hidden = !has;
       requestAnimationFrame(() => this.#apply(this.pos));
     }
 
@@ -442,6 +485,12 @@
         ...list.map((p) => new Option(`${p.name} · ${p.archetype}`, p.id)),
       );
       this.personaSelect.value = list.some((p) => p.id === selectedId) ? selectedId : 'auto';
+      this.cribSelect.replaceChildren(
+        new Option(Vern.t('socialSameCharacter', 'Same as my character'), ''),
+        ...list.map((p) => new Option(p.name, p.id)),
+      );
+      const crib = Vern.settings.values.cribPersonaId || '';
+      this.cribSelect.value = list.some((p) => p.id === crib) ? crib : '';
       const box = this.root.querySelector('.town-members');
       box.replaceChildren(...list.map((p) => {
         const label = document.createElement('label');

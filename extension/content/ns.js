@@ -25,6 +25,8 @@
     replaceCompanion: true, // on grok.com, sit in place of Grok's own companion avatar
     townEnabled: false,
     townMembers: ['big_sal', 'old_oakley', 'professor_pip'],
+    cribPersonaId: 'big_play_ray', // comedic voice for social crib notes and replies ('' = main character)
+    socialPill: true,
   };
 
   const listeners = new Set();
@@ -60,9 +62,9 @@
   });
 
   const log = (...a) => console.debug('[Vernaculator]', ...a);
-  const t = (key, fallback = '') => {
+  const t = (key, fallback = '', subs) => {
     try {
-      return chrome.i18n.getMessage(key) || fallback;
+      return chrome.i18n.getMessage(key, subs) || fallback;
     } catch {
       return fallback;
     }

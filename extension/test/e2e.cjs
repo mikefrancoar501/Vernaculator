@@ -267,6 +267,70 @@ const assert = (cond, msg) => {
   await inExt(`Vern.settings.save({ townEnabled: false }).then(() => true)`);
 
   await page.screenshot({ path: path.join(outDir, '3-hud-final.png') });
+
+  console.log('Social: crib notes on X');
+  const xHtml = fs.readFileSync(path.join(__dirname, 'fake-x.html'), 'utf8');
+  await ctx.route('https://x.com/**', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: xHtml }));
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'https://x.com' });
+  await sw.evaluate(() => chrome.storage.local.set({ hudSize: 'S', hudPos: { x: 960, y: 120 }, personaId: 'big_sal', accent: 'none' }));
+  const xp = await ctx.newPage();
+  const xcdp = await ctx.newCDPSession(xp);
+  const xContexts = [];
+  xcdp.on('Runtime.executionContextCreated', (e) => xContexts.push(e.context));
+  await xcdp.send('Runtime.enable');
+  await xp.goto('https://x.com/home');
+  await xp.waitForSelector('#vernaculator-hud', { state: 'attached', timeout: 10000 });
+  await sleep(800);
+  const inX = async (expr) => {
+    const c = [...xContexts].reverse().find((x) => x.auxData?.type === 'isolated' && x.name === 'The Vernaculator');
+    const r = await xcdp.send('Runtime.evaluate', { expression: expr, contextId: c.id, awaitPromise: true, returnByValue: true });
+    if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
+    return r.result.value;
+  };
+  const tabs = await inX(`({ post: !Vern.debug.hud.root.querySelector('[data-tab="social"]').hidden, ask: !Vern.debug.hud.root.querySelector('[data-tab="ask"]').hidden })`);
+  assert(tabs.post && !tabs.ask, 'Post tab replaces Ask on social sites');
+  assert(!(await inX('Vern.debug.observer instanceof Vern.MessageObserver')), 'no AI-reply observer on social sites');
+
+  const art = await xp.locator('article').first().boundingBox();
+  await xp.mouse.move(art.x + 200, art.y + 60);
+  await sleep(300);
+  const pill = await xp.locator('#vernaculator-crib').boundingBox();
+  assert(pill && pill.y >= art.y && pill.x + pill.width <= art.x + art.width + 1, 'Crib notes pill appears on the hovered post');
+  await xp.mouse.click(pill.x + pill.width / 2, pill.y + pill.height / 2);
+  let crib = null;
+  for (let i = 0; i < 100 && !crib; i++) {
+    await sleep(150);
+    crib = await inX(`Vern.debug.lastSession?.task === 'crib' ? { text: Vern.debug.lastSession.text, who: Vern.debug.lastSession.persona?.id } : null`);
+  }
+  assert(crib && /^Crib notes: Big news/.test(crib.text), `crib notes for the tapped post ("${crib?.text.slice(0, 60)}...")`);
+  assert(crib.who === 'big_play_ray', 'crib notes use the comedic voice (Big Play Ray)');
+  const ui = await inX(`({ out: !Vern.debug.hud.socialOut.hidden, size: Vern.debug.hud.card.dataset.size })`);
+  assert(ui.out && ui.size === 'M', 'HUD grows from compact to show the result and share buttons');
+  await sleep(500);
+  await xp.screenshot({ path: path.join(outDir, '10-social-crib.png') });
+
+  await inX(`Vern.debug.hud.onAction('reply', 'Bright idea'), true`);
+  let reply = null;
+  for (let i = 0; i < 100 && !reply; i++) {
+    await sleep(150);
+    reply = await inX(`Vern.debug.lastSession?.task === 'reply' ? Vern.debug.lastSession.text : null`);
+  }
+  assert(reply && /Bright idea\./.test(reply), `reply draft follows the angle ("${reply}")`);
+  await inX(`Vern.debug.hud.onAction('openReply'), true`);
+  await sleep(400);
+  assert(await xp.evaluate(() => window.__replyClicked === true), "Open reply box opens the site's own reply box");
+  assert(await xp.evaluate(() => document.querySelector('textarea').value === ''), 'nothing is typed or posted for the user');
+  const clip = await xp.evaluate(() => navigator.clipboard.readText());
+  assert(clip === reply, 'reply text copied to the clipboard');
+
+  const vidP = xp.waitForEvent('download', { timeout: 60000 });
+  await inX(`Vern.debug.hud.onAction('export'), true`);
+  const vid = await vidP;
+  const vidFile = path.join(outDir, `social-${vid.suggestedFilename()}`);
+  await vid.saveAs(vidFile);
+  assert(fs.statSync(vidFile).size > 10000, `reply video rendered (${path.basename(vidFile)})`);
+  await xp.screenshot({ path: path.join(outDir, '11-social-reply.png') });
+
   await ctx.close();
   console.log('\nE2E PASSED');
 })().catch(async (err) => {

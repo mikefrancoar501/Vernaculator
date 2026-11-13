@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extName__",
   "short_name": "__MSG_extShortName__",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "__MSG_extDescription__",
   "minimum_chrome_version": "126",
   "icons": {
@@ -32,7 +32,11 @@
       "matches": [
         "https://claude.ai/*",
         "https://grok.com/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://*.facebook.com/*",
+        "https://*.instagram.com/*"
       ],
       "js": [
         "content/ns.js",
@@ -43,6 +47,7 @@
         "content/viseme.js",
         "content/gestures.js",
         "content/meme.js",
+        "content/social.js",
         "content/town.js",
         "content/hud.js",
         "content/main.js"
@@ -59,7 +64,11 @@
       "matches": [
         "https://claude.ai/*",
         "https://grok.com/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://*.facebook.com/*",
+        "https://*.instagram.com/*"
       ]
     }
   ],

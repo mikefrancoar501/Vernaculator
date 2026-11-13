@@ -268,5 +268,68 @@
   },
   "hudTownMembers": {
     "message": "Town members"
+  },
+  "hudTabPost": {
+    "message": "Post"
+  },
+  "socialHint": {
+    "message": "Tap 🎭 on any post, or use the post on screen:"
+  },
+  "socialVoice": {
+    "message": "Comedic voice"
+  },
+  "socialSameCharacter": {
+    "message": "Same as my character"
+  },
+  "socialCrib": {
+    "message": "🎭 Crib notes"
+  },
+  "socialReply": {
+    "message": "💬 Draft reply"
+  },
+  "socialAngle": {
+    "message": "Your angle for the reply (optional)"
+  },
+  "socialCopy": {
+    "message": "📋 Copy text"
+  },
+  "socialVideo": {
+    "message": "🎬 Make video"
+  },
+  "socialOpenReply": {
+    "message": "↩ Open reply box"
+  },
+  "socialYouPost": {
+    "message": "You review it and post it yourself."
+  },
+  "socialPlaceholder": {
+    "message": "Tap 🎭 Crib notes on a post."
+  },
+  "socialCribPill": {
+    "message": "🎭 Crib notes"
+  },
+  "socialCribPillTitle": {
+    "message": "Sum up this post in a few witty lines"
+  },
+  "socialNoPost": {
+    "message": "No post found. Scroll a post into view or tap 🎭 on one."
+  },
+  "socialCopied": {
+    "message": "Copied. Paste it wherever you like."
+  },
+  "socialCopyFailed": {
+    "message": "Could not copy; select the caption text instead."
+  },
+  "socialReplyOpened": {
+    "message": "Reply box opened. Paste the text and attach your video, then post it yourself."
+  },
+  "socialReplyNotFound": {
+    "message": "Could not find the reply button on this post."
+  },
+  "statusCrib": {
+    "message": "Writing crib notes..."
+  },
+  "statusReply": {
+    "message": "Drafting a reply..."
   }
 }

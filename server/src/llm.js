@@ -139,6 +139,10 @@ export class MockLLM {
       const words = (question || '').toLowerCase().match(/[a-z]{4,}/g) || [];
       const hit = sentences.find((s) => words.some((w) => s.toLowerCase().includes(w)));
       body = hit ? `Good question. ${source} said: ${hit.trim()}` : `${source} didn't say anything about that. Tap Expound to go deeper.`;
+    } else if (task === 'crib') {
+      body = `Crib notes: ${sentences[0].trim()} Long story short, ${(sentences.at(-1) || '').trim().replace(/^./, (c) => c.toLowerCase())}`;
+    } else if (task === 'reply') {
+      body = `Ha, love this. ${question ? `${question.trim().replace(/[.!?]*$/, '.')} ` : ''}Sounds like ${sentences[0].trim().replace(/^./, (c) => c.toLowerCase())}`;
     } else if (task === 'expound') {
       body = `Let's go deeper. ${text} There is more to it than that, and here is the bigger picture.`;
     } else if (/PARAPHRASE MODE/.test(system)) {
@@ -147,7 +151,8 @@ export class MockLLM {
       body = `${listener ? `${listener}, b` : 'B'}asically what ${source} is telling you is this. ${keep.join(' ').trim()}`;
     }
     const handoff = /handoff from ([^(]+?) \(/.exec(system)?.[1];
-    const out = context ? body : town ? `${handoff ? `Thanks, ${handoff}. ` : ''}${name}: ${body}` : `${name} here. ${body}`;
+    const social = task === 'crib' || task === 'reply';
+    const out = context || social ? body : town ? `${handoff ? `Thanks, ${handoff}. ` : ''}${name}: ${body}` : `${name} here. ${body}`;
     for (const word of out.split(/(\s+)/)) {
       if (word) yield word;
       await new Promise((r) => setTimeout(r, 2));

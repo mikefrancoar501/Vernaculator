@@ -268,5 +268,68 @@
   },
   "hudTownMembers": {
     "message": "Miembros del pueblo"
+  },
+  "hudTabPost": {
+    "message": "Publicación"
+  },
+  "socialHint": {
+    "message": "Toca 🎭 en cualquier publicación, o usa la que está en pantalla:"
+  },
+  "socialVoice": {
+    "message": "Voz cómica"
+  },
+  "socialSameCharacter": {
+    "message": "La misma de mi personaje"
+  },
+  "socialCrib": {
+    "message": "🎭 Resumen chistoso"
+  },
+  "socialReply": {
+    "message": "💬 Escribir respuesta"
+  },
+  "socialAngle": {
+    "message": "Tu enfoque para la respuesta (opcional)"
+  },
+  "socialCopy": {
+    "message": "📋 Copiar texto"
+  },
+  "socialVideo": {
+    "message": "🎬 Crear video"
+  },
+  "socialOpenReply": {
+    "message": "↩ Abrir respuesta"
+  },
+  "socialYouPost": {
+    "message": "Tú lo revisas y lo publicas."
+  },
+  "socialPlaceholder": {
+    "message": "Toca 🎭 Resumen chistoso en una publicación."
+  },
+  "socialCribPill": {
+    "message": "🎭 Resumen"
+  },
+  "socialCribPillTitle": {
+    "message": "Resume esta publicación en unas líneas ingeniosas"
+  },
+  "socialNoPost": {
+    "message": "No encontré ninguna publicación. Desplázate hasta una o toca 🎭 en ella."
+  },
+  "socialCopied": {
+    "message": "Copiado. Pégalo donde quieras."
+  },
+  "socialCopyFailed": {
+    "message": "No se pudo copiar; selecciona el texto del subtítulo."
+  },
+  "socialReplyOpened": {
+    "message": "Se abrió la respuesta. Pega el texto y adjunta tu video, y luego publícalo tú."
+  },
+  "socialReplyNotFound": {
+    "message": "No encontré el botón de responder en esta publicación."
+  },
+  "statusCrib": {
+    "message": "Escribiendo el resumen..."
+  },
+  "statusReply": {
+    "message": "Escribiendo una respuesta..."
   }
 }

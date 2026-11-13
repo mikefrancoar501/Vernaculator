@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { guardrailPrompt } from './guardrails.js';
-import { taskPrompt, profilePrompt, parseProfile, parseTask, parseSource } from './tasks.js';
+import { taskPrompt, profilePrompt, parseProfile, parseTask, parseSource, isSocial } from './tasks.js';
 import { READING_LEVELS, FIDELITY_RULE, PARAPHRASE_RULE, parseReadingLevel, parseStyle, stylePrompt } from './styles.js';
 
 /**
@@ -67,7 +67,9 @@ export function buildSystemPrompt(persona, { coreValues, readingLevel, style, ta
     : '';
   return [
     `You are a voice-over writer performing as "${persona.name}", the ${persona.archetype}.`,
-    'Your job: turn text produced by another AI assistant into speech in this character\'s vernacular, cadence, and vocabulary, read aloud by a text-to-speech voice.',
+    isSocial(src)
+      ? 'Your job: turn a social media post into short lines in this character\'s vernacular, cadence, and vocabulary, read aloud by a text-to-speech voice and possibly shared as a video.'
+      : 'Your job: turn text produced by another AI assistant into speech in this character\'s vernacular, cadence, and vocabulary, read aloud by a text-to-speech voice.',
     '',
     `CHARACTER RULES: ${persona.systemPromptRules}`,
     `WORLD-VIEW: ${persona.worldviewPerspective} Reframe the source through this perspective while keeping every fact intact.`,

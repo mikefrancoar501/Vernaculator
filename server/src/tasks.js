@@ -5,21 +5,26 @@
  *   keypoints break the answer into its 3-5 key points
  *   ask       answer the listener's follow-up question using the answer as the source of truth
  *   expound   go deeper than the answer for a listener who wants more (may use web research)
+ *   crib      crib notes for a social media post: a couple of witty lines that sum it up
+ *   reply     a short, witty reply the user can review and post themselves (never posted for them)
  *
  * The listener profile (name, about-me, language) is user-written data. It is clipped,
  * wrapped in tags, and the prompt says to treat it as information, never instructions.
  */
 
-export const TASKS = ['speak', 'keypoints', 'ask', 'expound'];
+export const TASKS = ['speak', 'keypoints', 'ask', 'expound', 'crib', 'reply'];
 
 export function parseTask(v) {
   return TASKS.includes(v) ? v : 'speak';
 }
 
-const SOURCES = { claude: 'Claude', grok: 'Grok', gemini: 'Gemini' };
+const SOURCES = { claude: 'Claude', grok: 'Grok', gemini: 'Gemini', x: 'X', facebook: 'Facebook', instagram: 'Instagram' };
+const SOCIAL = new Set(['X', 'Facebook', 'Instagram']);
 export function parseSource(v) {
   return SOURCES[String(v || '').toLowerCase()] || 'the AI';
 }
+/** True when the source text is a person's social media post rather than an AI answer. */
+export const isSocial = (sourceName) => SOCIAL.has(sourceName);
 
 const clip = (v, n) => String(v ?? '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
 
@@ -50,7 +55,9 @@ export function languageName(code) {
 }
 
 export function profilePrompt(profile, { source }) {
-  const lines = [`SOURCE: The text you are given was written by ${source}, an AI assistant. When it helps, refer to ${source} as a third party ("what ${source} is telling you is...").`];
+  const lines = [isSocial(source)
+    ? `SOURCE: The text you are given is a social media post on ${source}, written by a real person (not an AI). Refer to its author only as "this post" or "the poster", never by name or handle. Poke fun at ideas and situations, never at the person, their looks, identity, or beliefs.`
+    : `SOURCE: The text you are given was written by ${source}, an AI assistant. When it helps, refer to ${source} as a third party ("what ${source} is telling you is...").`];
   if (profile.ageGroup) {
     lines.push(`AUDIENCE: You are talking to ${AGE_GROUPS[profile.ageGroup]}. Tailor examples and tone to that age group (on top of the reading level), and keep everything age-appropriate.`);
   }
@@ -89,6 +96,20 @@ export function taskPrompt(task, { profile, source }) {
         '- You may add well-established knowledge beyond the source. If a web search tool is available, use it for current or specific facts and mention where a key fact comes from ("according to ...").',
         '- Clearly separate what the source said from what you are adding. Keep it to about 6 to 10 spoken sentences.',
       ].join('\n');
+    case 'crib':
+      return [
+        'TASK: CRIB NOTES. Sum up the post in 2 or 3 short, witty lines, like crib notes a friend would whisper to you.',
+        '- Be genuinely funny in this character\'s own comedic voice, but the lines must still tell someone who never reads the post what it actually says. Keep the key facts and numbers.',
+        '- Under 280 characters in total so it fits in a post. No hashtags, no @mentions, no links.',
+        '- If the post is about something serious (illness, death, disaster, safety), drop the jokes and give a kind, plain two-line summary instead.',
+      ].join('\n');
+    case 'reply':
+      return [
+        'TASK: DRAFT A REPLY. Write a reply the listener could post under this post, in character: 1 to 3 sentences, under 280 characters.',
+        '- Witty and good-natured: respond to what the post actually says or asks. Agree, add something useful, or tease the idea gently, never the person.',
+        '- Write it in first person as the listener\'s reply (it is posted by them, after they review it). No hashtags, no @mentions, no links, no claims to be an AI or a character.',
+        '- If the listener gave an angle, follow it unless it would be mean, false, or unsafe.',
+      ].join('\n');
     default:
       return '';
   }
@@ -102,6 +123,12 @@ export function userMessage({ task, text, context, question }) {
       parts.push(`For continuity, here is what you already said aloud for the earlier part of this message (do not repeat it):\n<already_spoken>\n${context}\n</already_spoken>`);
     }
     parts.push(`Rewrite this next part of the assistant's message in character:\n<source>\n${text}\n</source>`);
+    return parts.join('\n\n');
+  }
+  if (task === 'crib' || task === 'reply') {
+    const parts = [`Here is the social media post:\n<post>\n${text}\n</post>`];
+    if (task === 'reply' && question) parts.push(`The listener's angle for the reply:\n<question>\n${question}\n</question>`);
+    parts.push(task === 'crib' ? 'Give the crib notes in character.' : 'Write the reply in character.');
     return parts.join('\n\n');
   }
   const parts = [`Here is the AI assistant's full answer:\n<source>\n${text}\n</source>`];
