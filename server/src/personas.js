@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { guardrailPrompt } from './guardrails.js';
 import { taskPrompt, profilePrompt, parseProfile, parseTask, parseSource, isSocial } from './tasks.js';
 import { READING_LEVELS, FIDELITY_RULE, PARAPHRASE_RULE, parseReadingLevel, parseStyle, stylePrompt } from './styles.js';
+import { comedyPrompt } from './comedy.js';
 
 /**
  * Persona & perspective engine (spec 3.2 / 3.3).
@@ -53,7 +54,7 @@ export function effectiveComplexity(persona, readingLevel) {
   return parseReadingLevel(readingLevel) ?? clamp(persona.vocabularyComplexity ?? 3, 1, 5);
 }
 
-export function buildSystemPrompt(persona, { coreValues, readingLevel, style, task, profile, source } = {}) {
+export function buildSystemPrompt(persona, { coreValues, readingLevel, style, task, profile, source, text } = {}) {
   const parsed = parseStyle(style);
   const level = effectiveComplexity(persona, readingLevel);
   const extras = stylePrompt(parsed);
@@ -74,6 +75,7 @@ export function buildSystemPrompt(persona, { coreValues, readingLevel, style, ta
     `CHARACTER RULES: ${persona.systemPromptRules}`,
     `WORLD-VIEW: ${persona.worldviewPerspective} Reframe the source through this perspective while keeping every fact intact.`,
     persona.catchphrases?.length ? `SIGNATURE PHRASES (use sparingly, at most one per reply): ${persona.catchphrases.join(' | ')}` : '',
+    comedyPrompt(persona, { text, task }),
     '',
     READING_LEVELS[level].prompt,
     'The reading level controls word choice and sentence length only. Stay fully in character at every level, and never talk down to the listener.',

@@ -454,7 +454,7 @@
       this.personaList.replaceChildren(...personas.map((p) => {
         const b = document.createElement('button');
         b.dataset.personaPick = p.id;
-        b.textContent = p.name;
+        b.textContent = Vern.personaName(p);
         b.setAttribute('aria-pressed', String(p.id === currentId));
         return b;
       }));
@@ -590,12 +590,12 @@
     setPersonas(list, selectedId) {
       this.personaSelect.replaceChildren(
         new Option(Vern.t('hudAutoCharacter', 'Auto (match the topic)'), 'auto'),
-        ...list.map((p) => new Option(`${p.name} · ${p.archetype}`, p.id)),
+        ...list.map((p) => new Option(`${Vern.personaName(p)} · ${p.archetype}`, p.id)),
       );
       this.personaSelect.value = list.some((p) => p.id === selectedId) ? selectedId : 'auto';
       this.cribSelect.replaceChildren(
         new Option(Vern.t('socialSameCharacter', 'Same as my character'), ''),
-        ...list.map((p) => new Option(p.name, p.id)),
+        ...list.map((p) => new Option(Vern.personaName(p), p.id)),
       );
       const scene = this.root.querySelector('.scene-members');
       scene.replaceChildren(...list.map((p) => {
@@ -603,12 +603,12 @@
         label.className = 'chip';
         label.innerHTML = '<input type="checkbox"> <span></span>';
         label.querySelector('input').dataset.sceneMember = p.id;
-        label.querySelector('span').textContent = p.name;
+        label.querySelector('span').textContent = Vern.personaName(p);
         return label;
       }));
       this.#syncSceneCast(this.sceneCast || Vern.settings.values.sceneCast || []);
       const dirSel = this.root.querySelector('[data-setting="sceneDirector"]');
-      dirSel.replaceChildren(...list.map((p) => new Option(p.name, p.id)));
+      dirSel.replaceChildren(...list.map((p) => new Option(Vern.personaName(p), p.id)));
       dirSel.value = list.some((p) => p.id === Vern.settings.values.sceneDirector) ? Vern.settings.values.sceneDirector : list[0]?.id;
       const crib = Vern.settings.values.cribPersonaId || '';
       this.cribSelect.value = list.some((p) => p.id === crib) ? crib : '';
@@ -618,7 +618,7 @@
         label.className = 'chip';
         label.innerHTML = '<input type="checkbox"> <span></span>';
         label.querySelector('input').dataset.townMember = p.id;
-        label.querySelector('span').textContent = p.name;
+        label.querySelector('span').textContent = Vern.personaName(p);
         return label;
       }));
       this.#syncTownMembers(this.townMembers || []);
@@ -642,7 +642,7 @@
     }
 
     setActivePersona(p) {
-      this.who.textContent = p ? `${p.name}` : '';
+      this.who.textContent = p ? Vern.personaName(p) : '';
     }
 
     setStatus(text, tone) {

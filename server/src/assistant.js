@@ -28,7 +28,7 @@ function findPersonaByName(text, personas) {
   const sorted = [...personas.list].sort((a, b) => b.name.length - a.name.length);
   for (const p of sorted) {
     const full = p.name.toLowerCase();
-    const parts = full.split(/\s+/).filter((w) => w.length > 3 && !['the', 'play', 'captain', 'professor', 'granny', 'old', 'big', 'sir'].includes(w));
+    const parts = full.split(/\s+/).filter((w) => w.length > 3 && !['the', 'play', 'captain', 'professor', 'granny', 'old', 'big', 'sir', 'comic'].includes(w));
     if (t.includes(full) || parts.some((w) => new RegExp(`\\b${w}\\b`).test(t))) return p;
   }
   return null;

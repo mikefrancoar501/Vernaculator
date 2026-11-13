@@ -17,6 +17,7 @@ import { parseCast, cleanScript, directorSystem, assignRoles, rolePrompt } from 
 import { parseTown, planTown, townPrompt } from '../src/town.js';
 import { ruleAssistant, sanitizeAction, runAssistant } from '../src/assistant.js';
 import { resolveVoiceId, resolveVoiceSpeed } from '../src/config.js';
+import { isComedian, callbackHook, planJoke, comedyLine, comedyPrompt, COMEDIAN_IDS } from '../src/comedy.js';
 
 const cfg = loadConfig();
 const personas = loadPersonas(cfg.personasFile);
@@ -245,4 +246,91 @@ test('town panel: members validated, answer split by topic with handoffs', () =>
   const tp = townPrompt({ index: 1, total: 3, prevName: 'Big Sal', nextName: 'Old Oakley', memberNames: ['Big Sal', 'Professor Pip', 'Old Oakley'] });
   assert.match(tp, /handoff from Big Sal/);
   assert.match(tp, /Old Oakley continues after you/);
+});
+
+test('town comedians are listed as Comic first names, with fallback art and voices', () => {
+  const expected = {
+    reggie_riff: { name: 'Comic Reggie', full: /Reggie Riff/, voice: 'fish_voice_uuid_placeholder' },
+    chuy_carcajadas: { name: 'Comic Chuy', full: /Chuy Carcajadas/, voice: 'fish_voice_uuid_placeholder' },
+    marty_midstep: { name: 'Comic Marty', full: /Marty Midstep/, voice: '1619ab48d9d04885bb4bae30f5ec50e0' },
+    winnie_brightwater: { name: 'Comic Winnie', full: /Winnie Brightwater/, voice: 'fish_voice_uuid_placeholder' },
+    priya_nair: { name: 'Comic Priya', full: /Priya Nair/, voice: 'fish_voice_uuid_placeholder' },
+  };
+  for (const [id, want] of Object.entries(expected)) {
+    const p = personas.get(id);
+    assert.ok(p, `missing comedian ${id}`);
+    assert.equal(p.name, want.name);
+    assert.match(p.systemPromptRules, want.full, 'full name lives in the description');
+    assert.match(p.systemPromptRules, /Keep it PG/i);
+    assert.match(p.systemPromptRules, /Original material only/i);
+    assert.match(p.systemPromptRules, /never a person/i);
+    assert.equal(p.fishAudioReferenceId, want.voice);
+    assert.equal(p.visemeAssets.idleUrl, 'assets/sprites/default_idle.svg');
+    assert.equal(p.visemeAssets.talkingUrl, 'assets/sprites/default_talking.svg');
+    assert.equal(COMEDIAN_IDS[id] !== undefined, true);
+    assert.equal(isComedian(p), true);
+  }
+  assert.match(personas.get('chuy_carcajadas').systemPromptRules, /Kid-safe Spanish only/);
+  assert.match(personas.get('priya_nair').systemPromptRules, /started the school comedy club/);
+  assert.equal(isComedian(personas.get('big_play_ray')), false);
+  // Missing Fish voices fall back the same way as other unfinished personas.
+  const voices = { tts: { defaultVoiceId: 'default-voice' } };
+  assert.equal(resolveVoiceId(voices, personas.get('reggie_riff')), 'default-voice');
+  assert.equal(resolveVoiceId(voices, personas.get('chuy_carcajadas')), 'default-voice');
+  assert.equal(resolveVoiceId(voices, personas.get('winnie_brightwater')), 'default-voice');
+  assert.equal(resolveVoiceId(voices, personas.get('priya_nair')), 'default-voice');
+  assert.equal(resolveVoiceId(voices, personas.get('marty_midstep')), '1619ab48d9d04885bb4bae30f5ec50e0');
+});
+
+test('comedy algorithm plans jokes deterministically and shapes social prompts', () => {
+  const post = 'The self-checkout asked me for help again.';
+  const a = planJoke('standup', post, [], 0);
+  const b = planJoke('standup', post, [], 0);
+  assert.deepEqual(a, b, 'same text and turn make the same plan');
+  const c = planJoke('standup', post, [], 1);
+  assert.ok(c.kind, 'a later turn still returns a plan');
+  assert.equal(callbackHook(''), '');
+  assert.equal(callbackHook('The platypus in a raincoat waved.'), 'platypus');
+  assert.equal(planJoke('observer', post, [], 0).hook, '', 'no callback hook without history');
+  const hooked = planJoke('improv', 'Yes, and the toaster spoke up.', ['The platypus in a raincoat waved.'], 0);
+  if (hooked.kind === 'callback') assert.equal(hooked.hook, 'platypus');
+
+  const line = comedyLine('standup', post);
+  assert.match(line, /JOKE BLUEPRINT/);
+  assert.match(line, /nah-nah-nah build/);
+
+  const reggie = buildSystemPrompt(personas.get('reggie_riff'), { coreValues: [], task: 'crib', text: post });
+  assert.match(reggie, /COMEDY ALGORITHM/);
+  assert.match(reggie, /nah-nah-nah build/);
+  assert.match(reggie, /never a person/);
+  assert.match(reggie, /Original material only/);
+
+  const reply = buildSystemPrompt(personas.get('chuy_carcajadas'), { coreValues: [], task: 'reply', text: post });
+  assert.match(reply, /COMEDY ALGORITHM/);
+  assert.match(reply, /Kid-safe Spanish only/);
+  assert.match(reply, /family is always the hero/i);
+
+  const marty = comedyPrompt(personas.get('marty_midstep'), { task: 'crib', text: post });
+  assert.match(marty, /observational/);
+  assert.match(marty, /what's the deal with/);
+
+  const winnie = comedyPrompt(personas.get('winnie_brightwater'), { task: 'crib', text: post });
+  assert.match(winnie, /yes, and/i);
+
+  const priya = comedyPrompt(personas.get('priya_nair'), { task: 'crib', text: post });
+  assert.match(priya, /pun|wordplay|one-liner/i);
+  assert.match(priya, /groan/);
+
+  const speak = buildSystemPrompt(personas.get('reggie_riff'), { coreValues: [], task: 'speak', text: post });
+  assert.doesNotMatch(speak, /COMEDY ALGORITHM/, 'everyday read-aloud keeps the voice, not a joke plan');
+  assert.equal(comedyPrompt(personas.get('big_sal'), { task: 'crib', text: post }), '');
+});
+
+test('mini-assistant finds comedians by Comic name or first name', () => {
+  assert.equal(ruleAssistant('switch to Comic Reggie', personas).action.personaId, 'reggie_riff');
+  assert.equal(ruleAssistant('talk like Priya', personas).action.personaId, 'priya_nair');
+  assert.equal(ruleAssistant('switch to Comic Chuy', personas).action.personaId, 'chuy_carcajadas');
+  assert.equal(ruleAssistant('switch to Marty', personas).action.personaId, 'marty_midstep');
+  assert.equal(ruleAssistant('Winnie please', personas).action.personaId, 'winnie_brightwater');
+  assert.equal(ruleAssistant('switch to Big Sal', personas).action.personaId, 'big_sal', '"comic" alone is not a name match');
 });

@@ -87,7 +87,7 @@
         castArt.set(id, Promise.all([
           loadBitmap(seg.sprites?.idle, session.sprites.fallbackIdle),
           loadBitmap(seg.sprites?.talking, session.sprites.fallbackTalking),
-        ]).then(([i, t]) => ({ idle: i, talking: t, hue: seg.sprites?.hue || 0, name: seg.persona.name })));
+        ]).then(([i, t]) => ({ idle: i, talking: t, hue: seg.sprites?.hue || 0, name: Vern.personaName(seg.persona) })));
       }
       segs.push({ id, start: (seg.startByte / totalBytes) * audioBuf.duration, line: seg.line || '' });
     }
@@ -133,7 +133,7 @@
       let seg = null;
       for (const x of segs) if (x.start <= elapsed + 0.05) seg = x;
       seg ||= segs[0];
-      const art = seg ? castArt.get(seg.id) : { idle, talking, hue: session.hue, name: session.persona?.name };
+      const art = seg ? castArt.get(seg.id) : { idle, talking, hue: session.hue, name: Vern.personaName(session.persona) };
 
       // Cast row along the top (town strip look); the speaker gets a ring.
       if (castArt.size > 1) {

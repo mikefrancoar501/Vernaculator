@@ -119,7 +119,7 @@
   async function refreshTown() {
     const members = await Promise.all(townIds().map(async (id) => {
       const p = personas.find((x) => x.id === id);
-      return { id, name: p.name, sprites: await spritesFor(p) };
+      return { id, name: Vern.personaName(p), sprites: await spritesFor(p) };
     }));
     town.setMembers(members);
     town.setVisible(townOn());
@@ -288,7 +288,7 @@
         current.persona = msg.persona;
         current.applied = { readingLevel: msg.readingLevel, style: msg.style }; // what the server actually used
         current.sprites = await showPersona(msg.persona);
-        hud.setStatus(`${msg.persona.name}${msg.method !== 'manual' ? ` (${Vern.t('statusAutoPicked', 'auto-picked')})` : ''}`, 'busy');
+        hud.setStatus(`${Vern.personaName(msg.persona)}${msg.method !== 'manual' ? ` (${Vern.t('statusAutoPicked', 'auto-picked')})` : ''}`, 'busy');
         break;
       case 'utterance.status': {
         const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'], crib: ['statusCrib', 'Writing crib notes...'], reply: ['statusReply', 'Drafting a reply...'], pitching: ['statusPitching', 'The room is pitching lines...'], directing: ['statusDirecting', 'The director is putting the scene together...'] };
@@ -297,13 +297,13 @@
         break;
       }
       case 'scene.cast':
-        hud.setStatus(`${Vern.t('sceneRoom', "Writers' room")}: ${msg.roles.map((r) => r.name).join(', ')}${msg.director ? ` · ${Vern.t('sceneDirector', 'Director')}: ${msg.director.name}` : ''}`, 'busy');
+        hud.setStatus(`${Vern.t('sceneRoom', "Writers' room")}: ${msg.roles.map((r) => Vern.personaName({ id: r.personaId, name: r.name })).join(', ')}${msg.director ? ` · ${Vern.t('sceneDirector', 'Director')}: ${Vern.personaName(msg.director)}` : ''}`, 'busy');
         break;
       case 'town.plan':
         if (current.task === 'scene') {
           // Show the scene's cast along the top while it plays.
           sceneStrip = true;
-          Promise.all(msg.members.map(async (p) => ({ id: p.id, name: p.name, sprites: await spritesFor(p) }))).then((members) => {
+          Promise.all(msg.members.map(async (p) => ({ id: p.id, name: Vern.personaName(p), sprites: await spritesFor(p) }))).then((members) => {
             if (!sceneStrip) return;
             town.setMembers(members);
             town.setVisible(true);
@@ -482,7 +482,7 @@
             },
             (f) => hud.setExportProgress(f),
           );
-          const name = `${(s.persona?.name || 'fancy-bot').toLowerCase().replace(/\W+/g, '-')}-${Date.now()}.${ext}`;
+          const name = `${(Vern.personaName(s.persona) || 'fancy-bot').toLowerCase().replace(/\W+/g, '-')}-${Date.now()}.${ext}`;
           Vern.downloadBlob(blob, name);
           hud.setStatus(ext === 'mp4' ? 'Saved MP4.' : 'Saved WebM (this Chrome cannot record MP4).', 'ok');
         } catch (err) {

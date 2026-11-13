@@ -448,5 +448,20 @@
   },
   "helpSettingsBody": {
     "message": "Tap the person icon to set your name, a little about you, your age range and language. Answers get tailored to you."
+  },
+  "persona_reggie_riff": {
+    "message": "Comic Reggie"
+  },
+  "persona_chuy_carcajadas": {
+    "message": "Comic Chuy"
+  },
+  "persona_marty_midstep": {
+    "message": "Comic Marty"
+  },
+  "persona_winnie_brightwater": {
+    "message": "Comic Winnie"
+  },
+  "persona_priya_nair": {
+    "message": "Comic Priya"
   }
 }
