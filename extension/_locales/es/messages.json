@@ -376,5 +376,77 @@
   },
   "optServerDown": {
     "message": "Guardado, pero ningún servidor de Fancy Bot responde en $1. Inícialo (doble clic en fancybot-setup.bat) y vuelve a pulsar Guardar."
+  },
+  "hudHelp": {
+    "message": "Cómo funciona"
+  },
+  "menuHelp": {
+    "message": "❓ Cómo funciona"
+  },
+  "helpTitle": {
+    "message": "Cómo funciona Fancy Bot"
+  },
+  "helpIntro": {
+    "message": "Leo en voz alta las respuestas de la IA con voces divertidas y te ayudo a entenderlas. Toca un tema:"
+  },
+  "helpListenTitle": {
+    "message": "🎧 Escuchar respuestas"
+  },
+  "helpListenBody": {
+    "message": "Pregúntale lo que quieras a Claude, Grok o Gemini. Cuando termine la respuesta, tu personaje la lee en voz alta. Usa el control de nivel de lectura: 1 es muy sencillo, 5 es experto. También puedes elegir un estilo de voz."
+  },
+  "helpGesturesTitle": {
+    "message": "👆 Gestos"
+  },
+  "helpGesturesBody": {
+    "message": "Arrástrame por la barra de arriba. Mantén pulsado para abrir el menú (tamaño, personajes, silencio). Toca dos veces para abrir el ayudante. Tócame rápido o frótame para hacerme cosquillas."
+  },
+  "helpHelperTitle": {
+    "message": "💬 Comandos del ayudante"
+  },
+  "helpHelperBody": {
+    "message": "Toca dos veces y escribe o di cosas como \"cambia a Old Oakley\", \"habla más despacio\", \"más sencillo, por favor\" o \"habla como un genio\". Yo cambio el ajuste por ti."
+  },
+  "helpAskTitle": {
+    "message": "❓ Pestaña Preguntar"
+  },
+  "helpAskBody": {
+    "message": "Puntos clave da la versión corta. Parafrasear lo dice con palabras sencillas. Oakley añade una reflexión sabia. Haz otra pregunta, o Ampliar para profundizar."
+  },
+  "helpTownTitle": {
+    "message": "🏘️ El pueblo"
+  },
+  "helpTownBody": {
+    "message": "Elige algunos personajes y cada uno cuenta una parte de la respuesta, como una pequeña reunión del pueblo. Big Sal, Old Oakley, Big Play Ray y Elias son el equipo principal."
+  },
+  "helpSocialTitle": {
+    "message": "📱 Publicaciones sociales"
+  },
+  "helpSocialBody": {
+    "message": "En X, Facebook e Instagram, toca la etiqueta \"Resumen\" de una publicación. Obtén un resumen ingenioso o un borrador de respuesta. Luego cópialo, haz un video o abre la caja de respuesta. Nunca publico por ti: tú eliges qué publicar."
+  },
+  "helpRoomTitle": {
+    "message": "🎬 Sala de guionistas"
+  },
+  "helpRoomBody": {
+    "message": "Elige de 2 a 4 personajes y un director. Proponen frases, el director escoge las mejores y obtienes una escena corta sobre la publicación. Los chistes son sobre ideas, nunca sobre personas."
+  },
+  "helpHotTitle": {
+    "message": "🔥 Lo más popular"
+  },
+  "helpHotBody": {
+    "message": "Actívalo para ordenar las publicaciones que ya están en tu pantalla por \"me gusta\" y temas en común. Elige una para comentarla."
+  },
+  "helpVideoTitle": {
+    "message": "🎞️ Video meme"
+  },
+  "helpVideoBody": {
+    "message": "Después de una narración, toca Video para descargar un clip con el personaje y los subtítulos, listo para que lo subas."
+  },
+  "helpSettingsTitle": {
+    "message": "👤 Ajustes"
+  },
+  "helpSettingsBody": {
+    "message": "Toca el icono de persona para poner tu nombre, algo sobre ti, tu rango de edad y tu idioma. Las respuestas se adaptan a ti."
   }
 }

@@ -110,6 +110,12 @@
     .hot-box:has([data-setting="whatsHot"]:not(:checked)) .hot-body { display: none; }
     .social-out { display: grid; gap: 6px; padding: 8px; border: 1px dashed var(--line); border-radius: 12px; }
     form.angle input { font: inherit; color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; user-select: text; -webkit-user-select: text; }
+    .pop.over { bottom: auto; top: 44px; }
+    .help { width: 290px; max-height: min(70vh, 460px); overflow: auto; gap: 4px; }
+    .help details { border-top: 1px solid var(--line); padding: 6px 0 2px; }
+    .help summary { cursor: pointer; font-weight: 600; list-style-position: inside; }
+    .help p { margin: 4px 0 2px; font-size: 12px; color: var(--fg); }
+    .help .help-intro { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
     [hidden] { display: none !important; }
   `;
 
@@ -120,6 +126,7 @@
       <header>
         <span class="dot" data-tone="idle"></span>
         <span class="title" data-i18n="extShortName">Fancy Bot</span>
+        <button class="icon" data-action="help" data-i18n-title="hudHelp" title="How it works" aria-label="How it works">?</button>
         <button class="icon" data-action="profile" data-i18n-title="hudProfile" title="About you" aria-label="About you">👤</button>
         <button class="icon" data-action="collapse" data-i18n-title="hudCollapse" title="Collapse" aria-label="Collapse">▾</button>
       </header>
@@ -226,7 +233,22 @@
         <button data-action="toggleMute" class="mute-btn" data-i18n="menuMute">Mute</button>
         <button data-action="openAssistant" data-i18n="menuAssistant">💬 Assistant</button>
         <button data-action="profile" data-i18n="menuSettings">Settings</button>
+        <button data-action="help" data-i18n="menuHelp">❓ How it works</button>
       </div>
+    </div>
+    <div class="pop help" hidden>
+      <div class="pop-title" data-i18n="helpTitle">How Fancy Bot works</div>
+      <p class="help-intro" data-i18n="helpIntro">I read AI answers out loud in fun voices and help you understand them. Tap a topic:</p>
+      <details><summary data-i18n="helpListenTitle">🎧 Listening to answers</summary><p data-i18n="helpListenBody">Ask Claude, Grok or Gemini anything. When the answer finishes, your character reads it out loud. Use the reading level slider: 1 is super simple, 5 is expert. Pick a voice style too.</p></details>
+      <details><summary data-i18n="helpGesturesTitle">👆 Gestures</summary><p data-i18n="helpGesturesBody">Drag me by the top bar. Long-press me for the menu (size, characters, mute). Double-tap me to open the helper. Tap me fast or rub me to tickle me.</p></details>
+      <details><summary data-i18n="helpHelperTitle">💬 Helper commands</summary><p data-i18n="helpHelperBody">Double-tap and type or say things like "switch to Old Oakley", "talk slower", "simpler please" or "talk like a genius". I change the setting for you.</p></details>
+      <details><summary data-i18n="helpAskTitle">❓ Ask tab</summary><p data-i18n="helpAskBody">Key points gives the short version. Paraphrase says it in plain words. Oakley adds a wise thought. Ask a follow-up, or Expound to go deeper.</p></details>
+      <details><summary data-i18n="helpTownTitle">🏘️ The town</summary><p data-i18n="helpTownBody">Pick a few characters and they each take a part of the answer, like a little town meeting. Big Sal, Old Oakley, Big Play Ray and Elias are the core crew.</p></details>
+      <details><summary data-i18n="helpSocialTitle">📱 Social posts</summary><p data-i18n="helpSocialBody">On X, Facebook and Instagram, tap the "Crib notes" pill on a post. Get crib notes (a witty summary) or a draft reply. Then copy it, make a video, or open the reply box. I never post for you: you choose what to post.</p></details>
+      <details><summary data-i18n="helpRoomTitle">🎬 Writers' room</summary><p data-i18n="helpRoomBody">Pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Jokes are about ideas, never people.</p></details>
+      <details><summary data-i18n="helpHotTitle">🔥 What's hot</summary><p data-i18n="helpHotBody">Turn it on to rank the posts already on your screen by likes and shared topics. Pick one to riff on.</p></details>
+      <details><summary data-i18n="helpVideoTitle">🎞️ Meme video</summary><p data-i18n="helpVideoBody">After a narration, tap Video to download a clip with the character and captions, ready for you to upload.</p></details>
+      <details><summary data-i18n="helpSettingsTitle">👤 Settings</summary><p data-i18n="helpSettingsBody">Tap the person icon to set your name, a little about you, your age range and language. Answers get tailored to you.</p></details>
     </div>
     <div class="pop assistant" hidden>
       <div class="pop-title" data-i18n="asstTitle">Tell me what you'd like</div>
@@ -276,6 +298,7 @@
       this.sourcesEl = $('.sources');
       this.menu = $('.menu');
       this.assistant = $('.assistant');
+      this.help = $('.help');
       this.asstForm = $('form.asst');
       this.asstReply = $('.asst-reply');
       this.personaList = $('.persona-list');
@@ -331,6 +354,7 @@
         const btn = e.target.closest('button[data-action]');
         if (!btn) return;
         if (btn.dataset.action === 'collapse') return this.setCollapsed(!this.collapsed, true);
+        if (btn.dataset.action === 'help') return this.toggleHelp();
         const arg = { expound: () => this.askForm.q.value.trim(), reply: () => this.angleForm.q.value.trim() }[btn.dataset.action];
         this.onAction(btn.dataset.action, arg ? arg() : undefined);
       });
@@ -404,7 +428,24 @@
       this.closePopovers();
       pop.hidden = false;
       const r = this.host.getBoundingClientRect();
-      pop.classList.toggle('below', r.top < pop.offsetHeight + 16);
+      pop.style.maxHeight = '';
+      pop.classList.remove('over');
+      const z = Number(this.host.style.zoom) || 1;
+      const above = r.top - 16;
+      const below = window.innerHeight - r.bottom - 16;
+      const goBelow = above < pop.offsetHeight && below > above;
+      pop.classList.toggle('below', goBelow);
+      if (pop === this.help) {
+        const room = goBelow ? below : above;
+        if (room < Math.min(pop.offsetHeight, 300)) {
+          // Not enough room above or below: lay the help over the card, under its header.
+          pop.classList.remove('below');
+          pop.classList.add('over');
+          pop.style.maxHeight = `${Math.floor((window.innerHeight - Math.max(r.top, 0) - 56) / z)}px`;
+        } else {
+          pop.style.maxHeight = `${Math.floor(room / z)}px`;
+        }
+      }
       const overflowRight = r.left + pop.offsetWidth - window.innerWidth + 8;
       pop.style.left = overflowRight > 0 ? `${-overflowRight}px` : '0';
     }
@@ -431,13 +472,21 @@
       this.asstForm.q.value = '';
     }
 
+    /** "How it works" dropdown; the ? button toggles it. */
+    toggleHelp() {
+      if (!this.help.hidden) return this.closePopovers();
+      for (const d of this.help.querySelectorAll('details')) d.open = false;
+      this.#openPopover(this.help);
+    }
+
     closePopovers() {
       this.menu.hidden = true;
       this.assistant.hidden = true;
+      this.help.hidden = true;
     }
 
     get popoverOpen() {
-      return !this.menu.hidden || !this.assistant.hidden;
+      return !this.menu.hidden || !this.assistant.hidden || !this.help.hidden;
     }
 
     /** Voice input for the mini-assistant (Web Speech API, where the browser offers it). */

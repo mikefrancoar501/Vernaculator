@@ -376,5 +376,77 @@
   },
   "optServerDown": {
     "message": "Saved, but no Fancy Bot server is answering at $1. Start it (double-click fancybot-setup.bat) and press Save again."
+  },
+  "hudHelp": {
+    "message": "How it works"
+  },
+  "menuHelp": {
+    "message": "❓ How it works"
+  },
+  "helpTitle": {
+    "message": "How Fancy Bot works"
+  },
+  "helpIntro": {
+    "message": "I read AI answers out loud in fun voices and help you understand them. Tap a topic:"
+  },
+  "helpListenTitle": {
+    "message": "🎧 Listening to answers"
+  },
+  "helpListenBody": {
+    "message": "Ask Claude, Grok or Gemini anything. When the answer finishes, your character reads it out loud. Use the reading level slider: 1 is super simple, 5 is expert. Pick a voice style too."
+  },
+  "helpGesturesTitle": {
+    "message": "👆 Gestures"
+  },
+  "helpGesturesBody": {
+    "message": "Drag me by the top bar. Long-press me for the menu (size, characters, mute). Double-tap me to open the helper. Tap me fast or rub me to tickle me."
+  },
+  "helpHelperTitle": {
+    "message": "💬 Helper commands"
+  },
+  "helpHelperBody": {
+    "message": "Double-tap and type or say things like \"switch to Old Oakley\", \"talk slower\", \"simpler please\" or \"talk like a genius\". I change the setting for you."
+  },
+  "helpAskTitle": {
+    "message": "❓ Ask tab"
+  },
+  "helpAskBody": {
+    "message": "Key points gives the short version. Paraphrase says it in plain words. Oakley adds a wise thought. Ask a follow-up, or Expound to go deeper."
+  },
+  "helpTownTitle": {
+    "message": "🏘️ The town"
+  },
+  "helpTownBody": {
+    "message": "Pick a few characters and they each take a part of the answer, like a little town meeting. Big Sal, Old Oakley, Big Play Ray and Elias are the core crew."
+  },
+  "helpSocialTitle": {
+    "message": "📱 Social posts"
+  },
+  "helpSocialBody": {
+    "message": "On X, Facebook and Instagram, tap the \"Crib notes\" pill on a post. Get crib notes (a witty summary) or a draft reply. Then copy it, make a video, or open the reply box. I never post for you: you choose what to post."
+  },
+  "helpRoomTitle": {
+    "message": "🎬 Writers' room"
+  },
+  "helpRoomBody": {
+    "message": "Pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Jokes are about ideas, never people."
+  },
+  "helpHotTitle": {
+    "message": "🔥 What's hot"
+  },
+  "helpHotBody": {
+    "message": "Turn it on to rank the posts already on your screen by likes and shared topics. Pick one to riff on."
+  },
+  "helpVideoTitle": {
+    "message": "🎞️ Meme video"
+  },
+  "helpVideoBody": {
+    "message": "After a narration, tap Video to download a clip with the character and captions, ready for you to upload."
+  },
+  "helpSettingsTitle": {
+    "message": "👤 Settings"
+  },
+  "helpSettingsBody": {
+    "message": "Tap the person icon to set your name, a little about you, your age range and language. Answers get tailored to you."
   }
 }

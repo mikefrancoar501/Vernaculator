@@ -246,6 +246,20 @@ const assert = (cond, msg) => {
   await sleep(300);
   assert((await inExt('Vern.debug.hud.card.dataset.size')) === 'S', 'compact size');
   await page.screenshot({ path: path.join(outDir, '8-compact.png') });
+  assert(await inExt(`getComputedStyle(Vern.debug.hud.root.querySelector('header [data-action="help"]')).display !== 'none'`), 'help button shows in compact size');
+  await inExt(`Vern.settings.save({ hudSize: 'M' }).then(() => true)`);
+  await sleep(300);
+  await inExt(`Vern.debug.hud.root.querySelector('header [data-action="help"]').click(), true`);
+  await sleep(200);
+  const help = await inExt(`({ open: !Vern.debug.hud.help.hidden, n: Vern.debug.hud.help.querySelectorAll('details').length, title: Vern.debug.hud.help.querySelector('.pop-title').textContent })`);
+  assert(help.open && help.n === 10 && /Fancy Bot/.test(help.title), `help dropdown opens with ${help.n} topics`);
+  await inExt(`Vern.debug.hud.help.querySelectorAll('details')[1].open = true, true`);
+  await sleep(150);
+  await page.screenshot({ path: path.join(outDir, '8b-help.png') });
+  await inExt(`Vern.debug.hud.root.querySelector('header [data-action="help"]').click(), true`);
+  assert(await inExt('Vern.debug.hud.help.hidden'), 'help button toggles the dropdown closed');
+  await inExt(`Vern.settings.save({ hudSize: 'S' }).then(() => true)`);
+  await sleep(300);
 
   console.log('Town panel');
   await inExt(`Vern.settings.save({ hudSize: 'M', personaId: 'auto', accent: 'none', autoRead: true, paraphrase: false, townEnabled: true, townMembers: ['big_sal', 'professor_pip', 'sir_reginald_ledger'] }).then(() => true)`);
