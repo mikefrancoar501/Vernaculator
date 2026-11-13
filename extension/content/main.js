@@ -147,8 +147,9 @@
    * Start a spoken request. `task` is speak | keypoints | ask | expound; overrides let the
    * Ask panel force a one-off character (e.g. Oakley) or a one-off paraphrase.
    */
-  async function startUtterance({ sourceId = null, text = '', final = false, task = 'speak', question, personaId, paraphrase } = {}) {
+  async function startUtterance({ sourceId = null, text = '', final = false, task = 'speak', question, personaId, paraphrase, cast, director } = {}) {
     if (current) conn.send({ type: 'utterance.cancel', seq: current.seq }).catch(() => {});
+    if (sceneStrip) { sceneStrip = false; refreshTown(); }
     const seq = ++seqCounter;
     current = { seq, sourceId, persona: null, sprites: null, text: '', task, segments: [] };
     hud.setCaption('');
@@ -169,7 +170,8 @@
         profile: Vern.profile(),
         source: platform.id,
         // Town panel shares plain read-alouds; one-off actions (Oakley, Ask, ...) stay solo.
-        town: townOn() && task === 'speak' && !personaId ? townIds() : undefined,
+        town: cast || (townOn() && task === 'speak' && !personaId ? townIds() : undefined),
+        director,
         text,
         final,
       });
@@ -225,15 +227,33 @@
     social.mount();
     hud.setSocial(true);
   }
+  let sceneStrip = false; // the town strip is showing a writers' room cast
+  let hotItems = [];
+  function refreshHot() {
+    if (!social || !Vern.settings.values.whatsHot) return;
+    hotItems = Vern.rankPosts(platform);
+    hud.setHotList(hotItems);
+  }
+  if (social) {
+    let queued = false;
+    new MutationObserver(() => {
+      if (queued || !Vern.settings.values.whatsHot) return;
+      queued = true;
+      setTimeout(() => { queued = false; refreshHot(); }, 3000);
+    }).observe(document.body, { childList: true, subtree: true });
+    refreshHot();
+  }
   function socialTask(task, el, angle) {
-    const post = el || (lastPost?.el?.isConnected && task === 'reply' ? lastPost.el : null) || social.postInView();
+    const post = el || (lastPost?.el?.isConnected && (task !== 'crib' || lastPost.picked) ? lastPost.el : null) || social.postInView();
     const text = post ? Vern.postText(platform, post) : '';
     if (!text) return hud.setStatus(Vern.t('socialNoPost', 'No post found. Scroll a post into view or tap 🎭 on one.'), 'idle');
-    lastPost = { el: post, text };
+    lastPost = { el: post, text, picked: post === lastPost?.el && lastPost.picked };
     hud.setSocialResult(false);
     hud.showTab('social', false);
     if (hud.card.dataset.size === 'S') hud.applySettings({ hudSize: 'M' }); // show the result, without changing the saved size
-    speak(text, { task, question: angle || undefined, personaId: Vern.settings.values.cribPersonaId || undefined });
+    const v = Vern.settings.values;
+    if (task === 'scene') return speak(text, { task, cast: v.sceneCast, director: v.sceneDirector });
+    speak(text, { task, question: angle || undefined, personaId: v.cribPersonaId || undefined });
   }
   async function copyResult() {
     const text = lastSession?.text;
@@ -271,11 +291,25 @@
         hud.setStatus(`${msg.persona.name}${msg.method !== 'manual' ? ` (${Vern.t('statusAutoPicked', 'auto-picked')})` : ''}`, 'busy');
         break;
       case 'utterance.status': {
-        const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'], crib: ['statusCrib', 'Writing crib notes...'], reply: ['statusReply', 'Drafting a reply...'] };
+        const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'], crib: ['statusCrib', 'Writing crib notes...'], reply: ['statusReply', 'Drafting a reply...'], pitching: ['statusPitching', 'The room is pitching lines...'], directing: ['statusDirecting', 'The director is putting the scene together...'] };
         const [k, fb] = labels[msg.status] || ['', msg.status];
         hud.setStatus(Vern.t(k, fb), 'busy');
         break;
       }
+      case 'scene.cast':
+        hud.setStatus(`${Vern.t('sceneRoom', "Writers' room")}: ${msg.roles.map((r) => r.name).join(', ')}${msg.director ? ` · ${Vern.t('sceneDirector', 'Director')}: ${msg.director.name}` : ''}`, 'busy');
+        break;
+      case 'town.plan':
+        if (current.task === 'scene') {
+          // Show the scene's cast along the top while it plays.
+          sceneStrip = true;
+          Promise.all(msg.members.map(async (p) => ({ id: p.id, name: p.name, sprites: await spritesFor(p) }))).then((members) => {
+            if (!sceneStrip) return;
+            town.setMembers(members);
+            town.setVisible(true);
+          });
+        }
+        break;
       case 'utterance.segment': {
         // Remember where in the audio this speaker starts; the playback loop hands off on time.
         const seg = { startByte: player.bytes, persona: msg.persona, sprites: null };
@@ -288,13 +322,15 @@
         hud.setSources(msg.sources);
         break;
       case 'utterance.caption':
-        hud.appendCaption(msg.text);
+        if (msg.speaker) hud.setCaption(`${hud.caption.textContent ? `${hud.caption.textContent}\n` : ''}${msg.speaker}: ${msg.text}`);
+        else hud.appendCaption(msg.text);
         break;
       case 'utterance.done':
         current.done = true;
         player.end(msg.seq);
+        if (msg.script) current.segments.forEach((seg, i) => { seg.line = msg.script[i]?.line || ''; });
         lastSession = { chunks: player.chunks, text: msg.text, persona: current.persona, sprites: current.sprites, segments: current.segments, task: current.task };
-        if (current.task === 'crib' || current.task === 'reply') hud.setSocialResult(true);
+        if (['crib', 'reply', 'scene'].includes(current.task)) hud.setSocialResult(true);
         hud.setStatus((() => { const n = msg.usage.remainingChars.toLocaleString(); return Vern.t('statusCharsLeft', `${n} characters left this month`, [n]); })(), 'ok');
         break;
       case 'utterance.cancelled':
@@ -383,6 +419,20 @@
       case 'reply':
         socialTask('reply', null, arg);
         break;
+      case 'scene':
+        socialTask('scene');
+        break;
+      case 'refreshHot':
+        refreshHot();
+        break;
+      case 'pickHot': {
+        const it = hotItems[arg];
+        if (!it?.el?.isConnected) return refreshHot();
+        it.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        lastPost = { el: it.el, text: it.text, picked: true };
+        hud.setStatus(Vern.t('hotPicked', 'Picked. Now tap Crib notes, Draft reply or the scene.'), 'ok');
+        break;
+      }
       case 'copyText':
         hud.setStatus((await copyResult()) ? Vern.t('socialCopied', 'Copied. Paste it wherever you like.') : Vern.t('socialCopyFailed', 'Could not copy; select the caption text instead.'), 'ok');
         break;
@@ -407,6 +457,7 @@
         if (!player.replay()) speak(observer.latestText());
         break;
       case 'stop':
+        if (sceneStrip) { sceneStrip = false; refreshTown(); }
         if (current) conn.send({ type: 'utterance.cancel', seq: current.seq }).catch(() => {});
         current = null;
         player.stop();
@@ -427,6 +478,7 @@
               persona: s.persona,
               hue: s.sprites?.hue || 0,
               sprites: { idle: s.sprites?.idle || FALLBACK.idle, talking: s.sprites?.talking || FALLBACK.talking, fallbackIdle: FALLBACK.idle, fallbackTalking: FALLBACK.talking },
+              segments: s.segments,
             },
             (f) => hud.setExportProgress(f),
           );
@@ -446,6 +498,7 @@
     hud.applySettings(patch);
     if ('muted' in patch) player.audio.muted = !!patch.muted;
     if ('townEnabled' in patch || 'townMembers' in patch) refreshTown();
+    if ('whatsHot' in patch) refreshHot();
     if ('replaceCompanion' in patch) companion.sync();
     if ('backendUrl' in patch || 'token' in patch) {
       conn.reset();

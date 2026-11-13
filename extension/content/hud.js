@@ -24,7 +24,7 @@
     button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
     button.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
     button.icon { padding: 4px 8px; background: transparent; border-color: transparent; }
-    .body { padding: 10px; display: grid; gap: 10px; }
+    .body { padding: 10px; display: grid; gap: 10px; max-height: calc(100vh - 56px); overflow-y: auto; overscroll-behavior: contain; }
     .card.collapsed .body { display: none; }
     .card.collapsed { width: auto; }
     .stage { position: relative; height: 150px; border-radius: 12px; background: radial-gradient(circle at 50% 40%, var(--chip), transparent 70%); display: grid; place-items: center; touch-action: none; cursor: pointer; }
@@ -100,6 +100,14 @@
     .asst-reply { font-size: 12px; min-height: 1.2em; color: var(--fg); }
     .pop .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .pop label.field { display: grid; gap: 3px; font-size: 11px; color: var(--muted); }
+    .caption { white-space: pre-line; }
+    .scene-box { display: grid; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; }
+    .scene-members { display: flex; flex-wrap: wrap; gap: 4px; }
+    .scene-members .chip { font-size: 11px; padding: 3px 7px; }
+    .hot-list { display: grid; gap: 4px; max-height: 190px; overflow: auto; }
+    .hot-list button { text-align: left; font-size: 12px; display: grid; gap: 2px; }
+    .hot-list small { color: var(--muted); font-size: 10.5px; }
+    .hot-box:has([data-setting="whatsHot"]:not(:checked)) .hot-body { display: none; }
     .social-out { display: grid; gap: 6px; padding: 8px; border: 1px dashed var(--line); border-radius: 12px; }
     form.angle input { font: inherit; color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; user-select: text; -webkit-user-select: text; }
     [hidden] { display: none !important; }
@@ -177,6 +185,19 @@
           <div class="row quick">
             <button data-action="crib" data-i18n="socialCrib">🎭 Crib notes</button>
             <button data-action="reply" data-i18n="socialReply">💬 Draft reply</button>
+          </div>
+          <div class="scene-box">
+            <button data-action="scene" class="primary" data-i18n="sceneButton">🎬 Writers' room scene</button>
+            <div class="hint" data-i18n="sceneHint">The cast pitch lines and the director turns them into a mini-scene.</div>
+            <div class="scene-members" data-i18n-aria="sceneCast" aria-label="Scene cast (2 to 4)"></div>
+            <label class="field"><span data-i18n="sceneDirector">Director</span><select data-setting="sceneDirector"></select></label>
+          </div>
+          <div class="hot-box">
+            <label class="chip strong"><input type="checkbox" data-setting="whatsHot"> <span data-i18n="hotToggle">🔥 What's hot on this page</span></label>
+            <div class="hot-body">
+              <div class="row"><span class="hint" style="flex:1" data-i18n="hotHint">Posts you're viewing, by reach and shared topics. Pick one:</span><button class="icon" data-action="refreshHot" title="Refresh" aria-label="Refresh">↻</button></div>
+              <div class="hot-list"></div>
+            </div>
           </div>
           <form class="angle"><input type="text" name="q" maxlength="200" autocomplete="off" data-i18n-placeholder="socialAngle" placeholder="Your angle for the reply (optional)"></form>
           <div class="social-out" hidden>
@@ -313,7 +334,17 @@
         const arg = { expound: () => this.askForm.q.value.trim(), reply: () => this.angleForm.q.value.trim() }[btn.dataset.action];
         this.onAction(btn.dataset.action, arg ? arg() : undefined);
       });
+      this.root.addEventListener('click', (e) => {
+        const hot = e.target.closest('[data-hot]');
+        if (hot) this.onAction('pickHot', Number(hot.dataset.hot));
+      });
       this.root.addEventListener('change', (e) => {
+        if (e.target.dataset?.sceneMember) {
+          const boxes = [...this.root.querySelectorAll('[data-scene-member]')];
+          let ids = boxes.filter((i) => i.checked).map((i) => i.dataset.sceneMember);
+          if (ids.length > 4) { e.target.checked = false; ids = ids.filter((id) => id !== e.target.dataset.sceneMember); }
+          return this.onSetting('sceneCast', ids);
+        }
         if (e.target.dataset?.townMember) {
           const ids = [...this.root.querySelectorAll('[data-town-member]:checked')].map((i) => i.dataset.townMember);
           return this.onSetting('townMembers', ids);
@@ -350,6 +381,7 @@
         requestAnimationFrame(() => this.#apply(this.pos));
       }
       if ('townMembers' in s) this.#syncTownMembers(s.townMembers || []);
+      if ('sceneCast' in s) this.#syncSceneCast(s.sceneCast || []);
       if ('muted' in s) this.root.querySelector('.mute-btn').textContent = s.muted ? Vern.t('menuUnmute', 'Unmute') : Vern.t('menuMute', 'Mute');
     }
 
@@ -435,6 +467,33 @@
       this.#apply({ x: rect.left + rect.width / 2 - r.width / 2, y: rect.top + rect.height / 2 - r.height / 2 });
     }
 
+    #syncSceneCast(ids) {
+      this.sceneCast = ids;
+      for (const i of this.root.querySelectorAll('[data-scene-member]')) i.checked = ids.includes(i.dataset.sceneMember);
+    }
+
+    /** What's hot list: [{ text, reach, topic }] */
+    setHotList(items) {
+      const list = this.root.querySelector('.hot-list');
+      if (!items.length) {
+        const p = document.createElement('div');
+        p.className = 'hint';
+        p.textContent = Vern.t('hotEmpty', 'No posts with enough text on screen yet. Scroll a little and refresh.');
+        return list.replaceChildren(p);
+      }
+      list.replaceChildren(...items.map((it, i) => {
+        const b = document.createElement('button');
+        b.dataset.hot = String(i);
+        const t = document.createElement('span');
+        t.textContent = it.text.length > 90 ? `${it.text.slice(0, 88)}…` : it.text;
+        const m = document.createElement('small');
+        m.textContent = [it.reach ? `🔥 ${it.reach.toLocaleString()}` : '', it.topic ? `#${it.topic.replace(/^#/, '')}` : ''].filter(Boolean).join(' · ');
+        b.append(t, m);
+        return b;
+      }));
+      requestAnimationFrame(() => this.#apply(this.pos));
+    }
+
     #syncTownMembers(ids) {
       this.townMembers = ids;
       for (const i of this.root.querySelectorAll('[data-town-member]')) i.checked = ids.includes(i.dataset.townMember);
@@ -489,6 +548,19 @@
         new Option(Vern.t('socialSameCharacter', 'Same as my character'), ''),
         ...list.map((p) => new Option(p.name, p.id)),
       );
+      const scene = this.root.querySelector('.scene-members');
+      scene.replaceChildren(...list.map((p) => {
+        const label = document.createElement('label');
+        label.className = 'chip';
+        label.innerHTML = '<input type="checkbox"> <span></span>';
+        label.querySelector('input').dataset.sceneMember = p.id;
+        label.querySelector('span').textContent = p.name;
+        return label;
+      }));
+      this.#syncSceneCast(this.sceneCast || Vern.settings.values.sceneCast || []);
+      const dirSel = this.root.querySelector('[data-setting="sceneDirector"]');
+      dirSel.replaceChildren(...list.map((p) => new Option(p.name, p.id)));
+      dirSel.value = list.some((p) => p.id === Vern.settings.values.sceneDirector) ? Vern.settings.values.sceneDirector : list[0]?.id;
       const crib = Vern.settings.values.cribPersonaId || '';
       this.cribSelect.value = list.some((p) => p.id === crib) ? crib : '';
       const box = this.root.querySelector('.town-members');

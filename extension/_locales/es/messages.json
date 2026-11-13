@@ -331,5 +331,38 @@
   },
   "statusReply": {
     "message": "Escribiendo una respuesta..."
+  },
+  "sceneButton": {
+    "message": "🎬 Escena del cuarto de guionistas"
+  },
+  "sceneHint": {
+    "message": "El elenco propone frases y el director las convierte en una mini escena."
+  },
+  "sceneCast": {
+    "message": "Elenco de la escena (2 a 4)"
+  },
+  "sceneDirector": {
+    "message": "Director"
+  },
+  "sceneRoom": {
+    "message": "Cuarto de guionistas"
+  },
+  "hotToggle": {
+    "message": "🔥 Lo más comentado en esta página"
+  },
+  "hotHint": {
+    "message": "Publicaciones que estás viendo, por alcance y temas en común. Elige una:"
+  },
+  "hotEmpty": {
+    "message": "Aún no hay publicaciones con suficiente texto en pantalla. Desplázate un poco y actualiza."
+  },
+  "hotPicked": {
+    "message": "Elegida. Ahora toca Resumen, Escribir respuesta o la escena."
+  },
+  "statusPitching": {
+    "message": "El cuarto está proponiendo frases..."
+  },
+  "statusDirecting": {
+    "message": "El director está armando la escena..."
   }
 }

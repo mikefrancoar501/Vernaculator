@@ -14,6 +14,69 @@
     button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   `;
 
+  // --- What's hot -------------------------------------------------------------------------
+  // Ranks the posts already loaded on the page the user is looking at (nothing is fetched and
+  // no accounts are looked up) by reach (likes, reposts, replies, views shown on the post) and
+  // by trend relevance (topics many of the visible posts share). The user picks one to riff on.
+  const STOP = new Set('about after again against being below between could doing during every from further having here hers herself himself into itself just more most other ours ourselves over same should some such than that their theirs them themselves then there these they this those through under until very what when where which while whom with would your yours yourself yourselves people today really thing things going want still know think like make made back even also been were will have just only much many said says because before little first great right years year time well never always'.split(' '));
+  const METRIC = /(\d[\d.,]*\s*[KkMm]?)\s*(likes?|reposts?|retweets?|quotes?|replies|reply|comments?|views?|shares?|reactions?|bookmarks?)\b/g;
+
+  /** "1.2K" -> 1200, "3,400" -> 3400, "2M" -> 2000000 */
+  function parseCount(str) {
+    const m = /^(\d[\d.,]*)\s*([KkMm]?)$/.exec(String(str).trim());
+    if (!m) return 0;
+    const n = parseFloat(m[1].replace(/,(?=\d{3}\b)/g, '').replace(',', '.'));
+    return Math.round(n * ({ k: 1e3, m: 1e6 }[m[2].toLowerCase()] || 1));
+  }
+
+  function reachOf(el) {
+    let total = 0;
+    const seen = new Set();
+    for (const n of el.querySelectorAll('[aria-label], button, [role="button"], a[href*="/analytics"]')) {
+      const label = `${n.getAttribute('aria-label') || ''} ${n.getAttribute('aria-label') ? '' : n.textContent || ''}`;
+      for (const m of label.matchAll(METRIC)) {
+        const key = `${m[2].toLowerCase().replace(/s$/, '')}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        total += parseCount(m[1]);
+      }
+      if (!label.match(METRIC)) {
+        // Icon buttons that only show a count (e.g. "💬 12").
+        const bare = /^\D{0,3}(\d[\d.,]*\s*[KkMm]?)$/.exec((n.textContent || '').trim());
+        if (bare && n.matches('button, [role="button"]')) total += parseCount(bare[1]);
+      }
+    }
+    return total;
+  }
+
+  function topicsOf(text) {
+    const tags = (text.match(/#[\p{L}\d_]{2,}/gu) || []).map((t) => t.toLowerCase());
+    const words = (text.toLowerCase().match(/\p{L}{5,}/gu) || []).filter((w) => !STOP.has(w));
+    return new Set([...tags, ...words]);
+  }
+
+  Vern.rankPosts = (platform, { limit = 5 } = {}) => {
+    const posts = [...document.querySelectorAll(platform.postSelector)]
+      .filter((el) => !el.parentElement?.closest(platform.postSelector))
+      .map((el) => {
+        const text = Vern.postText(platform, el);
+        return { el, text, reach: reachOf(el), topics: topicsOf(text) };
+      })
+      .filter((p) => p.text.length >= 40);
+    const df = new Map();
+    for (const p of posts) for (const t of p.topics) df.set(t, (df.get(t) || 0) + 1);
+    for (const p of posts) {
+      const shared = [...p.topics].filter((t) => df.get(t) > 1).sort((a, b) => df.get(b) - df.get(a));
+      p.trend = shared.reduce((n, t) => n + df.get(t) - 1, 0);
+      p.topic = shared[0] || '';
+    }
+    const maxReach = Math.max(1, ...posts.map((p) => Math.log10(1 + p.reach)));
+    const maxTrend = Math.max(1, ...posts.map((p) => p.trend));
+    for (const p of posts) p.score = 0.6 * (Math.log10(1 + p.reach) / maxReach) + 0.4 * (p.trend / maxTrend);
+    return posts.sort((a, b) => b.score - a.score).slice(0, limit);
+  };
+  Vern.parseCount = parseCount;
+
   class SocialOverlay {
     constructor(platform, { onCrib }) {
       this.platform = platform;

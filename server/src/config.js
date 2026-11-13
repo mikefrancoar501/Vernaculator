@@ -28,6 +28,8 @@ export function loadConfig(overrides = {}) {
       effort: env.LLM_EFFORT || 'low',
     },
     intentMode: env.INTENT_MODE || 'keywords',
+    // Per-user limits on social generations (crib notes, replies, writers' room scenes).
+    socialRate: { perMinute: int(env.SOCIAL_RATE_PER_MIN, 6), perDay: int(env.SOCIAL_RATE_PER_DAY, 120) },
     tts: {
       provider: env.TTS_PROVIDER || 'mock',
       apiKey: env.FISH_API_KEY || '',

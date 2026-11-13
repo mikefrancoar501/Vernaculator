@@ -331,5 +331,38 @@
   },
   "statusReply": {
     "message": "Drafting a reply..."
+  },
+  "sceneButton": {
+    "message": "🎬 Writers' room scene"
+  },
+  "sceneHint": {
+    "message": "The cast pitch lines and the director turns them into a mini-scene."
+  },
+  "sceneCast": {
+    "message": "Scene cast (2 to 4)"
+  },
+  "sceneDirector": {
+    "message": "Director"
+  },
+  "sceneRoom": {
+    "message": "Writers' room"
+  },
+  "hotToggle": {
+    "message": "🔥 What's hot on this page"
+  },
+  "hotHint": {
+    "message": "Posts you're viewing, by reach and shared topics. Pick one:"
+  },
+  "hotEmpty": {
+    "message": "No posts with enough text on screen yet. Scroll a little and refresh."
+  },
+  "hotPicked": {
+    "message": "Picked. Now tap Crib notes, Draft reply or the scene."
+  },
+  "statusPitching": {
+    "message": "The room is pitching lines..."
+  },
+  "statusDirecting": {
+    "message": "The director is putting the scene together..."
   }
 }

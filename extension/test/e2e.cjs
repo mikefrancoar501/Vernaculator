@@ -331,6 +331,34 @@ const assert = (cond, msg) => {
   assert(fs.statSync(vidFile).size > 10000, `reply video rendered (${path.basename(vidFile)})`);
   await xp.screenshot({ path: path.join(outDir, '11-social-reply.png') });
 
+  console.log("Social: What's hot and the writers' room");
+  await inX(`Vern.settings.save({ whatsHot: true }).then(() => true)`);
+  await sleep(300);
+  const hot = await inX(`Vern.rankPosts(Vern.platformFor()).map((p) => ({ t: p.text.slice(0, 20), reach: p.reach, topic: p.topic }))`);
+  assert(hot[0].t.startsWith('Council streetlight') && hot[0].reach === 1688, `What's hot ranks by reach and shared topics (${hot.map((h) => `${h.t}… ${h.reach} #${h.topic}`).join(' | ')})`);
+  assert(hot[1].t.startsWith('Big news') && hot[1].reach === 252, 'second: the long council post');
+  await inX(`Vern.debug.hud.onAction('pickHot', 0), true`);
+  await sleep(600);
+  assert(await inX(`Vern.debug.lastPost.text.startsWith('Council streetlight')`), 'picking a hot post makes it the target');
+
+  await inX(`Vern.debug.hud.onAction('scene'), true`);
+  let scene = null;
+  for (let i = 0; i < 200 && !scene; i++) {
+    await sleep(150);
+    scene = await inX(`Vern.debug.lastSession?.task === 'scene' ? { text: Vern.debug.lastSession.text, segs: Vern.debug.lastSession.segments.map((s) => s.persona.id), lines: Vern.debug.lastSession.segments.map((s) => !!s.line) } : null`);
+    if (i === 25) await xp.screenshot({ path: path.join(outDir, '12-scene.png') });
+  }
+  if (!scene) console.log('    debug', JSON.stringify(await inX(`({ status: Vern.debug.hud.statusEl.textContent, task: Vern.debug.current?.task, done: Vern.debug.current?.done, segs: Vern.debug.current?.segments.length, last: Vern.debug.lastSession?.task, playing: Vern.debug.player.playing, cap: Vern.debug.hud.caption.textContent })`)));
+  assert(scene && /^Big Play Ray: So council streetlight vote/m.test(scene.text), `scene about the picked post:\n      ${scene?.text.split('\n').join('\n      ')}`);
+  assert(new Set(scene.segs).size >= 3 && scene.lines.every(Boolean), `cast took turns in beat order: ${scene.segs.join(' -> ')}`);
+  assert(await xp.locator('#vernaculator-town').isVisible(), 'scene cast shown along the top');
+  const sceneVidP = xp.waitForEvent('download', { timeout: 90000 });
+  await inX(`Vern.debug.hud.onAction('export'), true`);
+  const sceneVid = await sceneVidP;
+  const sceneFile = path.join(outDir, `scene-${sceneVid.suggestedFilename()}`);
+  await sceneVid.saveAs(sceneFile);
+  assert(fs.statSync(sceneFile).size > 20000, `multi-character scene video rendered (${path.basename(sceneFile)})`);
+
   await ctx.close();
   console.log('\nE2E PASSED');
 })().catch(async (err) => {

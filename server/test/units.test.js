@@ -13,6 +13,7 @@ import { loadConfig } from '../src/config.js';
 import { splitFrames } from '../src/tts/mp3.js';
 import { parseStyle, styleCatalog } from '../src/styles.js';
 import { parseProfile, userMessage } from '../src/tasks.js';
+import { parseCast, cleanScript, directorSystem, assignRoles, rolePrompt } from '../src/writersroom.js';
 import { parseTown, planTown, townPrompt } from '../src/town.js';
 import { ruleAssistant, sanitizeAction, runAssistant } from '../src/assistant.js';
 import { resolveVoiceId } from '../src/config.js';
@@ -153,6 +154,35 @@ test('social tasks: crib notes and reply drafts treat the post as a person\'s, n
   assert.match(reply, /TASK: DRAFT A REPLY/);
   assert.match(reply, /posted by them, after they review it/);
   assert.match(userMessage({ task: 'reply', text: 'Post body', question: 'agree with them' }), /<post>\nPost body\n<\/post>[\s\S]*<question>\nagree with them/);
+});
+
+test('writers\' room: cast and script validation', () => {
+  assert.deepEqual(parseCast(['big_sal', 'nope'], personas), ['big_play_ray', 'professor_pip', 'old_oakley', 'granny_marigold'], 'falls back to the default cast');
+  assert.deepEqual(assignRoles(['granny_marigold', 'old_oakley', 'big_play_ray', 'professor_pip'], personas).map((r) => `${r.role}:${r.personaId}`), ['setup:big_play_ray', 'escalate:professor_pip', 'wildcard:old_oakley', 'closer:granny_marigold'], 'roles in beat order');
+  assert.deepEqual(assignRoles(['big_play_ray', 'captain_ada_quill'], personas).map((r) => r.role), ['setup', 'closer'], 'two-person scene still has a closer');
+  assert.match(rolePrompt('wildcard'), /left-field/);
+  assert.deepEqual(parseCast(['big_sal', 'old_oakley', 'big_sal', 'professor_pip', 'granny_marigold', 'big_play_ray'], personas), ['big_sal', 'old_oakley', 'professor_pip', 'granny_marigold']);
+  const ids = ['big_sal', 'old_oakley'];
+  assert.equal(cleanScript([{ personaId: 'big_sal', line: 'hi' }], ids), null, 'needs two speakers');
+  assert.deepEqual(cleanScript([{ personaId: 'big_sal', line: ' a  b ' }, { personaId: 'evil', line: 'x' }, { personaId: 'old_oakley', line: 'c' }], ids), [{ personaId: 'big_sal', line: 'a b' }, { personaId: 'old_oakley', line: 'c' }]);
+  const sys = directorSystem([personas.get('big_sal'), personas.get('old_oakley')]);
+  assert.match(sys, /never about the poster/);
+  assert.match(sys, /no jokes/);
+  assert.doesNotMatch(sys, /Seinfeld/i);
+  assert.match(directorSystem([personas.get('old_oakley')], { roles: [{ personaId: 'old_oakley', role: 'wildcard' }], director: personas.get('big_sal') }), /You are Big Sal[\s\S]*role: Free spirit/);
+});
+
+test('social generations are rate limited per user', () => {
+  const g = new Gateway(null, {}, { perMinute: 2, perDay: 3 });
+  const u = { id: 'u1' };
+  const t = 1_000_000;
+  assert.ok(g.takeGeneration(u, t).ok);
+  assert.ok(g.takeGeneration(u, t + 1000).ok);
+  const blocked = g.takeGeneration(u, t + 2000);
+  assert.ok(!blocked.ok && blocked.retryAfterMs === 58000);
+  assert.ok(g.takeGeneration({ id: 'u2' }, t + 2000).ok, 'other users unaffected');
+  assert.ok(g.takeGeneration(u, t + 61000).ok, 'minute window slides');
+  assert.ok(!g.takeGeneration(u, t + 130000).ok, 'daily cap');
 });
 
 test('voice resolution prefers a language-specific voice', () => {

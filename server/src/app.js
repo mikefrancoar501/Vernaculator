@@ -9,7 +9,7 @@ import { routeIntent } from './intent.js';
 import { sanitize } from './guardrails.js';
 import { Utterance } from './pipeline.js';
 import { styleCatalog } from './styles.js';
-import { parseTask } from './tasks.js';
+import { parseTask, SOCIAL_TASKS } from './tasks.js';
 import { runAssistant } from './assistant.js';
 
 const AUTH_TIMEOUT_MS = 10_000;
@@ -17,7 +17,7 @@ const MAX_JSON_BYTES = 64 * 1024;
 
 export function createApp(cfg, { store, llm } = {}) {
   store ??= new JsonStore(cfg.dataFile);
-  const gateway = new Gateway(store, cfg.quotas);
+  const gateway = new Gateway(store, cfg.quotas, cfg.socialRate);
   const personas = loadPersonas(cfg.personasFile);
   const coreValues = JSON.parse(fs.readFileSync(cfg.coreValuesFile, 'utf8')).values;
   llm ??= createLLM(cfg);
@@ -73,6 +73,11 @@ export function createApp(cfg, { store, llm } = {}) {
           method = routed.method;
         }
         const task = parseTask(body.task);
+        if (task === 'scene') return json(res, 400, { error: 'scenes are voiced: use the /v1/stream WebSocket' });
+        if (SOCIAL_TASKS.has(task)) {
+          const rate = gateway.takeGeneration(user);
+          if (!rate.ok) return json(res, 429, { error: 'rate_limited', retryAfterMs: rate.retryAfterMs });
+        }
         const system = buildSystemPrompt(persona, { coreValues, readingLevel: body.readingLevel, style: body.style, task, profile: body.profile, source: body.source });
         let out = '';
         let sources = [];
@@ -135,7 +140,7 @@ export function createApp(cfg, { store, llm } = {}) {
           current = new Utterance({
             seq,
             user,
-            opts: { personaId: msg.personaId || 'auto', readingLevel: msg.readingLevel, style: msg.style, task: msg.task, question: msg.question, profile: msg.profile, source: msg.source, town: msg.town },
+            opts: { personaId: msg.personaId || 'auto', readingLevel: msg.readingLevel, style: msg.style, task: msg.task, question: msg.question, profile: msg.profile, source: msg.source, town: msg.town, director: msg.director },
             deps,
             send,
           });

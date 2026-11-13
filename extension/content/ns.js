@@ -27,6 +27,9 @@
     townMembers: ['big_sal', 'old_oakley', 'professor_pip'],
     cribPersonaId: 'big_play_ray', // comedic voice for social crib notes and replies ('' = main character)
     socialPill: true,
+    sceneCast: ['big_play_ray', 'professor_pip', 'old_oakley', 'granny_marigold'], // writers' room, 2-4
+    sceneDirector: 'big_sal',
+    whatsHot: false,
   };
 
   const listeners = new Set();

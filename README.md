@@ -56,7 +56,14 @@ On x.com, facebook.com and instagram.com the extension does not watch for AI rep
 - Then **📋 Copy text**, **🎬 Make video** (the same MP4 export, with the character's voice and moving mouth) or **↩ Open reply box**, which copies the text and clicks the site's own reply button.
 - **Nothing is ever posted or typed for the user.** They paste the text, attach the video and press post themselves, which keeps the extension within the platforms' automation rules.
 
-Server side these are the `crib` and `reply` tasks (`server/src/tasks.js`) with sources `x`, `facebook` and `instagram`; the prompt treats the text as a real person's post, not an AI answer. Post selectors in `platforms.js` are placeholders to verify on the live sites.
+### Writers' room scenes and What's hot
+
+- **🎬 Writers' room scene** (Post tab): pick a cast of 2 to 4 characters and a director (Big Sal by default). Each cast member fills a role slot and pitches one line in their own voice, all in parallel: the **Realist** sets up the premise, the **Overthinker** escalates a tiny detail, the **Free spirit** offers a left-field fix, and the **Straight shooter** lands the clean summary line. The director pass then picks and edits the pitches into a 4 to 8 line mini-scene in that beat order. Each line is voiced by its own character, the cast sits in the strip along the top with the speaker highlighted, and **Make video** renders a multi-character MP4 (cast row, speaker in the middle, each line captioned under its speaker).
+- Preferred slots live in personas.json (`writersRoomRole`); any character can fill any slot. The humor is observational and original: prompts forbid imitating existing shows or comedians, profanity, and jokes about the poster, and serious posts get a kind, joke-free scene. Code: `server/src/writersroom.js`.
+- **🔥 What's hot on this page** (optional, off by default) ranks only the posts already loaded on the page you are viewing, by the reach shown on them (likes, reposts, replies, views) and by topics they share with the other visible posts. Tap one to scroll to it and make it the target. It never fetches other posts or looks up accounts or follower counts. A real trend feed can be plugged in later.
+- **Rate limit:** crib notes, replies and scenes are limited per user (`SOCIAL_RATE_PER_MIN`, default 6, and `SOCIAL_RATE_PER_DAY`, default 120) on top of the monthly quota, so the tool stays a personal helper and never a bulk-reply engine. There is still no auto-posting, auto-typing or scheduled replying.
+
+Server side these are the `crib`, `reply` and `scene` tasks (`server/src/tasks.js`) with sources `x`, `facebook` and `instagram`; the prompt treats the text as a real person's post, not an AI answer. Post selectors in `platforms.js` are placeholders to verify on the live sites.
 
 ## Repository layout
 
@@ -117,8 +124,8 @@ Requests to `claude-opus-5-5` enable server-side refusal fallbacks (`fallbacks: 
 
 ### Wire protocol (`/v1/stream`)
 
-Client → server JSON: `auth {token}`, `utterance.start {seq, personaId|'auto', readingLevel?: 1-5, style?: {paraphrase, humor, philosophy, accent}, task?: speak|keypoints|ask|expound|crib|reply, question?, profile?: {name, about, ageGroup, language}, source?: claude|grok|gemini|x|facebook|instagram, town?: [personaIds], text?, final?}`, `utterance.text {seq, text}`, `utterance.end {seq}`, `utterance.cancel {seq}`.
-Server → client JSON: `auth.ok`, `utterance.persona`, `utterance.status`, `utterance.segment`, `town.plan`, `utterance.caption`, `utterance.sources`, `utterance.done {text, usage}`, `utterance.cancelled`, `error {code}`.
+Client → server JSON: `auth {token}`, `utterance.start {seq, personaId|'auto', readingLevel?: 1-5, style?: {paraphrase, humor, philosophy, accent}, task?: speak|keypoints|ask|expound|crib|reply|scene, question?, profile?: {name, about, ageGroup, language}, source?: claude|grok|gemini|x|facebook|instagram, town?: [personaIds] (scene cast for `scene`), director?: personaId, text?, final?}`, `utterance.text {seq, text}`, `utterance.end {seq}`, `utterance.cancel {seq}`.
+Server → client JSON: `auth.ok`, `utterance.persona`, `utterance.status`, `utterance.segment`, `town.plan`, `scene.cast`, `utterance.caption` (with `speaker` in scenes), `utterance.sources`, `utterance.done {text, script?, usage}`, `utterance.cancelled`, `error {code}`.
 Server → client binary: `[uint32 big-endian seq][MP3 bytes]`.
 
 REST: `GET /health`, `GET /v1/personas` (public), `GET /v1/usage` and `POST /v1/transform` (Bearer token; text-only style transfer with task/style/profile, useful for tuning personas), `POST /v1/assistant` (Bearer token; the double-tap assistant).
@@ -133,14 +140,14 @@ REST: `GET /health`, `GET /v1/personas` (public), `GET /v1/usage` and `POST /v1/
 ## Testing
 
 ```bash
-cd server && npm test                      # 23 unit/integration tests (mock providers, fake Fish server)
+cd server && npm test                      # 26 unit/integration tests (mock providers, fake Fish server)
 
 # Extension end to end (real Chromium, unpacked extension, fake claude.ai page):
 npm start &                                # in server/, mock mode
 node extension/test/e2e.cjs <token> /tmp/vern-e2e
 ```
 
-The e2e test checks HUD injection, dragging and persistence, auto-read of a streamed reply (intent routing, captions, MediaSource playback), amplitude-driven sprite swaps, tickle → giggle without interrupting TTS, MP4 export, read-selection, and a Big Sal run at reading level 1 with humor and the slow style (sprite, mouth movement, server-applied settings, MP4 export), paraphrase with a name and profile, Old Oakley, key points, ask, expound with sources, long-press menu and sizes, double-tap assistant without triggering a tickle, triple-tap tickle, assistant-driven character switch, a three-member town panel with handoffs, and on a fake X timeline: the Crib notes pill, crib notes in Big Play Ray's voice, a reply draft, Open reply box (copies, never types), and the reply video.
+The e2e test checks HUD injection, dragging and persistence, auto-read of a streamed reply (intent routing, captions, MediaSource playback), amplitude-driven sprite swaps, tickle → giggle without interrupting TTS, MP4 export, read-selection, and a Big Sal run at reading level 1 with humor and the slow style (sprite, mouth movement, server-applied settings, MP4 export), paraphrase with a name and profile, Old Oakley, key points, ask, expound with sources, long-press menu and sizes, double-tap assistant without triggering a tickle, triple-tap tickle, assistant-driven character switch, a three-member town panel with handoffs, and on a fake X timeline: the Crib notes pill, crib notes in Big Play Ray's voice, a reply draft, Open reply box (copies, never types), the reply video, the What's hot ranking, and a four-character writers' room scene with its video.
 
 ## Open decisions (need the product owner)
 

@@ -41,7 +41,8 @@
       "visemeAssets": {
         "idleUrl": "assets/sprites/big_sal_idle.svg",
         "talkingUrl": "assets/sprites/big_sal_talking.svg"
-      }
+      },
+      "writersRoomRole": "director"
     },
     {
       "id": "old_oakley",
@@ -74,7 +75,8 @@
       "visemeAssets": {
         "idleUrl": "assets/sprites/old_oakley_idle.svg",
         "talkingUrl": "assets/sprites/old_oakley_talking.svg"
-      }
+      },
+      "writersRoomRole": "wildcard"
     },
     {
       "id": "elias_stillwater",
@@ -98,7 +100,8 @@
       "visemeAssets": {
         "idleUrl": "https://cdn.example.com/elias_idle.png",
         "talkingUrl": "https://cdn.example.com/elias_talking.png"
-      }
+      },
+      "writersRoomRole": "wildcard"
     },
     {
       "id": "big_play_ray",
@@ -123,7 +126,8 @@
       "visemeAssets": {
         "idleUrl": "https://cdn.example.com/ray_idle.png",
         "talkingUrl": "https://cdn.example.com/ray_talking.png"
-      }
+      },
+      "writersRoomRole": "setup"
     },
     {
       "id": "captain_ada_quill",
@@ -151,7 +155,8 @@
       "visemeAssets": {
         "idleUrl": "https://cdn.example.com/ada_idle.png",
         "talkingUrl": "https://cdn.example.com/ada_talking.png"
-      }
+      },
+      "writersRoomRole": "setup"
     },
     {
       "id": "granny_marigold",
@@ -178,7 +183,8 @@
       "visemeAssets": {
         "idleUrl": "https://cdn.example.com/marigold_idle.png",
         "talkingUrl": "https://cdn.example.com/marigold_talking.png"
-      }
+      },
+      "writersRoomRole": "closer"
     },
     {
       "id": "professor_pip",
@@ -205,7 +211,8 @@
       "visemeAssets": {
         "idleUrl": "https://cdn.example.com/pip_idle.png",
         "talkingUrl": "https://cdn.example.com/pip_talking.png"
-      }
+      },
+      "writersRoomRole": "escalate"
     },
     {
       "id": "sir_reginald_ledger",
@@ -232,7 +239,8 @@
       "visemeAssets": {
         "idleUrl": "https://cdn.example.com/reginald_idle.png",
         "talkingUrl": "https://cdn.example.com/reginald_talking.png"
-      }
+      },
+      "writersRoomRole": "escalate"
     }
   ]
 }

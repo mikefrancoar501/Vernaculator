@@ -168,6 +168,31 @@ test('WebSocket: crib notes and a reply draft for a social media post', async ()
   c.ws.close();
 });
 
+test('WebSocket: writers\' room turns a post into a multi-character mini-scene', async () => {
+  const c = connect();
+  await c.opened;
+  c.ws.send(JSON.stringify({ type: 'auth', token }));
+  await c.waitFor((e) => e.type === 'auth.ok');
+  const post = 'Our office got a new coffee machine with 47 settings. Nobody knows how to make plain coffee anymore. There is now a laminated guide.';
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 51, task: 'scene', source: 'x', town: ['big_play_ray', 'granny_marigold', 'professor_pip'], text: post, final: true }));
+  const done = await c.waitFor((e) => e.type === 'utterance.done' && e.seq === 51, 15000);
+  const statuses = c.events.filter((e) => e.type === 'utterance.status' && e.seq === 51).map((e) => e.status);
+  assert.ok(statuses.includes('pitching') && statuses.includes('directing'), `pitch then direct (${statuses})`);
+  const segs = c.events.filter((e) => e.type === 'utterance.segment' && e.seq === 51).map((e) => e.persona.id);
+  assert.ok(new Set(segs).size >= 2, `several characters speak (${segs})`);
+  assert.ok(done.script.length === segs.length, 'one script line per voiced segment');
+  assert.match(done.text, /^Big Play Ray: So our office got a new coffee machine/m);
+  assert.match(done.text, /^Granny Marigold: Wait, /m);
+  const castEv = c.events.find((e) => e.type === 'scene.cast' && e.seq === 51);
+  assert.equal(castEv.director.id, 'big_sal');
+  assert.deepEqual(castEv.roles.map((r) => r.role), ['setup', 'escalate', 'closer']);
+  assert.deepEqual(segs.slice(0, 3), ['big_play_ray', 'professor_pip', 'granny_marigold'], 'lines follow the beats');
+  const caps = c.events.filter((e) => e.type === 'utterance.caption' && e.seq === 51);
+  assert.ok(caps.every((e) => e.speaker), 'captions carry the speaker');
+  assert.ok(c.audio.filter((a) => a.readUInt32BE(0) === 51).length >= segs.length, 'each line is voiced');
+  c.ws.close();
+});
+
 test('WebSocket: town panel voices each section with its own character', async () => {
   const c = connect();
   await c.opened;

@@ -6,13 +6,15 @@
  *   ask       answer the listener's follow-up question using the answer as the source of truth
  *   expound   go deeper than the answer for a listener who wants more (may use web research)
  *   crib      crib notes for a social media post: a couple of witty lines that sum it up
+ *   scene     writers' room: the cast pitch lines, a director stitches a mini-scene (writersroom.js)
  *   reply     a short, witty reply the user can review and post themselves (never posted for them)
  *
  * The listener profile (name, about-me, language) is user-written data. It is clipped,
  * wrapped in tags, and the prompt says to treat it as information, never instructions.
  */
 
-export const TASKS = ['speak', 'keypoints', 'ask', 'expound', 'crib', 'reply'];
+export const TASKS = ['speak', 'keypoints', 'ask', 'expound', 'crib', 'reply', 'scene'];
+export const SOCIAL_TASKS = new Set(['crib', 'reply', 'scene']);
 
 export function parseTask(v) {
   return TASKS.includes(v) ? v : 'speak';

@@ -6,6 +6,8 @@ import { userMessage } from './tasks.js';
  *   stream({ system, task, text, context, question, research, onSources }) -> AsyncIterable<string>  (text deltas)
  *     research: allow web search (expound); onSources([{ title, url }]) reports cited pages
  *   classify(text, personas) -> Promise<personaId | null>
+ *   complete({ system, user }) -> Promise<string>              (short one-shot text, e.g. a pitch)
+ *   direct({ system, user, castIds }) -> Promise<[{ personaId, line }]>  (writers' room script)
  */
 
 export function createLLM(cfg) {
@@ -62,6 +64,52 @@ export class AnthropicLLM {
       messages.push({ role: 'assistant', content: final.content });
     }
     if (sources.size) onSources?.([...sources.values()].slice(0, 6));
+  }
+
+  async complete({ system, user, signal, maxTokens = 400 }) {
+    const res = await this.client.messages.create(
+      { model: this.model, max_tokens: maxTokens, system, output_config: { effort: this.effort }, messages: [{ role: 'user', content: user }], ...this.#fallbackParams() },
+      { signal },
+    );
+    if (res.stop_reason === 'refusal') throw Object.assign(new Error('The model declined this text.'), { code: 'refusal' });
+    return res.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
+  }
+
+  async direct({ system, user, castIds, signal }) {
+    const res = await this.client.messages.create(
+      {
+        model: this.model,
+        max_tokens: 2048,
+        system,
+        output_config: {
+          effort: this.effort,
+          format: {
+            type: 'json_schema',
+            schema: {
+              type: 'object',
+              properties: {
+                lines: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: { personaId: { type: 'string', enum: castIds }, line: { type: 'string' } },
+                    required: ['personaId', 'line'],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ['lines'],
+              additionalProperties: false,
+            },
+          },
+        },
+        messages: [{ role: 'user', content: user }],
+      },
+      { signal },
+    );
+    if (res.stop_reason !== 'end_turn') return null;
+    const block = res.content.find((b) => b.type === 'text');
+    return block ? JSON.parse(block.text).lines : null;
   }
 
   /** Mini-assistant fallback: map a free-form request onto the widget's options. */
@@ -161,5 +209,19 @@ export class MockLLM {
 
   async classify() {
     return null;
+  }
+
+  async complete({ system, user }) {
+    const name = /performing as "([^"]+)"/.exec(system)?.[1] || 'Narrator';
+    const post = /<post>\n([\s\S]*?)\n<\/post>/.exec(user)?.[1] || '';
+    const first = (post.match(/[^.!?]+[.!?]+/g) || [post])[0].trim().replace(/[.!?]+$/, '');
+    return `${name} pitch: so ${first.replace(/^./, (c) => c.toLowerCase())}, and somehow that is the news?`;
+  }
+
+  async direct({ user, castIds }) {
+    const pitches = [...user.matchAll(/<pitch from="([^"]+)">([^<]*)<\/pitch>/g)].map((m) => ({ personaId: m[1], line: m[2].replace(/^.*? pitch: /, '') }));
+    const lines = pitches.map((p, i) => ({ personaId: p.personaId, line: i === 0 ? p.line.replace(/^so /, 'So ') : `Wait, ${p.line}` }));
+    lines.push({ personaId: castIds[0], line: 'And that, folks, is the whole post.' });
+    return lines;
   }
 }

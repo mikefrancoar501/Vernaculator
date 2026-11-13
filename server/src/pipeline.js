@@ -6,8 +6,9 @@ import { resolveVoiceId } from './config.js';
 import { FishSession } from './tts/fish.js';
 import { MockSession } from './tts/mock.js';
 import { parseReadingLevel, parseStyle, SPEAKING_STYLES } from './styles.js';
-import { parseTask, parseProfile, parseSource } from './tasks.js';
+import { parseTask, parseProfile, parseSource, SOCIAL_TASKS } from './tasks.js';
 import { parseTown, planTown, townPrompt } from './town.js';
+import { parseCast, assignRoles, rolePrompt, PITCH_RULE, DEFAULT_DIRECTOR, directorSystem, directorUser, cleanScript, scriptFromPitches } from './writersroom.js';
 
 const MAX_UTTERANCE_CHARS = 20000;
 
@@ -49,6 +50,10 @@ export class Utterance {
     };
     // Town panel: 2-6 persona ids that share the answer.
     this.town = this.opts.task === 'speak' ? parseTown(opts.town, deps.personas) : [];
+    // Writers' room cast: 2-4 town members (or a default comedic cast).
+    this.cast = this.opts.task === 'scene' ? parseCast(opts.town, deps.personas) : [];
+    this.opts.director = typeof opts.director === 'string' ? opts.director : '';
+    this.script = [];
     // Paraphrase, town and the question tasks need the whole answer before anyone starts talking.
     this.wholeAnswer = this.opts.task !== 'speak' || this.opts.style.paraphrase || this.town.length > 0;
     this.deps = deps; // { cfg, personas, coreValues, llm, gateway }
@@ -141,6 +146,16 @@ export class Utterance {
       this.cancel('quota_exceeded');
       return;
     }
+    if (SOCIAL_TASKS.has(this.opts.task) && !this.counted) {
+      this.counted = true;
+      const rate = gateway.takeGeneration(this.user);
+      if (!rate.ok) {
+        this.send.json({ type: 'error', seq: this.seq, code: 'rate_limited', message: `Slow down a little: try again in ${Math.ceil(rate.retryAfterMs / 1000)} s.`, retryAfterMs: rate.retryAfterMs });
+        this.cancel('rate_limited');
+        return;
+      }
+    }
+    if (this.opts.task === 'scene') return this.#processScene(raw);
     if (this.town.length) return this.#processTown(raw);
     await this.#ensurePersona(raw);
     await this.#streamInto(raw);
@@ -166,6 +181,61 @@ export class Utterance {
       this.#openTts(persona);
       await this.#streamInto(seg.text, { town: true });
       if (this.cancelled) return;
+      this.tts.stop();
+      await this.ttsDone;
+      this.tts.close();
+      this.tts = null;
+    }
+  }
+
+  /** Writers' room: pitches in parallel, a director script, then each line in its speaker's voice. */
+  async #processScene(raw) {
+    const { personas, coreValues, llm } = this.deps;
+    const { readingLevel, style, profile, source } = this.opts;
+    const roles = assignRoles(this.cast, personas); // in beat order
+    const cast = roles.map((r) => personas.get(r.personaId));
+    const director = personas.get(this.opts.director) || personas.get(DEFAULT_DIRECTOR) || null;
+    const post = raw.slice(0, 5000);
+    this.send.json({ type: 'utterance.status', seq: this.seq, status: 'pitching' });
+    this.send.json({ type: 'scene.cast', seq: this.seq, director: director && publicPersona(director), roles: roles.map((r) => ({ ...r, name: personas.get(r.personaId).name })) });
+    const signal = this.abort.signal;
+    const pitches = await Promise.all(roles.map(async ({ personaId, role }) => {
+      const p = personas.get(personaId);
+      const system = `${buildSystemPrompt(p, { coreValues, readingLevel, style: { ...style, humor: true }, task: 'crib', profile, source })}\n\n${PITCH_RULE}\n${rolePrompt(role)}`;
+      try {
+        const line = await llm.complete({ system, user: `Here is the social media post:\n<post>\n${post}\n</post>\n\nPitch your one line.`, signal });
+        return { personaId: p.id, line: line.replace(/\s+/g, ' ').trim().slice(0, 240) };
+      } catch {
+        return { personaId: p.id, line: '' };
+      }
+    }));
+    if (this.cancelled) return;
+    this.send.json({ type: 'utterance.status', seq: this.seq, status: 'directing' });
+    let script = null;
+    try {
+      script = cleanScript(await llm.direct({ system: directorSystem(cast, { roles, director }), user: directorUser(post, pitches.filter((p) => p.line)), castIds: this.cast, signal }), this.cast);
+    } catch (err) {
+      if (this.cancelled) return;
+      console.warn(`[utterance ${this.seq}] director failed, using the raw pitches:`, err.message);
+    }
+    script ||= scriptFromPitches(pitches);
+    if (!script.length) {
+      this.send.json({ type: 'error', seq: this.seq, code: 'llm_error', message: 'The writers\' room came up empty. Try again.' });
+      return;
+    }
+    this.send.json({ type: 'town.plan', seq: this.seq, members: cast.map(publicPersona), segments: script.map((l) => l.personaId) });
+    for (const [index, line] of script.entries()) {
+      if (this.cancelled) return;
+      const persona = personas.get(line.personaId);
+      this.persona = persona;
+      this.send.json({ type: 'utterance.segment', seq: this.seq, index, total: script.length, persona: publicPersona(persona) });
+      if (index === 0) this.send.json({ type: 'utterance.persona', seq: this.seq, persona: publicPersona(persona), method: 'scene', readingLevel, style, task: 'scene', language: profile.language || null });
+      this.#openTts(persona);
+      const before = this.spoken.length;
+      this.#speak(line.line);
+      const said = this.spoken.slice(before).trim();
+      if (said) this.script.push({ personaId: persona.id, name: persona.name, line: said });
+      this.tts.flush();
       this.tts.stop();
       await this.ttsDone;
       this.tts.close();
@@ -212,7 +282,7 @@ export class Utterance {
     this.spoken += `${clean} `;
     this.outputChars += clean.length;
     this.deps.gateway.record(this.user, clean.length);
-    this.send.json({ type: 'utterance.caption', seq: this.seq, text: clean, filtered: flagged || undefined });
+    this.send.json({ type: 'utterance.caption', seq: this.seq, text: clean, speaker: this.opts.task === 'scene' ? this.persona?.name : undefined, filtered: flagged || undefined });
   }
 
   async #finish() {
@@ -223,7 +293,7 @@ export class Utterance {
       this.tts.close();
     }
     if (this.cancelled) return;
-    this.send.json({ type: 'utterance.done', seq: this.seq, chars: this.outputChars, text: this.spoken.trim(), usage: this.deps.gateway.usage(this.user) });
+    this.send.json({ type: 'utterance.done', seq: this.seq, chars: this.outputChars, text: this.script.length ? this.script.map((l) => `${l.name}: ${l.line}`).join('\n') : this.spoken.trim(), script: this.script.length ? this.script : undefined, usage: this.deps.gateway.usage(this.user) });
   }
 
   #fail(err) {
