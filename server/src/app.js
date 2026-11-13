@@ -10,6 +10,7 @@ import { sanitize } from './guardrails.js';
 import { Utterance } from './pipeline.js';
 import { styleCatalog } from './styles.js';
 import { parseTask } from './tasks.js';
+import { runAssistant } from './assistant.js';
 
 const AUTH_TIMEOUT_MS = 10_000;
 const MAX_JSON_BYTES = 64 * 1024;
@@ -53,6 +54,10 @@ export function createApp(cfg, { store, llm } = {}) {
 
       if (req.method === 'GET' && url.pathname === '/v1/usage') {
         return json(res, 200, gateway.usage(user));
+      }
+      if (req.method === 'POST' && url.pathname === '/v1/assistant') {
+        const body = await readJson(req);
+        return json(res, 200, await runAssistant(body.text, { personas, llm, current: body.current || {} }));
       }
       if (req.method === 'POST' && url.pathname === '/v1/transform') {
         // Text-only style transfer (no audio). Handy for testing personas and for the caption-only mode.
@@ -130,7 +135,7 @@ export function createApp(cfg, { store, llm } = {}) {
           current = new Utterance({
             seq,
             user,
-            opts: { personaId: msg.personaId || 'auto', readingLevel: msg.readingLevel, style: msg.style, task: msg.task, question: msg.question, profile: msg.profile, source: msg.source },
+            opts: { personaId: msg.personaId || 'auto', readingLevel: msg.readingLevel, style: msg.style, task: msg.task, question: msg.question, profile: msg.profile, source: msg.source, town: msg.town },
             deps,
             send,
           });

@@ -96,9 +96,9 @@
     }
   }
 
-  /** JSON GET through the service worker (same reason as above). */
-  Vern.fetchJson = async (url, headers) => {
-    const res = await chrome.runtime.sendMessage({ op: 'fetchJson', url, headers });
+  /** JSON GET (or POST when `body` is given) through the service worker (same reason as above). */
+  Vern.fetchJson = async (url, headers, body) => {
+    const res = await chrome.runtime.sendMessage({ op: 'fetchJson', url, headers, body });
     if (!res?.ok) throw new Error(res?.error || 'request failed');
     return res.data;
   };

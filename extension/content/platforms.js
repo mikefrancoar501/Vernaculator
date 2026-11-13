@@ -32,6 +32,8 @@
       id: 'grok',
       host: /(^|\.)grok\.com$/,
       selector: '.message-bubble',
+      // Grok's animated companion avatar. Best guess at its markup; verify on the live site.
+      companionSelector: '[data-testid*="companion" i], [class*="companion-avatar" i], [aria-label*="companion" i]',
       find(root) {
         // Grok right-aligns the user's own bubbles; keep the assistant ones.
         return outermost([...root.querySelectorAll(this.selector)], this.selector).filter(

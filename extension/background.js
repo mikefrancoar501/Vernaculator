@@ -85,7 +85,13 @@ chrome.runtime.onMessage.addListener((m, _sender, reply) => {
   allowed(m.url)
     .then((ok) => {
       if (!ok) throw new Error('URL is not the configured middleware');
-      return fetch(m.url, { headers: m.headers || {} });
+      const init = { headers: m.headers || {} };
+      if (m.body !== undefined) {
+        init.method = 'POST';
+        init.headers = { ...init.headers, 'Content-Type': 'application/json' };
+        init.body = JSON.stringify(m.body);
+      }
+      return fetch(m.url, init);
     })
     .then(async (r) => reply(r.ok ? { ok: true, data: await r.json() } : { ok: false, error: `HTTP ${r.status}` }))
     .catch((err) => reply({ ok: false, error: err.message }));

@@ -60,6 +60,11 @@
       return Math.sqrt(sum / this.levelBuf.length);
     }
 
+    /** Approximate byte offset of the playhead (the middleware streams 128 kbps CBR MP3). */
+    get playheadBytes() {
+      return this.audio.currentTime * 16000;
+    }
+
     get playing() {
       return !this.audio.paused && !this.audio.ended;
     }
@@ -68,6 +73,7 @@
       this.#teardown();
       this.seq = seq;
       this.chunks = [];
+      this.bytes = 0; // bytes received for this utterance (used to time town-panel handoffs)
       this.queue = [];
       this.ended = false;
       this.fallback = !mseSupported();
@@ -89,6 +95,7 @@
       if (seq !== this.seq) return; // stale audio from a superseded utterance
       const copy = bytes.slice();
       this.chunks.push(copy);
+      this.bytes += copy.length;
       if (!this.fallback) {
         this.queue.push(copy);
         this.#pump();

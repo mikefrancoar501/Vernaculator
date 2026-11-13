@@ -19,6 +19,12 @@
     hudVisible: true,
     hudCollapsed: false,
     hudPos: null,
+    hudSize: 'S', // compact by default; long-press the character for M / L / custom
+    hudScale: 1,
+    muted: false,
+    replaceCompanion: true, // on grok.com, sit in place of Grok's own companion avatar
+    townEnabled: false,
+    townMembers: ['big_sal', 'old_oakley', 'professor_pip'],
   };
 
   const listeners = new Set();

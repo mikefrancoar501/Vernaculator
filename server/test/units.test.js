@@ -13,6 +13,8 @@ import { loadConfig } from '../src/config.js';
 import { splitFrames } from '../src/tts/mp3.js';
 import { parseStyle, styleCatalog } from '../src/styles.js';
 import { parseProfile } from '../src/tasks.js';
+import { parseTown, planTown, townPrompt } from '../src/town.js';
+import { ruleAssistant, sanitizeAction, runAssistant } from '../src/assistant.js';
 import { resolveVoiceId } from '../src/config.js';
 
 const cfg = loadConfig();
@@ -145,4 +147,32 @@ test('voice resolution prefers a language-specific voice', () => {
   assert.equal(resolveVoiceId(cfg2, persona, 'es-MX'), 'sal-es');
   assert.equal(resolveVoiceId(cfg2, persona, 'fr'), 'sal-en');
   assert.equal(resolveVoiceId(cfg2, { id: 'x', fishAudioReferenceId: 'fish_voice_uuid_placeholder' }, 'es'), 'default-voice');
+});
+
+test('mini-assistant maps requests to settings and validates them', async () => {
+  const r1 = ruleAssistant('switch to Old Oakley and talk slower', personas, { readingLevel: 3 });
+  assert.equal(r1.action.personaId, 'old_oakley');
+  assert.equal(r1.action.accent, 'slow');
+  assert.equal(ruleAssistant('who would explain this like a coach?', personas).action.personaId, 'big_play_ray');
+  assert.equal(ruleAssistant('Big Sal please', personas).action.personaId, 'big_sal');
+  assert.equal(ruleAssistant('that was too complicated', personas, { readingLevel: 3 }).action.readingLevel, 2);
+  assert.equal(ruleAssistant('make it bigger', personas, { size: 'S' }).action.size, 'M');
+  assert.equal(ruleAssistant('make me laugh', personas).action.humor, true);
+  assert.deepEqual(sanitizeAction({ personaId: 'nobody', accent: 'evil', readingLevel: 9, humor: 'yes', size: 'XXL' }, personas), {});
+  const none = await runAssistant('hmm', { personas, llm: null, current: {} });
+  assert.deepEqual(none.action, {});
+  assert.match(none.reply, /switch to Old Oakley/);
+});
+
+test('town panel: members validated, answer split by topic with handoffs', () => {
+  assert.deepEqual(parseTown(['big_sal', 'nobody', 'big_sal'], personas), [], 'needs 2+ valid members');
+  assert.deepEqual(parseTown(['big_sal', 'professor_pip', 'x'], personas), ['big_sal', 'professor_pip']);
+  const text = 'Your doctor wants to explain the diagnosis simply.\nIn science terms, space and stars are made of gas, a fun experiment to learn about.\nFor your budget, the cost to save money is low.';
+  const plan = planTown(text, ['big_sal', 'professor_pip', 'sir_reginald_ledger'], personas);
+  assert.deepEqual(plan.map((p) => p.personaId), ['big_sal', 'professor_pip', 'sir_reginald_ledger']);
+  const single = planTown('Plain words here. More plain words. And more.', ['big_sal', 'old_oakley'], personas);
+  assert.equal(single.length, 2, 'a one-speaker answer still hands the bottom line to another member');
+  const tp = townPrompt({ index: 1, total: 3, prevName: 'Big Sal', nextName: 'Old Oakley', memberNames: ['Big Sal', 'Professor Pip', 'Old Oakley'] });
+  assert.match(tp, /handoff from Big Sal/);
+  assert.match(tp, /Old Oakley continues after you/);
 });

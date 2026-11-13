@@ -26,6 +26,26 @@ The point of the product: AI answers (medical, legal, technical) are often full 
 
 Levels and styles live in `server/src/styles.js` and are served to the HUD with the persona list, so adding a style is a server-only change. The extension sends them as `utterance.start { readingLevel: 1-5, style: { humor, philosophy, accent } }`; the server validates them against the catalog and echoes what it applied in `utterance.persona`.
 
+## Paraphrase assistant, profile and language
+
+- **Paraphrase** (chip on the Listen tab) condenses the answer while keeping every fact, number and warning, with any character and reading level. If the user gave a name, the character talks to them and treats the AI as a third party: "Sergio, basically what Claude is telling you is...".
+- **Ask tab:** Key points, Paraphrase now, *Paraphrase with Oakley*, a follow-up question about the last answer, and **Expound** (the server researches with Claude's web search tool and the HUD lists the sources).
+- **Profile** (options page, stored only in the browser): name, a free-text "about me" (profession, skills, education), age group (kid, teen, adult, senior). It is sent per request to tailor examples and level; nothing is stored on the server.
+- **Language** defaults to the browser language and can be overridden. The UI uses `chrome.i18n` (`extension/_locales/en` and `es` today); the LLM answers in that language, and Fish voices can be set per language (`fishAudioVoicesByLanguage` in personas.json or `FISH_VOICE_<ID>_<LANG>`).
+- **Old Oakley** is a spirit-guide narrator with an authoritative, poetic voice and his own sprite. He is built for paraphrasing and still follows the accuracy rule.
+
+## Gestures, Grok companion and the mini-assistant
+
+- The HUD starts compact (size S). Drag only by the header, so gestures on the character never fight with dragging.
+- **Long-press the character:** menu with size S/M/L or a custom scale, quick character switch, Paraphrase, mute and settings.
+- **Double-tap:** a small voice/text assistant ("switch to Old Oakley", "who would explain this like a coach?", "slower please"). Simple commands are handled by rules; anything else goes to `POST /v1/assistant`. It waits 320 ms so a triple-tap still counts as a tickle.
+- **Triple-tap or rub:** tickle and giggle, as before.
+- **On grok.com** the HUD can hide Grok's animated companion and sit in its place (option "Replace Grok's companion", on by default). The companion selector in `platforms.js` is a best guess and needs checking on the live site.
+
+## Town panel
+
+Turn on *Town* in the HUD and pick 2 to 6 characters. They sit in a strip along the top of the screen (scrolls sideways on phones, respects the notch). The server splits the answer by paragraphs, gives each part to the member whose interests fit it best (`server/src/town.js`), and each member speaks their part in their own voice with a short handoff to the next. The speaking member is highlighted and their mouth moves; tap a member to make them your main character.
+
 ## Repository layout
 
 | Path | What it is |
@@ -85,11 +105,11 @@ Requests to `claude-opus-5-5` enable server-side refusal fallbacks (`fallbacks: 
 
 ### Wire protocol (`/v1/stream`)
 
-Client → server JSON: `auth {token}`, `utterance.start {seq, personaId|'auto', readingLevel?: 1-5, style?: {humor, philosophy, accent}, text?, final?}`, `utterance.text {seq, text}`, `utterance.end {seq}`, `utterance.cancel {seq}`.
-Server → client JSON: `auth.ok`, `utterance.persona`, `utterance.caption`, `utterance.done {text, usage}`, `utterance.cancelled`, `error {code}`.
+Client → server JSON: `auth {token}`, `utterance.start {seq, personaId|'auto', readingLevel?: 1-5, style?: {paraphrase, humor, philosophy, accent}, task?: speak|keypoints|ask|expound, question?, profile?: {name, about, ageGroup, language}, source?: claude|grok|gemini, town?: [personaIds], text?, final?}`, `utterance.text {seq, text}`, `utterance.end {seq}`, `utterance.cancel {seq}`.
+Server → client JSON: `auth.ok`, `utterance.persona`, `utterance.status`, `utterance.segment`, `town.plan`, `utterance.caption`, `utterance.sources`, `utterance.done {text, usage}`, `utterance.cancelled`, `error {code}`.
 Server → client binary: `[uint32 big-endian seq][MP3 bytes]`.
 
-REST: `GET /health`, `GET /v1/personas` (public), `GET /v1/usage` and `POST /v1/transform` (Bearer token; text-only style transfer, useful for tuning personas).
+REST: `GET /health`, `GET /v1/personas` (public), `GET /v1/usage` and `POST /v1/transform` (Bearer token; text-only style transfer with task/style/profile, useful for tuning personas), `POST /v1/assistant` (Bearer token; the double-tap assistant).
 
 ## Design notes worth knowing
 
@@ -101,14 +121,14 @@ REST: `GET /health`, `GET /v1/personas` (public), `GET /v1/usage` and `POST /v1/
 ## Testing
 
 ```bash
-cd server && npm test                      # 13 unit/integration tests (mock providers, fake Fish server)
+cd server && npm test                      # 21 unit/integration tests (mock providers, fake Fish server)
 
 # Extension end to end (real Chromium, unpacked extension, fake claude.ai page):
 npm start &                                # in server/, mock mode
 node extension/test/e2e.cjs <token> /tmp/vern-e2e
 ```
 
-The e2e test checks HUD injection, dragging and persistence, auto-read of a streamed reply (intent routing, captions, MediaSource playback), amplitude-driven sprite swaps, tickle → giggle without interrupting TTS, MP4 export, read-selection, and a Big Sal run at reading level 1 with humor and the slow style (sprite, mouth movement, server-applied settings, MP4 export).
+The e2e test checks HUD injection, dragging and persistence, auto-read of a streamed reply (intent routing, captions, MediaSource playback), amplitude-driven sprite swaps, tickle → giggle without interrupting TTS, MP4 export, read-selection, and a Big Sal run at reading level 1 with humor and the slow style (sprite, mouth movement, server-applied settings, MP4 export), paraphrase with a name and profile, Old Oakley, key points, ask, expound with sources, long-press menu and sizes, double-tap assistant without triggering a tickle, triple-tap tickle, assistant-driven character switch, and a three-member town panel with handoffs.
 
 ## Open decisions (need the product owner)
 
@@ -118,3 +138,5 @@ The e2e test checks HUD injection, dragging and persistence, auto-read of a stre
 4. **User accounts and billing.** Tokens are minted with a CLI today. A real sign-up flow (and how plans map to quotas) is still open.
 5. **The 15 core values** (`shared/core-values.json` is a placeholder) and the **real character roster** ("over a hundred"), voices (Fish reference IDs, starting with Big Sal's) and final sprite art.
 6. **Meme branding** (watermark, aspect ratio for each platform).
+7. **Grok companion selector and live-site checks.** All three sites were tested against a fake page only; the selectors in `platforms.js` need a pass on the real sites.
+8. **More UI languages** beyond English and Spanish (add a folder under `extension/_locales/`).

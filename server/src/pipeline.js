@@ -7,6 +7,7 @@ import { FishSession } from './tts/fish.js';
 import { MockSession } from './tts/mock.js';
 import { parseReadingLevel, parseStyle, SPEAKING_STYLES } from './styles.js';
 import { parseTask, parseProfile, parseSource } from './tasks.js';
+import { parseTown, planTown, townPrompt } from './town.js';
 
 const MAX_UTTERANCE_CHARS = 20000;
 
@@ -46,8 +47,10 @@ export class Utterance {
       profile: parseProfile(opts.profile),
       source: parseSource(opts.source),
     };
-    // Paraphrase and the question tasks need the whole answer before the character starts talking.
-    this.wholeAnswer = this.opts.task !== 'speak' || this.opts.style.paraphrase;
+    // Town panel: 2-6 persona ids that share the answer.
+    this.town = this.opts.task === 'speak' ? parseTown(opts.town, deps.personas) : [];
+    // Paraphrase, town and the question tasks need the whole answer before anyone starts talking.
+    this.wholeAnswer = this.opts.task !== 'speak' || this.opts.style.paraphrase || this.town.length > 0;
     this.deps = deps; // { cfg, personas, coreValues, llm, gateway }
     this.send = send; // { json(obj), binary(buf) }
     this.chain = Promise.resolve();
@@ -65,7 +68,7 @@ export class Utterance {
     if (this.cancelled || !text) return;
     if (this.wholeAnswer) {
       // Buffer until end().
-      this.buffered = (this.buffered || '') + (this.buffered ? ' ' : '') + text;
+      this.buffered = (this.buffered || '') + (this.buffered ? '\n' : '') + text;
       return;
     }
     this.chain = this.chain.then(() => this.#process(text)).catch((err) => this.#fail(err));
@@ -105,7 +108,13 @@ export class Utterance {
     this.system = buildSystemPrompt(persona, { coreValues: this.deps.coreValues, readingLevel, style, task, profile, source });
     this.send.json({ type: 'utterance.persona', seq: this.seq, persona: publicPersona(persona), method, readingLevel, style, task, language: profile.language || null });
 
-    this.tts = createTtsSession(cfg, persona, { speed: SPEAKING_STYLES[style.accent].speed, language: profile.language });
+    this.#openTts(persona);
+  }
+
+  /** Opens a TTS session for `persona` as the current voice. */
+  #openTts(persona) {
+    const { style, profile } = this.opts;
+    this.tts = createTtsSession(this.deps.cfg, persona, { speed: SPEAKING_STYLES[style.accent].speed, language: profile.language });
     this.ttsDone = new Promise((resolve) => {
       this.tts.on('finish', resolve);
       this.tts.on('error', (err) => {
@@ -132,8 +141,39 @@ export class Utterance {
       this.cancel('quota_exceeded');
       return;
     }
+    if (this.town.length) return this.#processTown(raw);
     await this.#ensurePersona(raw);
+    await this.#streamInto(raw);
+  }
 
+  /** Town panel: each section is voiced by its own character, one after another. */
+  async #processTown(raw) {
+    const { personas, coreValues } = this.deps;
+    const { readingLevel, style, profile, source } = this.opts;
+    const plan = planTown(raw, this.town, personas);
+    const memberNames = this.town.map((id) => personas.get(id).name);
+    this.send.json({ type: 'town.plan', seq: this.seq, members: this.town.map((id) => publicPersona(personas.get(id))), segments: plan.map((p) => p.personaId) });
+    for (const [index, seg] of plan.entries()) {
+      if (this.cancelled) return;
+      const persona = personas.get(seg.personaId);
+      this.persona = persona;
+      this.system = [
+        buildSystemPrompt(persona, { coreValues, readingLevel, style, task: 'speak', profile, source }),
+        townPrompt({ index, total: plan.length, prevName: personas.get(plan[index - 1]?.personaId)?.name, nextName: personas.get(plan[index + 1]?.personaId)?.name, memberNames }),
+      ].join('\n\n');
+      this.send.json({ type: 'utterance.segment', seq: this.seq, index, total: plan.length, persona: publicPersona(persona) });
+      if (index === 0) this.send.json({ type: 'utterance.persona', seq: this.seq, persona: publicPersona(persona), method: 'town', readingLevel, style, task: 'speak', language: profile.language || null });
+      this.#openTts(persona);
+      await this.#streamInto(seg.text, { town: true });
+      if (this.cancelled) return;
+      this.tts.stop();
+      await this.ttsDone;
+      this.tts.close();
+      this.tts = null;
+    }
+  }
+
+  async #streamInto(raw, { town = false } = {}) {
     const sentences = new SentenceBuffer();
     const speak = (s) => this.#speak(s);
     try {
@@ -143,7 +183,8 @@ export class Utterance {
         task,
         text: raw,
         question,
-        context: task === 'speak' ? this.spoken.slice(-600) : '',
+        context: task === 'speak' && !town ? this.spoken.slice(-600) : '',
+        town,
         research: task === 'expound',
         onSources: (sources) => this.send.json({ type: 'utterance.sources', seq: this.seq, sources }),
         signal: this.abort.signal,

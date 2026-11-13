@@ -63,6 +63,12 @@ test('REST: health, personas, auth, transform', async () => {
   });
   const body = await res.json();
   assert.equal(body.persona.id, 'big_play_ray');
+  const asst = await (await fetch(`http://${base}/v1/assistant`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: 'switch to Big Sal', current: { size: 'S' } }),
+  })).json();
+  assert.equal(asst.action.personaId, 'big_sal');
   assert.match(body.text, /Big Play Ray here/);
 });
 
@@ -140,6 +146,21 @@ test('WebSocket: key points and follow-up questions about the last answer', asyn
   c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 22, personaId: 'big_sal', task: 'ask', question: 'What about the cough?', source: 'claude', text: answer, final: true, profile: { name: 'Sergio' } }));
   const ans = await c.waitFor((e) => e.type === 'utterance.done' && e.seq === 22);
   assert.match(ans.text, /Claude said: A dry cough/);
+  c.ws.close();
+});
+
+test('WebSocket: town panel voices each section with its own character', async () => {
+  const c = connect();
+  await c.opened;
+  c.ws.send(JSON.stringify({ type: 'auth', token }));
+  await c.waitFor((e) => e.type === 'auth.ok');
+  const text = 'Your doctor wants to explain the diagnosis simply.\nIn science terms, space and stars are made of gas, a fun experiment.\nFor your budget, the cost to save money is low.';
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 31, town: ['big_sal', 'professor_pip', 'sir_reginald_ledger'], text, final: true }));
+  const done = await c.waitFor((e) => e.type === 'utterance.done' && e.seq === 31, 15000);
+  const segs = c.events.filter((e) => e.type === 'utterance.segment' && e.seq === 31);
+  assert.deepEqual(segs.map((e) => e.persona.id), ['big_sal', 'professor_pip', 'sir_reginald_ledger']);
+  assert.match(done.text, /Thanks, Big Sal\. Professor Pip:/, 'handoff between characters');
+  assert.ok(c.audio.length >= 3);
   c.ws.close();
 });
 

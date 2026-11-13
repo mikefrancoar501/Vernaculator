@@ -25,6 +25,8 @@
   const hud = new Vern.Hud({ onAction, onSetting: (k, v) => Vern.settings.save({ [k]: v }) });
   hud.mount(settings);
   const viseme = new Vern.VisemeDriver(hud.img, player);
+  const town = new Vern.TownStrip({ onPick: (id) => Vern.settings.save({ personaId: id }) });
+  town.mount();
   viseme.setSprites(FALLBACK);
 
   // Web Audio may only start after a user gesture; hook the first one on the page.
@@ -34,10 +36,46 @@
 
   const giggler = new Vern.Giggler(() => player.ensureAudioGraph());
   giggler.preload();
-  Vern.attachTickle(hud.stage, () => {
-    hud.giggle();
-    giggler.play();
+  Vern.attachCharacterGestures(hud.stage, {
+    onTickle: () => {
+      hud.giggle();
+      giggler.play();
+    },
+    onLongPress: () => hud.openMenu(personas, Vern.settings.values.personaId),
+    onDoubleTap: () => hud.openAssistant(),
   });
+  player.audio.muted = !!settings.muted;
+
+  // --- Grok companion replacement ----------------------------------------------
+  // On grok.com the HUD can take the place of Grok's own animated companion avatar.
+  const companion = {
+    style: null,
+    sync() {
+      const sel = platform.companionSelector;
+      if (!sel) return;
+      const on = Vern.settings.values.replaceCompanion !== false;
+      const el = on && document.querySelector(sel);
+      if (on && el && !this.style) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width && rect.height && !Vern.settings.values.hudPos) hud.placeOver(rect);
+        this.style = document.createElement('style');
+        this.style.textContent = `${sel} { visibility: hidden !important; }`;
+        document.documentElement.appendChild(this.style);
+      } else if (!on && this.style) {
+        this.style.remove();
+        this.style = null;
+      }
+    },
+  };
+  if (platform.companionSelector) {
+    companion.sync();
+    let queued = false;
+    new MutationObserver(() => {
+      if (queued) return;
+      queued = true;
+      setTimeout(() => { queued = false; companion.sync(); }, 500);
+    }).observe(document.body, { childList: true, subtree: true });
+  }
 
   // --- Personas & sprites ---------------------------------------------------
   const spriteCache = new Map();
@@ -76,12 +114,24 @@
     return sprites;
   }
 
+  const townIds = () => (Vern.settings.values.townMembers || []).filter((id) => personas.some((p) => p.id === id));
+  const townOn = () => Vern.settings.values.townEnabled && townIds().length >= 2;
+  async function refreshTown() {
+    const members = await Promise.all(townIds().map(async (id) => {
+      const p = personas.find((x) => x.id === id);
+      return { id, name: p.name, sprites: await spritesFor(p) };
+    }));
+    town.setMembers(members);
+    town.setVisible(townOn());
+  }
+
   async function loadPersonas() {
     try {
       const data = await Vern.fetchJson(`${Vern.settings.values.backendUrl.replace(/\/+$/, '')}/v1/personas`);
       personas = data.characters;
       hud.setStyleCatalog(data.styles);
       hud.setPersonas(personas, Vern.settings.values.personaId);
+      refreshTown();
       const selected = personas.find((p) => p.id === Vern.settings.values.personaId);
       showPersona(selected || null);
     } catch (err) {
@@ -100,7 +150,7 @@
   async function startUtterance({ sourceId = null, text = '', final = false, task = 'speak', question, personaId, paraphrase } = {}) {
     if (current) conn.send({ type: 'utterance.cancel', seq: current.seq }).catch(() => {});
     const seq = ++seqCounter;
-    current = { seq, sourceId, persona: null, sprites: null, text: '', task };
+    current = { seq, sourceId, persona: null, sprites: null, text: '', task, segments: [] };
     hud.setCaption('');
     hud.setSources([]);
     hud.setStatus(Vern.t('statusThinking', 'Thinking in character...'), 'busy');
@@ -118,6 +168,8 @@
         question,
         profile: Vern.profile(),
         source: platform.id,
+        // Town panel shares plain read-alouds; one-off actions (Oakley, Ask, ...) stay solo.
+        town: townOn() && task === 'speak' && !personaId ? townIds() : undefined,
         text,
         final,
       });
@@ -137,6 +189,28 @@
     if (!clean) return hud.setStatus(Vern.t('statusNothing', 'Nothing to read yet.'), 'idle');
     startUtterance({ text: clean.slice(0, 20000), final: true, ...extra });
   }
+
+  /** Mini-assistant: the server maps the request onto settings; we apply them and show the reply. */
+  async function runAssistant(text) {
+    const v = Vern.settings.values;
+    try {
+      const res = await Vern.fetchJson(
+        `${v.backendUrl.replace(/\/+$/, '')}/v1/assistant`,
+        { Authorization: `Bearer ${v.token}` },
+        { text, current: { personaId: v.personaId, readingLevel: v.readingLevel, accent: v.accent, size: v.hudSize } },
+      );
+      const a = res.action || {};
+      const patch = {};
+      for (const k of ['personaId', 'readingLevel', 'accent', 'humor', 'philosophy', 'paraphrase', 'muted']) if (k in a) patch[k] = a[k];
+      if (a.size) Object.assign(patch, { hudSize: a.size, hudScale: 1 });
+      if (Object.keys(patch).length) await Vern.settings.save(patch);
+      hud.setAssistantReply(res.reply || '');
+      lastAssistant = res;
+    } catch (err) {
+      hud.setAssistantReply(err.message);
+    }
+  }
+  let lastAssistant = null;
 
   // The full text of the most recent AI answer: what Key points / Ask / Expound work from.
   let lastAnswer = '';
@@ -172,6 +246,14 @@
         hud.setStatus(Vern.t(k, fb), 'busy');
         break;
       }
+      case 'utterance.segment': {
+        // Remember where in the audio this speaker starts; the playback loop hands off on time.
+        const seg = { startByte: player.bytes, persona: msg.persona, sprites: null };
+        current.segments.push(seg);
+        seg.sprites = await spritesFor(msg.persona);
+        startTownLoop();
+        break;
+      }
       case 'utterance.sources':
         hud.setSources(msg.sources);
         break;
@@ -179,8 +261,9 @@
         hud.appendCaption(msg.text);
         break;
       case 'utterance.done':
+        current.done = true;
         player.end(msg.seq);
-        lastSession = { chunks: player.chunks, text: msg.text, persona: current.persona, sprites: current.sprites };
+        lastSession = { chunks: player.chunks, text: msg.text, persona: current.persona, sprites: current.sprites, segments: current.segments };
         hud.setStatus(Vern.t('statusCharsLeft', '$1 characters left this month').replace('$1', msg.usage.remainingChars.toLocaleString()), 'ok');
         break;
       case 'utterance.cancelled':
@@ -192,9 +275,39 @@
     }
   }
 
+  // While a town-panel reply plays, switch the active speaker (HUD sprite + strip) by playhead position.
+  let townRaf = 0;
+  let activeSeg = null;
+  function startTownLoop() {
+    if (townRaf) return;
+    const tick = () => {
+      const segs = current?.segments || lastSession?.segments || [];
+      if (!segs.length) { townRaf = 0; return; }
+      const pos = player.playheadBytes;
+      let seg = segs[0];
+      for (const s of segs) if (s.startByte <= pos) seg = s;
+      if (seg !== activeSeg && seg.sprites) {
+        activeSeg = seg;
+        hud.setActivePersona(seg.persona);
+        hud.img.style.filter = seg.sprites.hue ? `hue-rotate(${seg.sprites.hue}deg)` : '';
+        viseme.setSprites(seg.sprites);
+        town.setActive(seg.persona.id);
+      }
+      town.setMouth(hud.img.dataset.mouth === 'open');
+      townRaf = player.playing || (current && !current.done) ? requestAnimationFrame(tick) : 0;
+    };
+    townRaf = requestAnimationFrame(tick);
+  }
+
   function onPlayerState(state) {
     hud.setPlaying(state === 'playing');
-    if (state === 'playing') viseme.start();
+    if (state === 'playing') {
+      viseme.start();
+      if ((current?.segments || lastSession?.segments || []).length) {
+        activeSeg = null;
+        startTownLoop();
+      }
+    }
     if (state === 'blocked') hud.setStatus('Press ▶ to start audio (the browser blocked autoplay).', 'busy');
     if (state === 'error') hud.setStatus('This site blocked audio playback; captions only.', 'err');
   }
@@ -204,7 +317,17 @@
     player.ensureAudioGraph();
     switch (action) {
       case 'profile':
+        hud.closePopovers();
         chrome.runtime.sendMessage({ op: 'openOptions' });
+        break;
+      case 'toggleMute':
+        Vern.settings.save({ muted: !Vern.settings.values.muted });
+        break;
+      case 'openAssistant':
+        hud.openAssistant();
+        break;
+      case 'assistant':
+        await runAssistant(arg);
         break;
       case 'keypoints':
         speak(answerText(), { task: 'keypoints' });
@@ -270,6 +393,9 @@
 
   Vern.settings.onChange((patch) => {
     hud.applySettings(patch);
+    if ('muted' in patch) player.audio.muted = !!patch.muted;
+    if ('townEnabled' in patch || 'townMembers' in patch) refreshTown();
+    if ('replaceCompanion' in patch) companion.sync();
     if ('backendUrl' in patch || 'token' in patch) {
       conn.reset();
       loadPersonas();
@@ -278,5 +404,5 @@
   });
 
   // Exposed for debugging from DevTools (isolated world): Vern.debug.speak('hello')
-  Vern.debug = { speak, player, conn, observer, hud, get lastSession() { return lastSession; }, get current() { return current; } };
+  Vern.debug = { speak, player, conn, observer, hud, get lastSession() { return lastSession; }, get current() { return current; }, get lastAssistant() { return lastAssistant; }, town };
 })();

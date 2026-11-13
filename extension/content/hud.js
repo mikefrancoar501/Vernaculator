@@ -56,6 +56,10 @@
     .tabs button[aria-selected="true"] { color: var(--fg); box-shadow: inset 0 -2px 0 var(--accent); }
     section { display: grid; gap: 10px; }
     .chip.strong { font-weight: 600; }
+    .town-box { display: grid; gap: 6px; }
+    .town-members { display: flex; flex-wrap: wrap; gap: 4px; }
+    .town-members .chip { font-size: 11px; padding: 3px 7px; }
+    .town-box:has([data-setting="townEnabled"]:not(:checked)) .town-members { display: none; }
     .hint { font-size: 11px; color: var(--muted); }
     .quick button { flex: 1 1 auto; font-size: 12px; }
     .quick .oak { flex-basis: 100%; background: #2f4a26; color: #fff7c2; border-color: transparent; }
@@ -64,12 +68,45 @@
     form.ask .row button { flex: 1; }
     .sources { margin: 0; padding: 0 0 0 16px; font-size: 11px; max-height: 5em; overflow: auto; }
     .sources a { color: var(--accent); }
+    .wrap { position: relative; }
+    .card[data-size="S"] { width: 128px; }
+    .card[data-size="S"] .title, .card[data-size="S"] [data-action="profile"] { display: none; }
+    .card[data-size="S"] header { padding: 4px 6px; justify-content: space-between; }
+    .card[data-size="S"] .body { padding: 4px; }
+    .card[data-size="S"] .body > :not(.stage):not(.status) { display: none; }
+    .card[data-size="S"] .stage { height: 100px; }
+    .card[data-size="S"] .stage img { max-height: 96px; }
+    .card[data-size="S"] .who { display: none; }
+    .card[data-size="S"] .status { font-size: 10px; text-align: center; min-height: 0; }
+    .card[data-size="L"] { width: 380px; font-size: 14px; }
+    .card[data-size="L"] .stage { height: 210px; }
+    .card[data-size="L"] .stage img { max-height: 200px; }
+    .card[data-size="L"] .caption { max-height: 9em; font-size: 14px; }
+    .pop { position: absolute; left: 0; bottom: calc(100% + 8px); width: 260px; z-index: 2; display: grid; gap: 8px; padding: 10px;
+      background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 32px rgba(20,10,60,.22);
+      font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; --bg: #fff; --fg: #1d1b26; --muted: #6c6880; --line: #e4e1ee; --accent: #6b4eff; --chip: #f3f1fa; }
+    @media (prefers-color-scheme: dark) { .pop { --bg: #1e1c27; --fg: #f1effa; --muted: #a29eb8; --line: #34313f; --accent: #8f7bff; --chip: #2a2735; } }
+    .pop.below { bottom: auto; top: calc(100% + 8px); }
+    .pop-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); }
+    .pop button { font: inherit; color: inherit; background: var(--chip); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; cursor: pointer; min-height: 32px; }
+    .pop button.primary, .pop .sizes button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: transparent; }
+    .sizes button { flex: 1; font-weight: 700; }
+    .persona-list { display: flex; flex-wrap: wrap; gap: 4px; max-height: 120px; overflow: auto; }
+    .persona-list button { font-size: 12px; padding: 4px 8px; min-height: 28px; }
+    .persona-list button[aria-pressed="true"] { border-color: var(--accent); font-weight: 600; }
+    .menu-actions button { flex: 1 1 45%; font-size: 12px; }
+    form.asst input { flex: 1; min-width: 0; font: inherit; color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; user-select: text; -webkit-user-select: text; }
+    .mic.listening { background: #e5484d; color: #fff; }
+    .asst-reply { font-size: 12px; min-height: 1.2em; color: var(--fg); }
+    .pop .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .pop label.field { display: grid; gap: 3px; font-size: 11px; color: var(--muted); }
     [hidden] { display: none !important; }
   `;
 
   // Text comes from _locales via chrome.i18n (data-i18n*), with English fallbacks in the markup.
   const HTML = `
-    <div class="card" part="card">
+    <div class="wrap">
+    <div class="card" part="card" data-size="M">
       <header>
         <span class="dot" data-tone="idle"></span>
         <span class="title" data-i18n="extShortName">Vernaculator</span>
@@ -106,6 +143,10 @@
             <label class="chip"><input type="checkbox" data-setting="philosophy"> <span data-i18n="hudPhilosophy">Philosophy</span></label>
             <label class="field style-field"><span data-i18n="hudSpeakingStyle">Speaking style</span><select data-setting="accent"></select></label>
           </div>
+          <div class="town-box">
+            <label class="chip strong"><input type="checkbox" data-setting="townEnabled"> <span data-i18n="hudTown">Town panel</span></label>
+            <div class="town-members" data-i18n-aria="hudTownMembers" aria-label="Town members"></div>
+          </div>
           <div class="row">
             <label class="toggle"><input type="checkbox" data-setting="autoRead"> <span data-i18n="hudAutoRead">Auto-read replies</span></label>
             <span style="flex:1"></span>
@@ -130,6 +171,33 @@
         <progress hidden max="1" value="0"></progress>
         <div class="status"></div>
       </div>
+    </div>
+    <div class="pop menu" role="menu" hidden>
+      <div class="pop-title" data-i18n="menuSize">Size</div>
+      <div class="row sizes">
+        <button data-size-pick="S">S</button><button data-size-pick="M">M</button><button data-size-pick="L">L</button>
+      </div>
+      <label class="field"><span data-i18n="menuCustomSize">Custom size</span><input type="range" min="0.7" max="1.6" step="0.05" data-setting="hudScale"></label>
+      <div class="pop-title" data-i18n="menuCharacters">Characters</div>
+      <div class="persona-list"></div>
+      <div class="row menu-actions">
+        <button data-action="paraphraseNow" data-i18n="hudParaphraseNow">Paraphrase</button>
+        <button data-action="toggleMute" class="mute-btn" data-i18n="menuMute">Mute</button>
+        <button data-action="openAssistant" data-i18n="menuAssistant">💬 Assistant</button>
+        <button data-action="profile" data-i18n="menuSettings">Settings</button>
+      </div>
+    </div>
+    <div class="pop assistant" hidden>
+      <div class="pop-title" data-i18n="asstTitle">Tell me what you'd like</div>
+      <form class="asst">
+        <div class="row">
+          <input type="text" name="q" maxlength="300" autocomplete="off" data-i18n-placeholder="asstPlaceholder" placeholder="e.g. switch to Old Oakley, talk slower">
+          <button type="button" class="mic" data-i18n-title="asstMic" title="Speak" hidden>🎤</button>
+          <button type="submit" class="primary" data-i18n="hudAsk">Ask</button>
+        </div>
+      </form>
+      <div class="asst-reply" aria-live="polite"></div>
+    </div>
     </div>
   `;
 
@@ -165,6 +233,35 @@
       this.styleSelect = $('[data-setting="accent"]');
       this.levelLabels = Object.fromEntries([1, 2, 3, 4, 5].map((n) => [n, Vern.t(`level${n}`, ['Super simple', 'Plain', 'Everyday', 'Detailed', 'Expert'][n - 1])]));
       this.sourcesEl = $('.sources');
+      this.menu = $('.menu');
+      this.assistant = $('.assistant');
+      this.asstForm = $('form.asst');
+      this.asstReply = $('.asst-reply');
+      this.personaList = $('.persona-list');
+      this.asstForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const q = this.asstForm.q.value.trim();
+        if (q) this.onAction('assistant', q);
+      });
+      this.root.addEventListener('click', (e) => {
+        const size = e.target.closest('[data-size-pick]');
+        if (size) {
+          this.onSetting('hudSize', size.dataset.sizePick);
+          this.onSetting('hudScale', 1);
+        }
+        const pick = e.target.closest('[data-persona-pick]');
+        if (pick) {
+          this.onSetting('personaId', pick.dataset.personaPick);
+          this.closePopovers();
+        }
+      });
+      // Clicks outside the widget close any open popover.
+      document.addEventListener('pointerdown', (e) => {
+        if (!e.composedPath().includes(this.host)) this.closePopovers();
+      }, true);
+      this.levelInputScale = $('[data-setting="hudScale"]');
+      this.levelInputScale.addEventListener('input', () => this.onSetting('hudScale', Number(this.levelInputScale.value)));
+      this.#initVoiceInput($('.mic'));
       this.askForm = $('form.ask');
       this.askForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -175,7 +272,10 @@
         tab.addEventListener('click', () => this.showTab(tab.dataset.tab));
       }
       // Keep typing in the Ask box from triggering the host page's keyboard shortcuts.
-      for (const ev of ['keydown', 'keyup', 'keypress']) this.askForm.addEventListener(ev, (e) => e.stopPropagation());
+      for (const ev of ['keydown', 'keyup', 'keypress']) {
+        this.askForm.addEventListener(ev, (e) => e.stopPropagation());
+        this.asstForm.addEventListener(ev, (e) => e.stopPropagation());
+      }
       this.levelInput.addEventListener('input', () => this.#showLevel());
 
       this.root.addEventListener('click', (e) => {
@@ -185,6 +285,10 @@
         this.onAction(btn.dataset.action, btn.dataset.action === 'expound' ? this.askForm.q.value.trim() : undefined);
       });
       this.root.addEventListener('change', (e) => {
+        if (e.target.dataset?.townMember) {
+          const ids = [...this.root.querySelectorAll('[data-town-member]:checked')].map((i) => i.dataset.townMember);
+          return this.onSetting('townMembers', ids);
+        }
         const el = e.target.closest('[data-setting]');
         if (!el) return;
         const v = el.type === 'checkbox' ? el.checked : el.type === 'range' ? Number(el.value) : el.value;
@@ -207,6 +311,17 @@
       }
       this.#showLevel();
       if ('hudVisible' in s) this.host.style.display = s.hudVisible === false ? 'none' : '';
+      if ('hudSize' in s) {
+        this.card.dataset.size = ['S', 'M', 'L'].includes(s.hudSize) ? s.hudSize : 'M';
+        for (const b of this.root.querySelectorAll('[data-size-pick]')) b.setAttribute('aria-pressed', String(b.dataset.sizePick === this.card.dataset.size));
+        requestAnimationFrame(() => this.#apply(this.pos));
+      }
+      if ('hudScale' in s) {
+        this.host.style.zoom = String(Math.min(1.6, Math.max(0.7, Number(s.hudScale) || 1)));
+        requestAnimationFrame(() => this.#apply(this.pos));
+      }
+      if ('townMembers' in s) this.#syncTownMembers(s.townMembers || []);
+      if ('muted' in s) this.root.querySelector('.mute-btn').textContent = s.muted ? Vern.t('menuUnmute', 'Unmute') : Vern.t('menuMute', 'Mute');
     }
 
     #localize() {
@@ -221,6 +336,79 @@
         if (el.tagName === 'INPUT') el.placeholder = v;
         else el.dataset.placeholder = v;
       }
+    }
+
+    /** Menu/assistant open above the widget, or below it when there's no room. */
+    #openPopover(pop) {
+      this.closePopovers();
+      pop.hidden = false;
+      const r = this.host.getBoundingClientRect();
+      pop.classList.toggle('below', r.top < pop.offsetHeight + 16);
+      const overflowRight = r.left + pop.offsetWidth - window.innerWidth + 8;
+      pop.style.left = overflowRight > 0 ? `${-overflowRight}px` : '0';
+    }
+
+    openMenu(personas, currentId) {
+      this.personaList.replaceChildren(...personas.map((p) => {
+        const b = document.createElement('button');
+        b.dataset.personaPick = p.id;
+        b.textContent = p.name;
+        b.setAttribute('aria-pressed', String(p.id === currentId));
+        return b;
+      }));
+      this.#openPopover(this.menu);
+    }
+
+    openAssistant() {
+      this.asstReply.textContent = '';
+      this.#openPopover(this.assistant);
+      this.asstForm.q.focus();
+    }
+
+    setAssistantReply(text) {
+      this.asstReply.textContent = text;
+      this.asstForm.q.value = '';
+    }
+
+    closePopovers() {
+      this.menu.hidden = true;
+      this.assistant.hidden = true;
+    }
+
+    get popoverOpen() {
+      return !this.menu.hidden || !this.assistant.hidden;
+    }
+
+    /** Voice input for the mini-assistant (Web Speech API, where the browser offers it). */
+    #initVoiceInput(btn) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return;
+      btn.hidden = false;
+      btn.addEventListener('click', () => {
+        const rec = new SR();
+        rec.lang = Vern.profile().language;
+        rec.interimResults = false;
+        btn.classList.add('listening');
+        rec.onresult = (e) => {
+          const text = e.results[0][0].transcript;
+          this.asstForm.q.value = text;
+          this.onAction('assistant', text);
+        };
+        rec.onend = () => btn.classList.remove('listening');
+        rec.onerror = () => btn.classList.remove('listening');
+        rec.start();
+      });
+    }
+
+    /** Sit exactly where another element was (used to replace Grok's companion avatar). */
+    placeOver(rect) {
+      const r = this.host.getBoundingClientRect();
+      this.#apply({ x: rect.left + rect.width / 2 - r.width / 2, y: rect.top + rect.height / 2 - r.height / 2 });
+    }
+
+    #syncTownMembers(ids) {
+      this.townMembers = ids;
+      for (const i of this.root.querySelectorAll('[data-town-member]')) i.checked = ids.includes(i.dataset.townMember);
     }
 
     showTab(name) {
@@ -254,6 +442,16 @@
         ...list.map((p) => new Option(`${p.name} · ${p.archetype}`, p.id)),
       );
       this.personaSelect.value = list.some((p) => p.id === selectedId) ? selectedId : 'auto';
+      const box = this.root.querySelector('.town-members');
+      box.replaceChildren(...list.map((p) => {
+        const label = document.createElement('label');
+        label.className = 'chip';
+        label.innerHTML = '<input type="checkbox"> <span></span>';
+        label.querySelector('input').dataset.townMember = p.id;
+        label.querySelector('span').textContent = p.name;
+        return label;
+      }));
+      this.#syncTownMembers(this.townMembers || []);
     }
 
     /** Server-provided labels for reading levels and speaking styles. */

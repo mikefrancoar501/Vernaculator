@@ -41,8 +41,9 @@
         "content/connection.js",
         "content/player.js",
         "content/viseme.js",
-        "content/tickle.js",
+        "content/gestures.js",
         "content/meme.js",
+        "content/town.js",
         "content/hud.js",
         "content/main.js"
       ],

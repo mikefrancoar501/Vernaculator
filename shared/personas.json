@@ -117,7 +117,8 @@
         "win",
         "game",
         "score",
-        "motivation"
+        "motivation",
+        "coach"
       ],
       "visemeAssets": {
         "idleUrl": "https://cdn.example.com/ray_idle.png",

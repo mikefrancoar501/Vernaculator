@@ -232,5 +232,41 @@
   },
   "optChecking": {
     "message": "Checking..."
+  },
+  "menuSize": {
+    "message": "Size"
+  },
+  "menuCustomSize": {
+    "message": "Custom size"
+  },
+  "menuCharacters": {
+    "message": "Characters"
+  },
+  "menuMute": {
+    "message": "Mute"
+  },
+  "menuUnmute": {
+    "message": "Unmute"
+  },
+  "menuAssistant": {
+    "message": "💬 Assistant"
+  },
+  "menuSettings": {
+    "message": "Settings"
+  },
+  "asstTitle": {
+    "message": "Tell me what you'd like"
+  },
+  "asstPlaceholder": {
+    "message": "e.g. switch to Old Oakley, talk slower"
+  },
+  "asstMic": {
+    "message": "Speak"
+  },
+  "hudTown": {
+    "message": "Town panel"
+  },
+  "hudTownMembers": {
+    "message": "Town members"
   }
 }

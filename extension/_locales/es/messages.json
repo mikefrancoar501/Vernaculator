@@ -232,5 +232,41 @@
   },
   "optChecking": {
     "message": "Comprobando..."
+  },
+  "menuSize": {
+    "message": "Tamaño"
+  },
+  "menuCustomSize": {
+    "message": "Tamaño personalizado"
+  },
+  "menuCharacters": {
+    "message": "Personajes"
+  },
+  "menuMute": {
+    "message": "Silenciar"
+  },
+  "menuUnmute": {
+    "message": "Activar sonido"
+  },
+  "menuAssistant": {
+    "message": "💬 Asistente"
+  },
+  "menuSettings": {
+    "message": "Ajustes"
+  },
+  "asstTitle": {
+    "message": "Dime qué te gustaría"
+  },
+  "asstPlaceholder": {
+    "message": "p. ej. cambia a Old Oakley, habla más despacio"
+  },
+  "asstMic": {
+    "message": "Hablar"
+  },
+  "hudTown": {
+    "message": "Panel del pueblo"
+  },
+  "hudTownMembers": {
+    "message": "Miembros del pueblo"
   }
 }

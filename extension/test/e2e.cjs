@@ -31,7 +31,7 @@ const assert = (cond, msg) => {
   sw ??= await ctx.waitForEvent('serviceworker');
   // Let onInstalled seed defaults first so it can't overwrite our test settings.
   await sw.evaluate(async () => { for (let i = 0; i < 50 && !('autoRead' in (await chrome.storage.local.get('autoRead'))); i++) await new Promise((r) => setTimeout(r, 100)); });
-  await sw.evaluate(async ({ token, backendUrl }) => chrome.storage.local.set({ token, backendUrl, autoRead: true, personaId: 'auto' }), { token, backendUrl });
+  await sw.evaluate(async ({ token, backendUrl }) => chrome.storage.local.set({ token, backendUrl, autoRead: true, personaId: 'auto', hudSize: 'M' }), { token, backendUrl });
 
   const html = fs.readFileSync(path.join(__dirname, 'fake-claude.html'), 'utf8');
   await ctx.route('https://claude.ai/**', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: html }));
@@ -203,6 +203,68 @@ const assert = (cond, msg) => {
   await waitCaption(/go deeper/i, 'Expound goes deeper');
   const lang = await inExt('Vern.profile().language');
   assert(/^en/.test(lang), `language defaults to the browser language (${lang})`);
+
+  console.log('Gestures: long-press menu, double-tap assistant, triple-tap tickle');
+  const stagePt = async () => inExt(`(() => { const r = Vern.debug.hud.stage.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+  await inExt(`Vern.debug.player.stop(), true`);
+  let sp = await stagePt();
+  await page.mouse.move(sp.x, sp.y);
+  await page.mouse.down();
+  await sleep(750);
+  await page.mouse.up();
+  assert(await inExt('!Vern.debug.hud.menu.hidden'), 'long-press opens the menu');
+  const sizeL = await inExt(`(() => { const r = Vern.debug.hud.root.querySelector('[data-size-pick="L"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+  await page.mouse.click(sizeL.x, sizeL.y);
+  await sleep(300);
+  assert((await inExt('Vern.debug.hud.card.dataset.size')) === 'L', 'menu size L enlarges the widget');
+  await page.screenshot({ path: path.join(outDir, '6-menu.png') });
+  await page.mouse.click(5, 795); // click outside closes it
+  await sleep(200);
+  assert(await inExt('Vern.debug.hud.menu.hidden'), 'clicking outside closes the menu');
+
+  const g0 = await inExt('window.__giggles');
+  sp = await stagePt();
+  await page.mouse.click(sp.x, sp.y);
+  await sleep(90);
+  await page.mouse.click(sp.x, sp.y);
+  await sleep(600);
+  assert(await inExt('!Vern.debug.hud.assistant.hidden'), 'double-tap opens the mini-assistant');
+  assert((await inExt('window.__giggles')) === g0, 'double-tap does not tickle');
+  await inExt(`Vern.debug.hud.closePopovers(), true`);
+  await sleep(1600); // tickle cooldown
+  for (let i = 0; i < 3; i++) { await page.mouse.click(sp.x, sp.y); await sleep(80); }
+  await sleep(600);
+  assert((await inExt('window.__giggles')) === g0 + 1, 'triple-tap still tickles');
+  assert(await inExt('Vern.debug.hud.assistant.hidden'), 'triple-tap does not open the assistant');
+
+  await inExt(`Vern.debug.hud.openAssistant(), Vern.debug.hud.onAction('assistant', 'switch to Old Oakley and talk slower'), true`);
+  await sleep(800);
+  const asst = await inExt(`({ p: Vern.settings.values.personaId, a: Vern.settings.values.accent, reply: Vern.debug.hud.asstReply.textContent })`);
+  assert(asst.p === 'old_oakley' && asst.a === 'slow', `assistant switched character and style ("${asst.reply}")`);
+  await page.screenshot({ path: path.join(outDir, '7-assistant.png') });
+  await inExt(`Vern.debug.hud.closePopovers(), Vern.settings.save({ hudSize: 'S' }).then(() => true)`);
+  await sleep(300);
+  assert((await inExt('Vern.debug.hud.card.dataset.size')) === 'S', 'compact size');
+  await page.screenshot({ path: path.join(outDir, '8-compact.png') });
+
+  console.log('Town panel');
+  await inExt(`Vern.settings.save({ hudSize: 'M', personaId: 'auto', accent: 'none', autoRead: true, paraphrase: false, townEnabled: true, townMembers: ['big_sal', 'professor_pip', 'sir_reginald_ledger'] }).then(() => true)`);
+  await sleep(500);
+  assert(await page.locator('#vernaculator-town').isVisible(), 'town strip shows along the top');
+  await page.evaluate(() => window.streamReply('Your doctor wants to explain the diagnosis simply, so let me break it down.\nIn science terms, the experiment shows how stars and space work, which is fun to learn.\nFor your budget, the cost is low and you can save money with a simple plan.', { delay: 2 }));
+  const speakers = new Set();
+  let segCount = 0;
+  for (let i = 0; i < 120; i++) {
+    await sleep(200);
+    const st = await inExt(`({ a: Vern.debug.town.active, n: (Vern.debug.current?.segments || []).length, done: !!Vern.debug.current?.done, playing: Vern.debug.player.playing })`);
+    if (st.a) speakers.add(st.a);
+    segCount = Math.max(segCount, st.n);
+    if (speakers.size >= 2 && i % 10 === 0) await page.screenshot({ path: path.join(outDir, '9-town.png') });
+    if (st.done && !st.playing && speakers.size >= 3) break;
+  }
+  assert(segCount === 3, `answer split into ${segCount} sections`);
+  assert(speakers.size >= 3, `speakers handed off on time: ${[...speakers].join(' -> ')}`);
+  await inExt(`Vern.settings.save({ townEnabled: false }).then(() => true)`);
 
   await page.screenshot({ path: path.join(outDir, '3-hud-final.png') });
   await ctx.close();
