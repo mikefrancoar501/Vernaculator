@@ -64,12 +64,21 @@ if ($LASTEXITCODE -ne 0) { Fail 'npm install failed. Check your internet connect
 
 # 4. Token (kept in Documents\FancyBot so updates never lose it)
 $env:DATA_FILE = Join-Path $Data 'store.json'
-if (-not (Test-Path $TokenFile) -or -not (Test-Path $env:DATA_FILE) -or -not (Get-Content $TokenFile -ErrorAction SilentlyContinue)) {
+$token = ''
+if (Test-Path $TokenFile) { $token = ([string](Get-Content $TokenFile -Raw)).Trim() }
+$valid = $false
+if ($token) {
+  node scripts/check-token.js $token | Out-Null
+  $valid = ($LASTEXITCODE -eq 0)
+}
+if (-not $valid) {
   Say 'Creating your sign-in token'
   $out = node scripts/create-token.js --plan pro
   $m = [regex]::Match(($out -join "`n"), 'vk_[A-Za-z0-9_-]+')
   if (-not $m.Success) { Fail "Could not create a token:`n$out" }
-  Set-Content -Path $TokenFile -Value $m.Value -NoNewline
+  [IO.File]::WriteAllText($TokenFile, $m.Value)
+  node scripts/check-token.js $m.Value | Out-Null
+  if ($LASTEXITCODE -ne 0) { Fail "The new token could not be saved in $($env:DATA_FILE)." }
 }
 $token = (Get-Content $TokenFile -Raw).Trim()
 try { Set-Clipboard -Value $token; $copied = ' (already copied to your clipboard)' } catch { $copied = '' }
@@ -99,7 +108,18 @@ Write-Host @"
 try { Start-Process 'chrome.exe' 'chrome://extensions' } catch { Write-Host 'Open Chrome and go to chrome://extensions' }
 Start-Process explorer.exe $ext
 
-# 6. Start the server
+# 6. Start the server (stop an older Fancy Bot server first: it would use a different token list)
+$busy = Get-NetTCPConnection -LocalPort 8787 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($busy) {
+  $proc = Get-Process -Id $busy.OwningProcess -ErrorAction SilentlyContinue
+  if ($proc -and $proc.ProcessName -eq 'node') {
+    Say "Stopping an older Fancy Bot server that was still running (process $($proc.Id))"
+    Stop-Process -Id $proc.Id -Force
+    Start-Sleep -Seconds 1
+  } else {
+    Fail "Port 8787 is being used by another program ($($proc.ProcessName)). Close it and run this again."
+  }
+}
 Say 'Starting the Fancy Bot server on http://localhost:8787'
 npm start
 Read-Host 'Fancy Bot stopped. Press Enter to close'

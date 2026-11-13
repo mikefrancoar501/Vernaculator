@@ -12,5 +12,6 @@ const cfg = loadConfig();
 const store = new JsonStore(cfg.dataFile);
 const { user, token } = store.createUser({ plan: arg('plan', 'free'), email: arg('email', null) });
 store.flush();
-console.log(`Created ${user.id} (plan: ${user.plan})`);
+console.log(`Created ${user.id} (plan: ${user.plan}) in ${cfg.dataFile}`);
+console.log('The server must use this same data file (DATA_FILE) to accept the token.');
 console.log(`Token (shown once, paste into the extension options): ${token}`);

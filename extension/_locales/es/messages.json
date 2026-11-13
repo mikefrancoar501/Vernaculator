@@ -367,5 +367,14 @@
   },
   "style_rapid": {
     "message": "Genio a toda velocidad"
+  },
+  "optTokenMissing": {
+    "message": "Primero pega tu token (empieza con vk_)."
+  },
+  "optTokenRejected": {
+    "message": "Guardado, pero el servidor no reconoce este token. Asegúrate de tener abierta solo una ventana del servidor de Fancy Bot, ejecuta fancybot-setup otra vez y pega el token que muestra."
+  },
+  "optServerDown": {
+    "message": "Guardado, pero ningún servidor de Fancy Bot responde en $1. Inícialo (doble clic en fancybot-setup.bat) y vuelve a pulsar Guardar."
   }
 }

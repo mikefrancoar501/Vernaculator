@@ -367,5 +367,14 @@
   },
   "style_rapid": {
     "message": "Rapid-fire genius"
+  },
+  "optTokenMissing": {
+    "message": "Paste your token first (it starts with vk_)."
+  },
+  "optTokenRejected": {
+    "message": "Saved, but the server does not recognize this token. Make sure only one Fancy Bot server window is open, run fancybot-setup again, and paste the token it shows."
+  },
+  "optServerDown": {
+    "message": "Saved, but no Fancy Bot server is answering at $1. Start it (double-click fancybot-setup.bat) and press Save again."
   }
 }

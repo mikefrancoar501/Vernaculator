@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-const t = (key, fallback) => chrome.i18n.getMessage(key) || fallback;
+const t = (key, fallback, subs) => chrome.i18n.getMessage(key, subs) || fallback;
 
 // Languages offered as an override. The default ("auto") follows the browser's language.
 const LANGS = ['en', 'es', 'pt', 'fr', 'de', 'it', 'nl', 'pl', 'ru', 'uk', 'tr', 'ar', 'hi', 'bn', 'zh', 'ja', 'ko', 'vi', 'id', 'tl', 'sw'];
@@ -19,7 +19,7 @@ const label = (code) => {
   }
 };
 $('language').append(
-  new Option(t('optLanguageAuto', 'Same as this browser ($1)').replace('$1', label(uiLang)), 'auto'),
+  new Option(t('optLanguageAuto', `Same as this browser (${label(uiLang)})`, [label(uiLang)]), 'auto'),
   ...LANGS.map((c) => new Option(label(c), c)),
 );
 
@@ -42,9 +42,17 @@ $('save').addEventListener('click', async () => {
     // Must run inside the click gesture, before other awaits.
     await chrome.permissions.request({ origins: [`${new URL(backendUrl).origin}/*`] }).catch(() => false);
   }
+  // Accept a pasted line like "Token (shown once ...): vk_..." or a quoted token: keep just the token.
+  const pasted = $('token').value.trim();
+  const token = (pasted.match(/vk_[A-Za-z0-9_-]+/) || [pasted.replace(/^["']|["']$/g, '')])[0];
+  $('token').value = token;
+  if (!token) {
+    status.textContent = t('optTokenMissing', 'Paste your token first (it starts with vk_).');
+    return;
+  }
   await chrome.storage.local.set({
     backendUrl,
-    token: $('token').value.trim(),
+    token,
     autoRead: $('autoRead').checked,
     userName: $('userName').value.trim().slice(0, 40),
     aboutMe: $('aboutMe').value.trim().slice(0, 600),
@@ -52,12 +60,17 @@ $('save').addEventListener('click', async () => {
     language: $('language').value,
   });
   try {
-    const res = await fetch(`${backendUrl}/v1/usage`, { headers: { Authorization: `Bearer ${$('token').value.trim()}` } });
-    if (res.status === 401) throw new Error('token rejected');
+    const res = await fetch(`${backendUrl}/v1/usage`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.status === 401) {
+      status.textContent = t('optTokenRejected', 'Saved, but the server does not recognize this token. Make sure only one Fancy Bot server window is open, run fancybot-setup again, and paste the token it shows.');
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const u = await res.json();
     status.textContent = `${t('optSaved', 'Saved.')} ${u.remainingChars.toLocaleString()} (${u.plan})`;
   } catch (err) {
-    status.textContent = `${t('optSaved', 'Saved.')} (${err.message})`;
+    status.textContent = /Failed to fetch|NetworkError/.test(err.message)
+      ? t('optServerDown', `Saved, but no Fancy Bot server is answering at ${backendUrl}. Start it (double-click fancybot-setup.bat) and press Save again.`, [backendUrl])
+      : `${t('optSaved', 'Saved.')} (${err.message})`;
   }
 });
