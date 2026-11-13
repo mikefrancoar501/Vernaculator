@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { guardrailPrompt } from './guardrails.js';
 import { taskPrompt, profilePrompt, parseProfile, parseTask, parseSource, isSocial } from './tasks.js';
-import { READING_LEVELS, FIDELITY_RULE, PARAPHRASE_RULE, parseReadingLevel, parseStyle, stylePrompt } from './styles.js';
+import { READING_LEVELS, FIDELITY_RULE, PARAPHRASE_RULE, parseReadingLevel, parseStyle, stylePrompt, SPEAKING_STYLES } from './styles.js';
 
 /**
  * Persona & perspective engine (spec 3.2 / 3.3).
@@ -54,8 +54,9 @@ export function effectiveComplexity(persona, readingLevel) {
 }
 
 export function buildSystemPrompt(persona, { coreValues, readingLevel, style, task, profile, source } = {}) {
-  const level = effectiveComplexity(persona, readingLevel);
   const parsed = parseStyle(style);
+  // Some speaking styles imply a level (Rapid-fire genius is expert talk).
+  const level = effectiveComplexity(persona, SPEAKING_STYLES[parsed.accent]?.readingLevel ?? readingLevel);
   const extras = stylePrompt(parsed);
   const who = parseProfile(profile);
   const src = parseSource(source);

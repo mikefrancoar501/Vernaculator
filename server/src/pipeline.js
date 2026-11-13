@@ -39,10 +39,11 @@ export class Utterance {
     this.user = user;
     // personaId: id | 'auto'; readingLevel: 1-5 | null; style: { paraphrase, humor, philosophy, accent };
     // task: speak | keypoints | ask | expound; question (ask); profile: { name, about, ageGroup, language }; source: claude | grok | gemini
+    const style = parseStyle(opts.style);
     this.opts = {
       ...opts,
-      readingLevel: parseReadingLevel(opts.readingLevel),
-      style: parseStyle(opts.style),
+      readingLevel: SPEAKING_STYLES[style.accent].readingLevel ?? parseReadingLevel(opts.readingLevel),
+      style,
       task: parseTask(opts.task),
       question: String(opts.question || '').slice(0, 1000),
       profile: parseProfile(opts.profile),
@@ -119,7 +120,9 @@ export class Utterance {
   /** Opens a TTS session for `persona` as the current voice. */
   #openTts(persona) {
     const { style, profile } = this.opts;
-    this.tts = createTtsSession(this.deps.cfg, persona, { speed: SPEAKING_STYLES[style.accent].speed, language: profile.language });
+    // Style speed (Slow 0.85, Rapid-fire 1.35, ...) times the character's natural pace (Rusty talks fast).
+    const speed = Math.min(2, Math.max(0.5, SPEAKING_STYLES[style.accent].speed * (persona.voiceSpeed || 1)));
+    this.tts = createTtsSession(this.deps.cfg, persona, { speed, language: profile.language });
     this.ttsDone = new Promise((resolve) => {
       this.tts.on('finish', resolve);
       this.tts.on('error', (err) => {

@@ -21,13 +21,15 @@ The Vernaculator is a social-emotional learning (SEL) tool for kids, and for adu
 
 **Rusty Peters** is a sample character with a redemption arc (`"arc": "redemption"` in personas.json): a gruff former troublemaker who is learning to be good. His lines may start with a grumble or an old (always harmless) instinct, but he talks himself into the kind or honest choice and finds it more fun. When he is in a scene, the director makes sure his last line lands on the good side. Every scene also models kindness, honesty and fairness, even while characters tease each other's ideas.
 
+**Dash Dawson** is the town genius who has no idea he is a genius: a regular guy who fixes bikes at Big Sal's and explains things in rapid-fire, PhD-level chains of reasoning, then shrugs it off. His voice runs at 1.35x (`"voiceSpeed"` in personas.json; Rusty Peters talks fast too, at 1.2x). Any character can borrow the delivery with the **Rapid-fire genius** speaking style, which also switches to the expert reading level and speeds the voice up. The prompt forbids invented studies or quotes. A pacing reference clip may be used only to tune the speaking rate, never to copy anyone's voice.
+
 ## Big Sal and the plain-language controls
 
 The point of the product: AI answers (medical, legal, technical) are often full of jargon. The Vernaculator lets anyone hear the same answer in a voice and at a level that works for them.
 
 - **Big Sal** is the flagship and default character: a warm, wise, seriously smart old friend who cuts through jargon. He has his own bundled two-frame sprite (`extension/assets/sprites/big_sal_*.svg`), and intent routing sends "explain what my doctor meant" style questions to him when the character is set to *Auto*.
 - **Reading level slider (1-5)**, from *Super simple* to *Expert*, works with **any** character. Default is 2 (*Plain*). It is always framed as reading level / plain language, never intelligence.
-- **Add-ons that stack on any character:** Humor, Philosophy, and a Speaking style (Character's own, Slow & patient, British English, Old-time storyteller, Hype announcer, Friendly pirate). *Slow & patient* also slows the TTS voice (Fish `prosody.speed` 0.85). Styles describe delivery, never race or region.
+- **Add-ons that stack on any character:** Humor, Philosophy, and a Speaking style (Character's own, Slow & patient, British English, Old-time storyteller, Hype announcer, Rapid-fire genius, Friendly pirate). *Slow & patient* also slows the TTS voice (Fish `prosody.speed` 0.85). Styles describe delivery, never race or region.
 - **Accuracy rule at every level:** simplify the words, never the facts. Numbers, doses, dates, warnings and "see a doctor / call emergency services" advice are kept exactly, and the rewrite may not add medical, legal or financial advice.
 
 Levels and styles live in `server/src/styles.js` and are served to the HUD with the persona list, so adding a style is a server-only change. The extension sends them as `utterance.start { readingLevel: 1-5, style: { humor, philosophy, accent } }`; the server validates them against the catalog and echoes what it applied in `utterance.persona`.
@@ -146,7 +148,7 @@ REST: `GET /health`, `GET /v1/personas` (public), `GET /v1/usage` and `POST /v1/
 ## Testing
 
 ```bash
-cd server && npm test                      # 26 unit/integration tests (mock providers, fake Fish server)
+cd server && npm test                      # 27 unit/integration tests (mock providers, fake Fish server)
 
 # Extension end to end (real Chromium, unpacked extension, fake claude.ai page):
 npm start &                                # in server/, mock mode

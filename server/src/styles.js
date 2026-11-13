@@ -91,6 +91,19 @@ export const SPEAKING_STYLES = {
     prompt: 'SPEAKING STYLE: High-energy announcer: punchy short lines, big enthusiasm, exclamation where it fits.',
     speed: 1.1,
   },
+  rapid: {
+    label: 'Rapid-fire genius',
+    prompt: [
+      'SPEAKING STYLE: Rapid-fire genius. Deliver it like a brilliant mind thinking out loud at top speed for an audience of PhDs.',
+      '- Long, chained sentences that race from cause to effect ("which means", "and that is exactly why", "so the real mechanism is").',
+      '- Dense, precise expert vocabulary; name the underlying mechanisms, fields, and well-established principles or landmark findings by their proper names.',
+      '- Only cite things that really exist and are well established; never invent studies, numbers, authors, or quotes.',
+      '- Quick pivots between connected ideas, then land a crisp one-sentence synthesis.',
+      '- Confident and dazzling, never rude, smug, or condescending to the listener.',
+    ].join('\n'),
+    speed: 1.35,
+    readingLevel: 5, // genius talk is expert-level by definition
+  },
   pirate: {
     label: 'Friendly pirate',
     prompt: 'SPEAKING STYLE: A friendly, family-film pirate: "ahoy", "matey", nautical comparisons. Keep facts crystal clear.',

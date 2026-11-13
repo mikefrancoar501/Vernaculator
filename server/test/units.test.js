@@ -11,7 +11,7 @@ import { JsonStore } from '../src/store.js';
 import { Gateway } from '../src/auth.js';
 import { loadConfig } from '../src/config.js';
 import { splitFrames } from '../src/tts/mp3.js';
-import { parseStyle, styleCatalog } from '../src/styles.js';
+import { parseStyle, styleCatalog, SPEAKING_STYLES, READING_LEVELS } from '../src/styles.js';
 import { parseProfile, userMessage } from '../src/tasks.js';
 import { parseCast, cleanScript, directorSystem, assignRoles, rolePrompt } from '../src/writersroom.js';
 import { parseTown, planTown, townPrompt } from '../src/town.js';
@@ -188,6 +188,20 @@ test('social generations are rate limited per user', () => {
   assert.ok(g.takeGeneration({ id: 'u2' }, t + 2000).ok, 'other users unaffected');
   assert.ok(g.takeGeneration(u, t + 61000).ok, 'minute window slides');
   assert.ok(!g.takeGeneration(u, t + 130000).ok, 'daily cap');
+});
+
+test('Rapid-fire genius: expert level, fast voice, chosen by the assistant', () => {
+  const p = personas.get('big_sal');
+  const sys = buildSystemPrompt(p, { coreValues: [], readingLevel: 1, style: { accent: 'rapid' } });
+  assert.match(sys, /Rapid-fire genius/);
+  assert.match(sys, /never invent studies/);
+  assert.ok(sys.includes(READING_LEVELS[5].prompt), 'forces expert reading level');
+  assert.equal(SPEAKING_STYLES.rapid.speed, 1.35);
+  assert.equal(personas.get('rusty_peters').voiceSpeed, 1.2, 'Rusty talks fast by nature');
+  assert.equal(personas.get('dash_dawson').voiceSpeed, 1.35, 'Dash, the accidental genius, talks fastest');
+  assert.match(buildSystemPrompt(personas.get('dash_dawson'), { coreValues: [] }), /no idea he is a genius/);
+  assert.equal(ruleAssistant('talk like a fast genius', personas, {}).action.accent, 'rapid');
+  assert.equal(ruleAssistant('talk slower please', personas, {}).action.accent, 'slow');
 });
 
 test('voice resolution prefers a language-specific voice', () => {

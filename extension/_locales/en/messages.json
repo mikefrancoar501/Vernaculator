@@ -364,5 +364,8 @@
   },
   "statusDirecting": {
     "message": "The director is putting the scene together..."
+  },
+  "style_rapid": {
+    "message": "Rapid-fire genius"
   }
 }

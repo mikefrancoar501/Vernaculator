@@ -364,5 +364,8 @@
   },
   "statusDirecting": {
     "message": "El director está armando la escena..."
+  },
+  "style_rapid": {
+    "message": "Genio a toda velocidad"
   }
 }

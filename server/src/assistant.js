@@ -61,6 +61,7 @@ export function ruleAssistant(text, personas, current = {}) {
   else if (/\b(british|english accent)\b/.test(t)) action.accent = 'british';
   else if (/\bpirate\b/.test(t)) action.accent = 'pirate';
   else if (/\b(story ?teller|campfire)\b/.test(t)) action.accent = 'storyteller';
+  else if (/\b(genius|rapid|fast(er)?|quick(er)?|speed (it )?up|phd)\b/.test(t)) action.accent = 'rapid';
   else if (/\b(hype|excit|energy)\w*/.test(t)) action.accent = 'hype';
   else if (/\bnormal (voice|style)\b/.test(t)) action.accent = 'none';
   if (action.accent) notes.push(`Speaking style: ${SPEAKING_STYLES[action.accent].label}.`);
