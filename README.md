@@ -38,7 +38,7 @@ Levels and styles live in `server/src/styles.js` and are served to the HUD with 
 
 ## Paraphrase assistant, profile and language
 
-- **Paraphrase** (chip on the Listen tab) condenses the answer while keeping every fact, number and warning, with any character and reading level. If the user gave a name, the character talks to them and treats the AI as a third party: "Sergio, basically what Claude is telling you is...".
+- **Paraphrase** (chip on the Listen tab) condenses the answer while keeping every fact, number and warning, with any character and reading level. If the user gave a name, the character talks to them and treats the AI as a third party: "Alex, basically what Claude is telling you is...".
 - **Ask tab:** Key points, Paraphrase now, *Paraphrase with Oakley*, a follow-up question about the last answer, and **Expound** (the server researches with Claude's web search tool and the HUD lists the sources).
 - **Profile** (options page, stored only in the browser): name, a free-text "about me" (profession, skills, education), age group (kid, teen, adult, senior). It is sent per request to tailor examples and level; nothing is stored on the server.
 - **Language** defaults to the browser language and can be overridden. The UI uses `chrome.i18n` (`extension/_locales/en` and `es` today); the LLM answers in that language, and Fish voices can be set per language (`fishAudioVoicesByLanguage` in personas.json or `FISH_VOICE_<ID>_<LANG>`).
@@ -46,7 +46,7 @@ Levels and styles live in `server/src/styles.js` and are served to the HUD with 
 
 ## Gestures, Grok companion and the mini-assistant
 
-- The HUD starts compact (size S). Drag only by the header, so gestures on the character never fight with dragging.
+- The HUD starts at size M so the control bar is visible (compact S is still available). On very narrow screens it starts at S, with a one-time hint to press and hold Sal for controls. A size the user already chose is left alone. Drag only by the header, so gestures on the character never fight with dragging.
 - **Long-press the character:** menu with size S/M/L or a custom scale, quick character switch, Paraphrase, mute and settings.
 - **Double-tap:** a small voice/text assistant ("switch to Old Oakley", "who would explain this like a coach?", "slower please"). Simple commands are handled by rules; anything else goes to `POST /v1/assistant`. It waits 320 ms so a triple-tap still counts as a tickle.
 - **Triple-tap or rub:** tickle and giggle, as before.
@@ -133,7 +133,7 @@ Requests to `claude-opus-5-5` enable server-side refusal fallbacks (`fallbacks: 
 | 3.3 Perspective simulator | `worldviewPerspective`, `vocabularyComplexity` (1-5) and `catchphrases` in personas.json; the listener's reading level and add-ons (`styles.js`) layer on top of any character |
 | 3.4 Fish proxy | `server/src/tts/fish.js`: `wss://api.fish.audio/v1/tts/live`, msgpack `start/text/flush/stop` → `audio/finish` |
 | 5.1 Dragging | Pointer events + `setPointerCapture`, `transform: translate(x,y)`, clamped to the viewport, position persisted |
-| 5.2 Tickle | `tickle.js`: 3 taps in 900 ms or a fast back-and-forth rub; giggle is decoded once and mixed through Web Audio, so TTS keeps playing |
+| 5.2 Tickle | `gestures.js`: 3 taps in 900 ms or a fast back-and-forth rub; giggle is decoded once and mixed through Web Audio, so TTS keeps playing |
 | 5.3 Meme export | `meme.js`: re-renders the last reply's audio + viseme swaps onto a 720×720 canvas, records with MediaRecorder (H.264 MP4 on Chrome 126+, WebM fallback), downloads |
 
 ### Wire protocol (`/v1/stream`)

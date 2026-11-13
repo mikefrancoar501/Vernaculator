@@ -23,7 +23,7 @@ $('language').append(
   ...LANGS.map((c) => new Option(label(c), c)),
 );
 
-const fields = ['backendUrl', 'token', 'autoRead', 'userName', 'aboutMe', 'ageGroup', 'language'];
+const fields = ['backendUrl', 'token', 'autoRead', 'replaceCompanion', 'socialPill', 'userName', 'aboutMe', 'ageGroup', 'language'];
 // Pick up a token written by the Windows setup script (extension/local-config.json), if any.
 chrome.runtime.sendMessage({ op: 'adoptLocalConfig' }).catch(() => {});
 chrome.storage.onChanged.addListener((changes) => {
@@ -33,6 +33,8 @@ chrome.storage.local.get(fields).then((s) => {
   $('backendUrl').value = s.backendUrl || 'http://localhost:8787';
   $('token').value = s.token || '';
   $('autoRead').checked = s.autoRead !== false;
+  $('replaceCompanion').checked = s.replaceCompanion !== false;
+  $('socialPill').checked = s.socialPill !== false;
   $('userName').value = s.userName || '';
   $('aboutMe').value = s.aboutMe || '';
   $('ageGroup').value = s.ageGroup || '';
@@ -59,6 +61,8 @@ $('save').addEventListener('click', async () => {
     backendUrl,
     token,
     autoRead: $('autoRead').checked,
+    replaceCompanion: $('replaceCompanion').checked,
+    socialPill: $('socialPill').checked,
     userName: $('userName').value.trim().slice(0, 40),
     aboutMe: $('aboutMe').value.trim().slice(0, 600),
     ageGroup: $('ageGroup').value,

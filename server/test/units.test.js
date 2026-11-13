@@ -14,7 +14,7 @@ import { splitFrames } from '../src/tts/mp3.js';
 import { parseStyle, styleCatalog, SPEAKING_STYLES, READING_LEVELS } from '../src/styles.js';
 import { parseProfile, userMessage } from '../src/tasks.js';
 import { parseCast, cleanScript, directorSystem, assignRoles, rolePrompt } from '../src/writersroom.js';
-import { parseTown, planTown, townPrompt } from '../src/town.js';
+import { parseTown, planTown, townPrompt, MAX_TOWN } from '../src/town.js';
 import { ruleAssistant, sanitizeAction, runAssistant } from '../src/assistant.js';
 import { resolveVoiceId, resolveVoiceSpeed } from '../src/config.js';
 
@@ -237,6 +237,10 @@ test('mini-assistant maps requests to settings and validates them', async () => 
 test('town panel: members validated, answer split by topic with handoffs', () => {
   assert.deepEqual(parseTown(['big_sal', 'nobody', 'big_sal'], personas), [], 'needs 2+ valid members');
   assert.deepEqual(parseTown(['big_sal', 'professor_pip', 'x'], personas), ['big_sal', 'professor_pip']);
+  assert.equal(MAX_TOWN, 6);
+  const many = personas.list.map((p) => p.id);
+  assert.ok(many.length > 6, 'roster is larger than the cap so the cap can be tested');
+  assert.equal(parseTown(many, personas).length, 6, 'server caps town members at 6');
   const text = 'Your doctor wants to explain the diagnosis simply.\nIn science terms, space and stars are made of gas, a fun experiment to learn about.\nFor your budget, the cost to save money is low.';
   const plan = planTown(text, ['big_sal', 'professor_pip', 'sir_reginald_ledger'], personas);
   assert.deepEqual(plan.map((p) => p.personaId), ['big_sal', 'professor_pip', 'sir_reginald_ledger']);

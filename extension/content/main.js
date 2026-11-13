@@ -24,6 +24,7 @@
   });
   const hud = new Vern.Hud({ onAction, onSetting: (k, v) => Vern.settings.save({ [k]: v }) });
   hud.mount(settings);
+  if (!settings.controlsHintSeen) hud.showControlsHint();
   const viseme = new Vern.VisemeDriver(hud.img, player);
   const town = new Vern.TownStrip({ onPick: (id) => Vern.settings.save({ personaId: id }) });
   town.mount();

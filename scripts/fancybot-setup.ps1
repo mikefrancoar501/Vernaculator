@@ -63,7 +63,7 @@ if (Test-Path (Join-Path $Code '.git')) {
   if ($LASTEXITCODE -ne 0) { Write-Host 'Could not update (offline or local changes). Using the copy you already have.' }
   $ok = $true
 } elseif ($hasGit) {
-  # Git Credential Manager pops up a GitHub sign-in the first time (the repo is private).
+  # Git Credential Manager may pop up a GitHub sign-in the first time (the repo is public, but Git may still ask).
   # Clone next to the code folder, then move it in place (an older ZIP copy may already be there).
   $tmpClone = Join-Path $env:TEMP ("fancybot-git-" + [guid]::NewGuid())
   git clone --depth 1 $RepoUrl $tmpClone
@@ -198,7 +198,7 @@ for ($i = 0; $i -lt 30 -and -not $up -and -not $server.HasExited; $i++) {
 }
 if (-not $up) {
   if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
-  Fail 'The Fancy Bot server did not start. Take a screenshot of this window and send it to Claude.'
+  Fail 'The Fancy Bot server did not start. Copy the text in this window and send it to the person who set up Fancy Bot.'
 }
 Write-Host "`nFancy Bot is running. Check it any time at http://localhost:8787/health (it should say ok: true)." -ForegroundColor Green
 Write-Host 'Leave this window open while you test. Close it to stop Fancy Bot.' -ForegroundColor Green
