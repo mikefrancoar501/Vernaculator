@@ -20,7 +20,7 @@ $Scripts = Join-Path $Base 'scripts'
 $here = Split-Path -Parent $PSCommandPath
 if ($here -ne $Scripts) {
   New-Item -ItemType Directory -Force -Path $Scripts | Out-Null
-  foreach ($f in 'fancybot-setup.ps1', 'fancybot-setup.bat') {
+  foreach ($f in 'fancybot-setup.ps1', 'fancybot-setup.bat', 'fancybot-keys.ps1', 'fancybot-keys.bat') {
     $from = Join-Path $here $f
     if (Test-Path $from) { Copy-Item -Force $from (Join-Path $Scripts $f) }
   }
@@ -96,7 +96,7 @@ if (-not $ok) {
 }
 if (-not (Test-Path (Join-Path $Code 'extension\manifest.json'))) { Fail "The code folder looks incomplete: $Code" }
 # Keep the scripts folder current for next time (this running copy is already loaded in memory).
-foreach ($f in 'fancybot-setup.ps1', 'fancybot-setup.bat') {
+foreach ($f in 'fancybot-setup.ps1', 'fancybot-setup.bat', 'fancybot-keys.ps1', 'fancybot-keys.bat') {
   $new = Join-Path $Code "scripts\$f"
   if (Test-Path $new) { Copy-Item -Force $new (Join-Path $Scripts $f) -ErrorAction SilentlyContinue }
 }
@@ -178,6 +178,16 @@ if ($busy) {
   } else {
     Fail "Port 8787 is being used by another program ($($proc.ProcessName)). Close it and run this again."
   }
+}
+# Load API keys saved by fancybot-keys.bat (Documents\FancyBot\keys.env), if any.
+$KeysFile = Join-Path $Base 'keys.env'
+if (Test-Path $KeysFile) {
+  foreach ($line in Get-Content $KeysFile) {
+    if ($line -match '^\s*([A-Z0-9_]+)\s*=\s*(.+)$') { Set-Item -Path "env:$($Matches[1])" -Value $Matches[2].Trim() }
+  }
+  Write-Host "Using your keys from $KeysFile (words: $env:LLM_PROVIDER, voices: $env:TTS_PROVIDER)" -ForegroundColor Green
+} else {
+  Write-Host 'Test mode (no API keys yet). Double-click fancybot-keys.bat to add them.' -ForegroundColor Yellow
 }
 Say 'Starting the Fancy Bot server on http://localhost:8787'
 $server = Start-Process -FilePath 'node' -ArgumentList '--env-file-if-exists=.env', 'src/index.js' -WorkingDirectory (Get-Location).Path -NoNewWindow -PassThru

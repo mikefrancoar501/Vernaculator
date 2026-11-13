@@ -86,7 +86,7 @@ Server side these are the `crib`, `reply` and `scene` tasks (`server/src/tasks.j
 
 ## One-click setup on Windows
 
-`scripts/fancybot-setup.bat` (with `fancybot-setup.ps1` next to it) does everything for local testing: it clones or updates the code into `Documents\FancyBot\code` (Git for Windows asks you to sign in to GitHub the first time; without Git it uses a `Vernaculator*.zip` from GitHub's Code > Download ZIP in Downloads), checks Node.js 22+, runs `npm install`, creates a token once and saves it in `Documents\FancyBot\token.txt` (copied to the clipboard), opens `chrome://extensions` and the extension folder, and starts the server in mock mode. The server data lives in `Documents\FancyBot\data`, so updates never lose the token. Double-click it again any time to update and restart.
+`scripts/fancybot-setup.bat` (with `fancybot-setup.ps1` next to it) does everything for local testing: it clones or updates the code into `Documents\FancyBot\code` (Git for Windows asks you to sign in to GitHub the first time; without Git it uses a `Vernaculator*.zip` from GitHub's Code > Download ZIP in Downloads), checks Node.js 22+, runs `npm install`, creates a token once and saves it in `Documents\FancyBot\token.txt` (copied to the clipboard), opens `chrome://extensions` and the extension folder, and starts the server in mock mode. The server data lives in `Documents\FancyBot\data`, so updates never lose the token. Double-click it again any time to update and restart. To use real services, double-click `scripts/fancybot-keys.bat` first: it asks for the Anthropic API key, the Fish Audio API key and voice IDs (typed hidden) and saves them in `Documents\\FancyBot\\keys.env`, which the setup script loads on every start.
 
 ## Quick start (no API keys needed)
 
