@@ -24,10 +24,10 @@
     muted: false,
     replaceCompanion: true, // on grok.com, sit in place of Grok's own companion avatar
     townEnabled: false,
-    townMembers: ['big_sal', 'old_oakley', 'professor_pip'],
+    townMembers: ['big_sal', 'old_oakley', 'big_play_ray', 'elias_stillwater'], // the core four
     cribPersonaId: 'big_play_ray', // comedic voice for social crib notes and replies ('' = main character)
     socialPill: true,
-    sceneCast: ['big_play_ray', 'professor_pip', 'old_oakley', 'granny_marigold'], // writers' room, 2-4
+    sceneCast: ['big_sal', 'old_oakley', 'big_play_ray', 'elias_stillwater'], // writers' room, 2-4 (the core four)
     sceneDirector: 'big_sal',
     whatsHot: false,
   };

@@ -157,7 +157,12 @@ test('social tasks: crib notes and reply drafts treat the post as a person\'s, n
 });
 
 test('writers\' room: cast and script validation', () => {
-  assert.deepEqual(parseCast(['big_sal', 'nope'], personas), ['big_play_ray', 'professor_pip', 'old_oakley', 'granny_marigold'], 'falls back to the default cast');
+  assert.deepEqual(parseCast(['big_sal', 'nope'], personas), ['big_sal', 'old_oakley', 'big_play_ray', 'elias_stillwater'], 'falls back to the core four');
+  assert.deepEqual(assignRoles(['big_sal', 'old_oakley', 'big_play_ray', 'elias_stillwater'], personas).map((r) => `${r.role}:${r.personaId}`), ['setup:big_play_ray', 'escalate:elias_stillwater', 'wildcard:old_oakley', 'closer:big_sal'], 'core four fill every beat');
+  const rusty = personas.get('rusty_peters');
+  assert.match(rolePrompt('escalate', rusty), /choosing the good side/);
+  assert.match(directorSystem([rusty, personas.get('big_sal')]), /REDEMPTION ARC: Rusty Peters/);
+  assert.doesNotMatch(directorSystem([personas.get('big_sal'), personas.get('old_oakley')]), /REDEMPTION ARC/);
   assert.deepEqual(assignRoles(['granny_marigold', 'old_oakley', 'big_play_ray', 'professor_pip'], personas).map((r) => `${r.role}:${r.personaId}`), ['setup:big_play_ray', 'escalate:professor_pip', 'wildcard:old_oakley', 'closer:granny_marigold'], 'roles in beat order');
   assert.deepEqual(assignRoles(['big_play_ray', 'captain_ada_quill'], personas).map((r) => r.role), ['setup', 'closer'], 'two-person scene still has a closer');
   assert.match(rolePrompt('wildcard'), /left-field/);

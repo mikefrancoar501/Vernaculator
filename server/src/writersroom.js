@@ -13,7 +13,8 @@
 export const MIN_CAST = 2;
 export const MAX_CAST = 4;
 export const MAX_LINES = 8;
-export const DEFAULT_CAST = ['big_play_ray', 'professor_pip', 'old_oakley', 'granny_marigold'];
+// The proven core four from the episodes: they work best together.
+export const DEFAULT_CAST = ['big_sal', 'old_oakley', 'big_play_ray', 'elias_stillwater'];
 export const DEFAULT_DIRECTOR = 'big_sal';
 
 /**
@@ -52,8 +53,9 @@ export function assignRoles(castIds, personas) {
   return BEATS.filter((r) => taken.has(r)).map((role) => ({ personaId: taken.get(role), role }));
 }
 
-export function rolePrompt(role) {
-  return `YOUR ROLE IN THE SCENE: ${ROLES[role].label}. You ${ROLES[role].beat}.`;
+export function rolePrompt(role, persona) {
+  const arc = persona?.arc === 'redemption' ? '\nYOUR ARC: You are learning to be good. If your line starts from an old troublemaker instinct, it ends with you choosing the good side.' : '';
+  return `YOUR ROLE IN THE SCENE: ${ROLES[role].label}. You ${ROLES[role].beat}.${arc}`;
 }
 
 export const PITCH_RULE = [
@@ -69,6 +71,8 @@ export function directorSystem(members, { roles = [], director = null } = {}) {
     `You are ${director ? `${director.name}, the ${director.archetype}, acting as ` : ''}the director of a writers' room that turns a social media post into a short comedic mini-scene for a family-friendly audience.`,
     `CAST (use only these ids): ${members.map((p) => `${p.id} = ${p.name}, the ${p.archetype}${roleOf[p.id] ? ` (role: ${ROLES[roleOf[p.id]].label}, ${ROLES[roleOf[p.id]].beat})` : ''}`).join('; ')}.`,
     'BEATS: follow the roles in this order: premise, escalation, left-field turn, knockout summary. Characters may trade a line or two inside a beat.',
+    ...members.filter((p) => p.arc === 'redemption').map((p) => `REDEMPTION ARC: ${p.name} is a former troublemaker learning to be good. Let him start grumpy or tempted, and by his last line have him choose the kind or honest option and enjoy it. The scene should leave the feeling that being on the good side is more fun.`),
+    'SPIRIT: this is a social-emotional learning show set in Big Sal\'s town. Characters can disagree and tease ideas, but they model kindness, honesty, and fairness.',
     'SCENE RULES:',
     `- 4 to ${MAX_LINES} lines in total, at least 2 different characters, each line at most 30 words, under 700 characters overall.`,
     '- Use the best pitches (edit them freely) and keep each line in its character\'s voice.',

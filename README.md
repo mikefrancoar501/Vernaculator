@@ -15,6 +15,12 @@ A Manifest V3 Chrome extension plus a Node middleware that reads AI chat replies
  └──────────────────────────────────────────┘
 ```
 
+## Big Sal's World: the core four and redemption
+
+The Vernaculator is a social-emotional learning (SEL) tool for kids, and for adults too. Its characters live in Big Sal's town, a place where good values make a better city. Learning from the first nine episodes, **Big Sal, Old Oakley, Big Play Ray and Elias Stillwater** are the core four: they are the default cast for both the town panel and the writers' room, and together they fill every beat (Ray sets up, Elias overthinks, Oakley takes the left turn, Sal lands it).
+
+**Rusty Peters** is a sample character with a redemption arc (`"arc": "redemption"` in personas.json): a gruff former troublemaker who is learning to be good. His lines may start with a grumble or an old (always harmless) instinct, but he talks himself into the kind or honest choice and finds it more fun. When he is in a scene, the director makes sure his last line lands on the good side. Every scene also models kindness, honesty and fairness, even while characters tease each other's ideas.
+
 ## Big Sal and the plain-language controls
 
 The point of the product: AI answers (medical, legal, technical) are often full of jargon. The Vernaculator lets anyone hear the same answer in a voice and at a level that works for them.
@@ -69,7 +75,7 @@ Server side these are the `crib`, `reply` and `scene` tasks (`server/src/tasks.j
 
 | Path | What it is |
 |---|---|
-| `shared/personas.json` | Character definitions (cleaned schema, Big Sal + 6 sample characters). Sprites can be https URLs or `assets/...` paths bundled in the extension. Served to the extension without prompts. |
+| `shared/personas.json` | Character definitions (cleaned schema: Big Sal, the core four, Rusty Peters and sample characters). Sprites can be https URLs or `assets/...` paths bundled in the extension. Served to the extension without prompts. |
 | `shared/core-values.json` | The "15 core values" injected into every prompt. **Placeholder list, replace with yours.** |
 | `server/` | Middleware: HTTP + WebSocket server, store, LLM + TTS providers, tests. |
 | `extension/` | Unpacked MV3 extension: content scripts, service worker, options page, assets, e2e test. |

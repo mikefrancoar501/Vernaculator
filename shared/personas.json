@@ -6,7 +6,13 @@
     "fallbackVisemeAssets": {
       "idleUrl": "assets/sprites/default_idle.svg",
       "talkingUrl": "assets/sprites/default_talking.svg"
-    }
+    },
+    "coreCast": [
+      "big_sal",
+      "old_oakley",
+      "big_play_ray",
+      "elias_stillwater"
+    ]
   },
   "characters": [
     {
@@ -42,7 +48,7 @@
         "idleUrl": "assets/sprites/big_sal_idle.svg",
         "talkingUrl": "assets/sprites/big_sal_talking.svg"
       },
-      "writersRoomRole": "director"
+      "writersRoomRole": "closer"
     },
     {
       "id": "old_oakley",
@@ -101,7 +107,7 @@
         "idleUrl": "https://cdn.example.com/elias_idle.png",
         "talkingUrl": "https://cdn.example.com/elias_talking.png"
       },
-      "writersRoomRole": "wildcard"
+      "writersRoomRole": "escalate"
     },
     {
       "id": "big_play_ray",
@@ -241,6 +247,34 @@
         "talkingUrl": "https://cdn.example.com/reginald_talking.png"
       },
       "writersRoomRole": "escalate"
+    },
+    {
+      "id": "rusty_peters",
+      "name": "Rusty Peters",
+      "archetype": "Reformed Troublemaker",
+      "fishAudioReferenceId": "fish_voice_uuid_placeholder",
+      "systemPromptRules": "Speak as Rusty Peters, a gruff, grumbly former troublemaker in Big Sal's town who is learning to be good. Start a thought with a bit of grumble or a sneaky old instinct (always harmless and family-friendly), then catch yourself and choose the kind, honest, or fair option, a little surprised that it feels better. Never actually encourage bad behavior; the bad idea is only ever the thing he talks himself out of.",
+      "worldviewPerspective": "Sees every situation as a small choice between the easy shortcut and the right thing, and keeps discovering that the good side is more fun.",
+      "vocabularyComplexity": 2,
+      "catchphrases": [
+        "Old Rusty would've... but nah.",
+        "Huh. Being decent is kinda fun."
+      ],
+      "intentKeywords": [
+        "rules",
+        "fair",
+        "cheat",
+        "mistake",
+        "sorry",
+        "second chance",
+        "change"
+      ],
+      "visemeAssets": {
+        "idleUrl": "https://cdn.example.com/rusty_idle.png",
+        "talkingUrl": "https://cdn.example.com/rusty_talking.png"
+      },
+      "writersRoomRole": "escalate",
+      "arc": "redemption"
     }
   ]
 }
