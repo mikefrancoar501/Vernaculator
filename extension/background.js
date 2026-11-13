@@ -20,11 +20,44 @@ const DEFAULTS = {
   hudVisible: true,
 };
 
+/**
+ * The Windows setup script writes extension/local-config.json ({ backendUrl, token }, git-ignored).
+ * If the extension has no token yet (first install, or re-added from the folder, which gives it
+ * fresh storage), fill it in from there so testers never have to paste it again. Also runs when
+ * the options page opens (it asks over runtime messaging).
+ */
+async function adoptLocalConfig() {
+  const { token, localConfigToken } = await chrome.storage.local.get(['token', 'localConfigToken']);
+  try {
+    const res = await fetch(chrome.runtime.getURL('local-config.json'), { cache: 'no-store' });
+    if (!res.ok) return false;
+    const cfg = await res.json();
+    if (typeof cfg.token !== 'string' || !/^vk_[A-Za-z0-9_-]+$/.test(cfg.token)) return false;
+    // Fill an empty token, or replace one that came from an older local config (the setup script
+    // made a new token). A token the user typed in themselves is left alone.
+    if (token && token !== localConfigToken) return false;
+    if (token === cfg.token) return false;
+    const patch = { token: cfg.token, localConfigToken: cfg.token };
+    if (typeof cfg.backendUrl === 'string' && /^https?:\/\/[^/]+/.test(cfg.backendUrl)) patch.backendUrl = cfg.backendUrl;
+    await chrome.storage.local.set(patch);
+    return true;
+  } catch {
+    return false; // no local config: normal installs paste the token on the options page
+  }
+}
+
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   const current = await chrome.storage.local.get(Object.keys(DEFAULTS));
   const missing = Object.fromEntries(Object.entries(DEFAULTS).filter(([k]) => current[k] === undefined));
   if (Object.keys(missing).length) await chrome.storage.local.set(missing);
+  await adoptLocalConfig();
   if (reason === 'install') chrome.runtime.openOptionsPage();
+});
+chrome.runtime.onStartup.addListener(adoptLocalConfig);
+chrome.runtime.onMessage.addListener((m, _sender, sendResponse) => {
+  if (m?.op !== 'adoptLocalConfig') return false;
+  adoptLocalConfig().then(sendResponse);
+  return true;
 });
 
 chrome.action.onClicked.addListener(async () => {

@@ -132,6 +132,9 @@ if (-not $valid) {
   if (-not (Test-Token $m.Value)) { Fail "The new token could not be saved in $($env:DATA_FILE)." }
 }
 $token = (Get-Content $TokenFile -Raw).Trim()
+# The extension reads this (git-ignored) file when it has no token, so reloading or re-adding it never loses the token.
+$localCfg = @{ backendUrl = 'http://localhost:8787'; token = $token } | ConvertTo-Json
+[IO.File]::WriteAllText((Join-Path $Code 'extension\local-config.json'), $localCfg)
 try { Set-Clipboard -Value $token; $copied = ' (already copied to your clipboard)' } catch { $copied = '' }
 
 # 5. Instructions for Chrome
@@ -149,8 +152,8 @@ Write-Host @"
    2. Turn on "Developer mode" (top right)
    3. Click "Load unpacked" and choose this folder:
         $ext
-   4. On the Fancy Bot settings page, paste the token above.
-      Leave the URL as http://localhost:8787
+   4. The token fills in by itself. If the settings page shows it empty,
+      paste the token above. Leave the URL as http://localhost:8787
 
  After updates: click the reload arrow on the Fancy Bot card in chrome://extensions.
  Keep this window open while you test. Close it to stop Fancy Bot.

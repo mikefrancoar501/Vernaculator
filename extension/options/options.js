@@ -24,6 +24,11 @@ $('language').append(
 );
 
 const fields = ['backendUrl', 'token', 'autoRead', 'userName', 'aboutMe', 'ageGroup', 'language'];
+// Pick up a token written by the Windows setup script (extension/local-config.json), if any.
+chrome.runtime.sendMessage({ op: 'adoptLocalConfig' }).catch(() => {});
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.token?.newValue && !$('token').value) $('token').value = changes.token.newValue;
+});
 chrome.storage.local.get(fields).then((s) => {
   $('backendUrl').value = s.backendUrl || 'http://localhost:8787';
   $('token').value = s.token || '';

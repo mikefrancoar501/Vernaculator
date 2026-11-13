@@ -3,3 +3,4 @@ server/data/
 server/.env
 extension/test/out/
 *.log
+extension/local-config.json
