@@ -52,8 +52,8 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
   Start-Process 'https://nodejs.org/en/download'
   Fail 'Node.js is not installed. Install the LTS version from nodejs.org (the page just opened), then run this again.'
 }
-$major = [int](node -p "process.versions.node.split('.')[0]")
-if ($major -lt 22) { Start-Process 'https://nodejs.org/en/download'; Fail "Node.js $(node -v) is too old. Install version 22 or newer, then run this again." }
+$ver = [version]((node -v).TrimStart('v'))
+if ($ver -lt [version]'22.9.0') { Start-Process 'https://nodejs.org/en/download'; Fail "Node.js $(node -v) is too old. Install the current LTS (22.9 or newer) from nodejs.org, then run this again." }
 Write-Host "Node.js $(node -v) OK"
 
 # 3. Install
@@ -121,5 +121,17 @@ if ($busy) {
   }
 }
 Say 'Starting the Fancy Bot server on http://localhost:8787'
-npm start
+$server = Start-Process -FilePath 'node' -ArgumentList '--env-file-if-exists=.env', 'src/index.js' -WorkingDirectory (Get-Location).Path -NoNewWindow -PassThru
+$up = $false
+for ($i = 0; $i -lt 30 -and -not $up -and -not $server.HasExited; $i++) {
+  Start-Sleep -Milliseconds 500
+  try { $up = (Invoke-RestMethod -Uri 'http://localhost:8787/health' -TimeoutSec 2).ok } catch { }
+}
+if (-not $up) {
+  if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
+  Fail 'The Fancy Bot server did not start. Take a screenshot of this window and send it to Claude.'
+}
+Write-Host "`nFancy Bot is running. Check it any time at http://localhost:8787/health (it should say ok: true)." -ForegroundColor Green
+Write-Host 'Leave this window open while you test. Close it to stop Fancy Bot.' -ForegroundColor Green
+$server.WaitForExit()
 Read-Host 'Fancy Bot stopped. Press Enter to close'
