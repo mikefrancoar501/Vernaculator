@@ -84,6 +84,10 @@ Server side these are the `crib`, `reply` and `scene` tasks (`server/src/tasks.j
 | `server/` | Middleware: HTTP + WebSocket server, store, LLM + TTS providers, tests. |
 | `extension/` | Unpacked MV3 extension: content scripts, service worker, options page, assets, e2e test. |
 
+## One-click setup on Windows
+
+`scripts/fancybot-setup.bat` (with `fancybot-setup.ps1` next to it) does everything for local testing: it clones or updates the code into `Documents\FancyBot\code` (Git for Windows asks you to sign in to GitHub the first time; without Git it uses a `Vernaculator*.zip` from GitHub's Code > Download ZIP in Downloads), checks Node.js 22+, runs `npm install`, creates a token once and saves it in `Documents\FancyBot\token.txt` (copied to the clipboard), opens `chrome://extensions` and the extension folder, and starts the server in mock mode. The server data lives in `Documents\FancyBot\data`, so updates never lose the token. Double-click it again any time to update and restart.
+
 ## Quick start (no API keys needed)
 
 Both providers default to `mock`: the mock LLM prefixes the persona's name, and the mock TTS streams a bundled "babble" MP3 so the whole pipeline, HUD animation, and meme export work offline.
