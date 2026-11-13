@@ -16,7 +16,7 @@ import { parseProfile, userMessage } from '../src/tasks.js';
 import { parseCast, cleanScript, directorSystem, assignRoles, rolePrompt } from '../src/writersroom.js';
 import { parseTown, planTown, townPrompt } from '../src/town.js';
 import { ruleAssistant, sanitizeAction, runAssistant } from '../src/assistant.js';
-import { resolveVoiceId } from '../src/config.js';
+import { resolveVoiceId, resolveVoiceSpeed } from '../src/config.js';
 
 const cfg = loadConfig();
 const personas = loadPersonas(cfg.personasFile);
@@ -190,15 +190,22 @@ test('social generations are rate limited per user', () => {
   assert.ok(!g.takeGeneration(u, t + 130000).ok, 'daily cap');
 });
 
-test('Rapid-fire genius: expert level, fast voice, chosen by the assistant', () => {
+test('Rapid-fire genius: follows the reading level, fast voice, chosen by the assistant', () => {
   const p = personas.get('big_sal');
-  const sys = buildSystemPrompt(p, { coreValues: [], readingLevel: 1, style: { accent: 'rapid' } });
-  assert.match(sys, /Rapid-fire genius/);
-  assert.match(sys, /never invent studies/);
-  assert.ok(sys.includes(READING_LEVELS[5].prompt), 'forces expert reading level');
-  assert.equal(SPEAKING_STYLES.rapid.speed, 1.35);
+  const kid = buildSystemPrompt(p, { coreValues: [], readingLevel: 1, style: { accent: 'rapid' } });
+  assert.match(kid, /Rapid-fire genius/);
+  assert.match(kid, /never invent studies/);
+  assert.ok(kid.includes(READING_LEVELS[1].prompt), 'simple for kids');
+  assert.ok(buildSystemPrompt(p, { coreValues: [], readingLevel: 5, style: { accent: 'rapid' } }).includes(READING_LEVELS[5].prompt), 'PhD-dense at expert level');
+  assert.equal(SPEAKING_STYLES.rapid.speed, 1.5);
+  assert.equal(resolveVoiceSpeed(personas.get('dash_dawson')), 1.7);
+  process.env.VOICE_SPEED_DASH_DAWSON = '1.9';
+  assert.equal(resolveVoiceSpeed(personas.get('dash_dawson')), 1.9, 'env override for tuning');
+  process.env.VOICE_SPEED_DASH_DAWSON = '9';
+  assert.equal(resolveVoiceSpeed(personas.get('dash_dawson')), 2, 'clamped to the TTS maximum');
+  delete process.env.VOICE_SPEED_DASH_DAWSON;
   assert.equal(personas.get('rusty_peters').voiceSpeed, 1.2, 'Rusty talks fast by nature');
-  assert.equal(personas.get('dash_dawson').voiceSpeed, 1.35, 'Dash, the accidental genius, talks fastest');
+  assert.equal(personas.get('dash_dawson').voiceSpeed, 1.7, 'Dash, the accidental genius, talks fastest');
   assert.match(buildSystemPrompt(personas.get('dash_dawson'), { coreValues: [] }), /no idea he is a genius/);
   assert.equal(ruleAssistant('talk like a fast genius', personas, {}).action.accent, 'rapid');
   assert.equal(ruleAssistant('talk slower please', personas, {}).action.accent, 'slow');

@@ -48,6 +48,16 @@ export function loadConfig(overrides = {}) {
  * language-specific env override (FISH_VOICE_BIG_SAL_ES) > persona's fishAudioVoicesByLanguage.es
  * > env override (FISH_VOICE_BIG_SAL) > real id in personas.json > default.
  */
+/**
+ * A character's natural speaking pace (TTS speed multiplier, 1 = normal, ~150-160 wpm).
+ * VOICE_SPEED_<ID> overrides personas.json so pace can be tuned without a code change.
+ */
+export function resolveVoiceSpeed(persona) {
+  const v = Number(env[`VOICE_SPEED_${persona.id.toUpperCase()}`]);
+  const speed = Number.isFinite(v) && v > 0 ? v : persona.voiceSpeed || 1;
+  return Math.min(2, Math.max(0.5, speed));
+}
+
 export function resolveVoiceId(cfg, persona, language = '') {
   const base = `FISH_VOICE_${persona.id.toUpperCase()}`;
   const lang = (language || '').split('-')[0].toLowerCase();

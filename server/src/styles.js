@@ -94,15 +94,13 @@ export const SPEAKING_STYLES = {
   rapid: {
     label: 'Rapid-fire genius',
     prompt: [
-      'SPEAKING STYLE: Rapid-fire genius. Deliver it like a brilliant mind thinking out loud at top speed for an audience of PhDs.',
-      '- Long, chained sentences that race from cause to effect ("which means", "and that is exactly why", "so the real mechanism is").',
-      '- Dense, precise expert vocabulary; name the underlying mechanisms, fields, and well-established principles or landmark findings by their proper names.',
+      'SPEAKING STYLE: Rapid-fire genius. Deliver it like a brilliant mind thinking out loud at top speed (the voice plays at about double normal pace).',
+      '- Long, chained sentences that race from cause to effect ("which means", "and that is exactly why", "so the real mechanism is"), quick pivots between connected ideas, then a crisp one-sentence synthesis.',
+      '- Match the depth to the READING LEVEL above: at levels 1-2 use simple words and everyday examples but keep the speed and the clever connections; at level 3 add the real terms with quick definitions; at levels 4-5 go PhD-dense, naming mechanisms, fields, and well-established principles or landmark findings by their proper names.',
       '- Only cite things that really exist and are well established; never invent studies, numbers, authors, or quotes.',
-      '- Quick pivots between connected ideas, then land a crisp one-sentence synthesis.',
       '- Confident and dazzling, never rude, smug, or condescending to the listener.',
     ].join('\n'),
-    speed: 1.35,
-    readingLevel: 5, // genius talk is expert-level by definition
+    speed: 1.5,
   },
   pirate: {
     label: 'Friendly pirate',

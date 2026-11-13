@@ -2,7 +2,7 @@ import { SentenceBuffer } from './text.js';
 import { sanitize } from './guardrails.js';
 import { buildSystemPrompt, publicPersona } from './personas.js';
 import { routeIntent } from './intent.js';
-import { resolveVoiceId } from './config.js';
+import { resolveVoiceId, resolveVoiceSpeed } from './config.js';
 import { FishSession } from './tts/fish.js';
 import { MockSession } from './tts/mock.js';
 import { parseReadingLevel, parseStyle, SPEAKING_STYLES } from './styles.js';
@@ -42,7 +42,7 @@ export class Utterance {
     const style = parseStyle(opts.style);
     this.opts = {
       ...opts,
-      readingLevel: SPEAKING_STYLES[style.accent].readingLevel ?? parseReadingLevel(opts.readingLevel),
+      readingLevel: parseReadingLevel(opts.readingLevel),
       style,
       task: parseTask(opts.task),
       question: String(opts.question || '').slice(0, 1000),
@@ -121,7 +121,7 @@ export class Utterance {
   #openTts(persona) {
     const { style, profile } = this.opts;
     // Style speed (Slow 0.85, Rapid-fire 1.35, ...) times the character's natural pace (Rusty talks fast).
-    const speed = Math.min(2, Math.max(0.5, SPEAKING_STYLES[style.accent].speed * (persona.voiceSpeed || 1)));
+    const speed = Math.min(2, Math.max(0.5, SPEAKING_STYLES[style.accent].speed * resolveVoiceSpeed(persona)));
     this.tts = createTtsSession(this.deps.cfg, persona, { speed, language: profile.language });
     this.ttsDone = new Promise((resolve) => {
       this.tts.on('finish', resolve);
