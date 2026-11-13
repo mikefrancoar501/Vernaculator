@@ -13,6 +13,23 @@ New-Item -ItemType Directory -Force -Path $Base, $Data | Out-Null
 
 function Say($m) { Write-Host "`n==> $m" -ForegroundColor Magenta }
 function Fail($m) { Write-Host "`n$m" -ForegroundColor Red; Read-Host 'Press Enter to close'; exit 1 }
+
+# Always run from Documents\FancyBot\scripts. If started from a copy inside the code folder
+# (which this script updates), copy it out and relaunch from there.
+$Scripts = Join-Path $Base 'scripts'
+$here = Split-Path -Parent $PSCommandPath
+if ($here -ne $Scripts) {
+  New-Item -ItemType Directory -Force -Path $Scripts | Out-Null
+  foreach ($f in 'fancybot-setup.ps1', 'fancybot-setup.bat') {
+    $from = Join-Path $here $f
+    if (Test-Path $from) { Copy-Item -Force $from (Join-Path $Scripts $f) }
+  }
+  Write-Host "Moved the setup script to $Scripts. Next time, double-click fancybot-setup.bat there." -ForegroundColor Yellow
+  Set-Location $Scripts
+  & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Scripts 'fancybot-setup.ps1')
+  exit $LASTEXITCODE
+}
+Set-Location $Base
 $hasGit = [bool](Get-Command git -ErrorAction SilentlyContinue)
 
 # 1. Latest code
@@ -37,15 +54,25 @@ if (-not $ok) {
     Expand-Archive -Path $zip.FullName -DestinationPath $tmp -Force
     $manifest = Get-ChildItem -Path $tmp -Recurse -Filter manifest.json | Where-Object { $_.Directory.Name -eq 'extension' } | Select-Object -First 1
     $src = $manifest.Directory.Parent.FullName
-    if (Test-Path $Code) { Remove-Item -Recurse -Force $Code }
-    Copy-Item -Recurse -Path $src -Destination $Code
-    Remove-Item -Recurse -Force $tmp
+    # Update in place: copy new and changed files over the old ones, keep node_modules, never delete
+    # the folder (OneDrive or an open window may be holding files in it).
+    New-Item -ItemType Directory -Force -Path $Code | Out-Null
+    robocopy $src $Code /E /XD node_modules .git data /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+    if ($LASTEXITCODE -ge 8) { Fail "Could not copy the new code into $Code (robocopy code $LASTEXITCODE). Close any windows or programs using that folder and try again." }
+    $global:LASTEXITCODE = 0
+    Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+    Write-Host 'Tip: install Git for Windows (git-scm.com) so this script can download updates for you.' -ForegroundColor Yellow
   } else {
     Start-Process $RepoPage
     Fail 'Could not download the code. On the GitHub page that just opened, sign in, click Code > Download ZIP, then run this again.'
   }
 }
 if (-not (Test-Path (Join-Path $Code 'extension\manifest.json'))) { Fail "The code folder looks incomplete: $Code" }
+# Keep the scripts folder current for next time (this running copy is already loaded in memory).
+foreach ($f in 'fancybot-setup.ps1', 'fancybot-setup.bat') {
+  $new = Join-Path $Code "scripts\$f"
+  if (Test-Path $new) { Copy-Item -Force $new (Join-Path $Scripts $f) -ErrorAction SilentlyContinue }
+}
 
 # 2. Node.js 22+
 Say 'Checking Node.js'
