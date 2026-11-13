@@ -78,7 +78,7 @@ export function createApp(cfg, { store, llm } = {}) {
           const rate = gateway.takeGeneration(user);
           if (!rate.ok) return json(res, 429, { error: 'rate_limited', retryAfterMs: rate.retryAfterMs });
         }
-        const system = buildSystemPrompt(persona, { coreValues, readingLevel: body.readingLevel, style: body.style, task, profile: body.profile, source: body.source });
+        const system = buildSystemPrompt(persona, { coreValues, readingLevel: body.readingLevel, style: body.style, task, profile: body.profile, source: body.source, text });
         let out = '';
         let sources = [];
         const question = String(body.question || '').slice(0, 1000);

@@ -111,7 +111,7 @@ export class Utterance {
     }
     this.persona = persona;
     const { readingLevel, style, task, profile, source } = this.opts;
-    this.system = buildSystemPrompt(persona, { coreValues: this.deps.coreValues, readingLevel, style, task, profile, source });
+    this.system = buildSystemPrompt(persona, { coreValues: this.deps.coreValues, readingLevel, style, task, profile, source, text: firstText });
     this.send.json({ type: 'utterance.persona', seq: this.seq, persona: publicPersona(persona), method, readingLevel, style, task, language: profile.language || null });
 
     this.#openTts(persona);
@@ -204,7 +204,7 @@ export class Utterance {
     const signal = this.abort.signal;
     const pitches = await Promise.all(roles.map(async ({ personaId, role }) => {
       const p = personas.get(personaId);
-      const system = `${buildSystemPrompt(p, { coreValues, readingLevel, style: { ...style, humor: true }, task: 'crib', profile, source })}\n\n${PITCH_RULE}\n${rolePrompt(role, p)}`;
+      const system = `${buildSystemPrompt(p, { coreValues, readingLevel, style: { ...style, humor: true }, task: 'crib', profile, source, text: post })}\n\n${PITCH_RULE}\n${rolePrompt(role, p)}`;
       try {
         const line = await llm.complete({ system, user: `Here is the social media post:\n<post>\n${post}\n</post>\n\nPitch your one line.`, signal });
         return { personaId: p.id, line: line.replace(/\s+/g, ' ').trim().slice(0, 240) };

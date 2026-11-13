@@ -72,6 +72,8 @@
       return fallback;
     }
   };
+  // Locale display name when we have one (Comic Reggie, ...); otherwise the server's name.
+  const personaName = (p) => (p && p.id ? t(`persona_${p.id}`, p.name || '') : '');
   const browserLanguage = () => {
     try {
       return chrome.i18n.getUILanguage() || navigator.language || 'en';
@@ -86,5 +88,5 @@
   };
   const assetUrl = (p) => chrome.runtime.getURL(p);
 
-  window.Vern = { DEFAULTS, settings, log, assetUrl, t, profile, browserLanguage };
+  window.Vern = { DEFAULTS, settings, log, assetUrl, t, personaName, profile, browserLanguage };
 })();
