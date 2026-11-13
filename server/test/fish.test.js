@@ -22,7 +22,7 @@ test('FishSession speaks the Fish Audio msgpack protocol', async () => {
   });
   await new Promise((r) => wss.on('listening', r));
 
-  const s = new FishSession({ apiKey: 'test-key', wsUrl: `ws://localhost:${wss.address().port}`, model: 's2.1-pro', latency: 'balanced', voiceId: 'voice-123' });
+  const s = new FishSession({ apiKey: 'test-key', wsUrl: `ws://localhost:${wss.address().port}`, model: 's2.1-pro', latency: 'balanced', voiceId: 'voice-123', speed: 0.85, language: 'es' });
   const audio = [];
   s.on('audio', (b) => audio.push(b));
   const finished = new Promise((r) => s.on('finish', r));
@@ -38,6 +38,8 @@ test('FishSession speaks the Fish Audio msgpack protocol', async () => {
   assert.deepEqual(received.map((m) => m.event), ['start', 'text', 'flush', 'stop']);
   assert.equal(received[0].request.reference_id, 'voice-123');
   assert.equal(received[0].request.format, 'mp3');
+  assert.equal(received[0].request.language, 'es');
+  assert.equal(received[0].request.prosody.speed, 0.85);
   assert.equal(received[1].text, 'Hello there. ');
   assert.equal(audio.length, 1);
 });

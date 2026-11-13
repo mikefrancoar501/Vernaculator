@@ -6,12 +6,13 @@ import { resolveVoiceId } from './config.js';
 import { FishSession } from './tts/fish.js';
 import { MockSession } from './tts/mock.js';
 import { parseReadingLevel, parseStyle, SPEAKING_STYLES } from './styles.js';
+import { parseTask, parseProfile, parseSource } from './tasks.js';
 
 const MAX_UTTERANCE_CHARS = 20000;
 
-export function createTtsSession(cfg, persona, { speed = 1 } = {}) {
+export function createTtsSession(cfg, persona, { speed = 1, language = '' } = {}) {
   if (cfg.tts.provider === 'fish') {
-    return new FishSession({ ...cfg.tts, voiceId: resolveVoiceId(cfg, persona), speed });
+    return new FishSession({ ...cfg.tts, voiceId: resolveVoiceId(cfg, persona, language), speed, language: language || null });
   }
   return new MockSession({ speed });
 }
@@ -34,8 +35,19 @@ export class Utterance {
   constructor({ seq, user, opts, deps, send }) {
     this.seq = seq;
     this.user = user;
-    // { personaId: string | 'auto', readingLevel: 1-5 | null, style: { humor, philosophy, accent } }
-    this.opts = { ...opts, readingLevel: parseReadingLevel(opts.readingLevel), style: parseStyle(opts.style) };
+    // personaId: id | 'auto'; readingLevel: 1-5 | null; style: { paraphrase, humor, philosophy, accent };
+    // task: speak | keypoints | ask | expound; question (ask); profile: { name, about, ageGroup, language }; source: claude | grok | gemini
+    this.opts = {
+      ...opts,
+      readingLevel: parseReadingLevel(opts.readingLevel),
+      style: parseStyle(opts.style),
+      task: parseTask(opts.task),
+      question: String(opts.question || '').slice(0, 1000),
+      profile: parseProfile(opts.profile),
+      source: parseSource(opts.source),
+    };
+    // Paraphrase and the question tasks need the whole answer before the character starts talking.
+    this.wholeAnswer = this.opts.task !== 'speak' || this.opts.style.paraphrase;
     this.deps = deps; // { cfg, personas, coreValues, llm, gateway }
     this.send = send; // { json(obj), binary(buf) }
     this.chain = Promise.resolve();
@@ -51,10 +63,21 @@ export class Utterance {
 
   append(text) {
     if (this.cancelled || !text) return;
+    if (this.wholeAnswer) {
+      // Buffer until end().
+      this.buffered = (this.buffered || '') + (this.buffered ? ' ' : '') + text;
+      return;
+    }
     this.chain = this.chain.then(() => this.#process(text)).catch((err) => this.#fail(err));
   }
 
   end() {
+    if (this.buffered && !this.cancelled) {
+      const all = this.buffered;
+      this.buffered = '';
+      this.send.json({ type: 'utterance.status', seq: this.seq, status: this.opts.task === 'speak' ? 'paraphrasing' : this.opts.task });
+      this.chain = this.chain.then(() => this.#process(all)).catch((err) => this.#fail(err));
+    }
     this.chain = this.chain.then(() => this.#finish()).catch((err) => this.#fail(err));
     return this.chain;
   }
@@ -78,11 +101,11 @@ export class Utterance {
       method = routed.method;
     }
     this.persona = persona;
-    const { readingLevel, style } = this.opts;
-    this.system = buildSystemPrompt(persona, { coreValues: this.deps.coreValues, readingLevel, style });
-    this.send.json({ type: 'utterance.persona', seq: this.seq, persona: publicPersona(persona), method, readingLevel, style });
+    const { readingLevel, style, task, profile, source } = this.opts;
+    this.system = buildSystemPrompt(persona, { coreValues: this.deps.coreValues, readingLevel, style, task, profile, source });
+    this.send.json({ type: 'utterance.persona', seq: this.seq, persona: publicPersona(persona), method, readingLevel, style, task, language: profile.language || null });
 
-    this.tts = createTtsSession(cfg, persona, { speed: SPEAKING_STYLES[style.accent].speed });
+    this.tts = createTtsSession(cfg, persona, { speed: SPEAKING_STYLES[style.accent].speed, language: profile.language });
     this.ttsDone = new Promise((resolve) => {
       this.tts.on('finish', resolve);
       this.tts.on('error', (err) => {
@@ -114,7 +137,18 @@ export class Utterance {
     const sentences = new SentenceBuffer();
     const speak = (s) => this.#speak(s);
     try {
-      for await (const delta of this.deps.llm.stream({ system: this.system, text: raw, context: this.spoken.slice(-600), signal: this.abort.signal })) {
+      const { task, question } = this.opts;
+      const stream = this.deps.llm.stream({
+        system: this.system,
+        task,
+        text: raw,
+        question,
+        context: task === 'speak' ? this.spoken.slice(-600) : '',
+        research: task === 'expound',
+        onSources: (sources) => this.send.json({ type: 'utterance.sources', seq: this.seq, sources }),
+        signal: this.abort.signal,
+      });
+      for await (const delta of stream) {
         if (this.cancelled) return;
         sentences.push(delta).forEach(speak);
       }

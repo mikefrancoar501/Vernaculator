@@ -41,10 +41,18 @@ export function loadConfig(overrides = {}) {
   return cfg;
 }
 
-/** Resolve the Fish voice for a persona: env override > real id in personas.json > default. */
-export function resolveVoiceId(cfg, persona) {
-  const envKey = `FISH_VOICE_${persona.id.toUpperCase()}`;
-  if (env[envKey]) return env[envKey];
+/**
+ * Resolve the Fish voice for a persona:
+ * language-specific env override (FISH_VOICE_BIG_SAL_ES) > persona's fishAudioVoicesByLanguage.es
+ * > env override (FISH_VOICE_BIG_SAL) > real id in personas.json > default.
+ */
+export function resolveVoiceId(cfg, persona, language = '') {
+  const base = `FISH_VOICE_${persona.id.toUpperCase()}`;
+  const lang = (language || '').split('-')[0].toLowerCase();
+  if (lang && env[`${base}_${lang.toUpperCase()}`]) return env[`${base}_${lang.toUpperCase()}`];
+  const byLang = lang && persona.fishAudioVoicesByLanguage?.[lang];
+  if (byLang && !/placeholder/i.test(byLang)) return byLang;
+  if (env[base]) return env[base];
   const id = persona.fishAudioReferenceId;
   if (id && !/placeholder/i.test(id)) return id;
   return cfg.tts.defaultVoiceId || null;

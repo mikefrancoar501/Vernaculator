@@ -21,7 +21,8 @@ before(async () => {
   base = `localhost:${app.server.address().port}`;
 });
 
-after(() => app.server.close());
+// Terminate sockets so a failed assertion can't leave the server (and the test run) hanging.
+after(() => { for (const c of app.wss.clients) c.terminate(); app.server.close(); });
 
 function connect(origin) {
   const ws = new WebSocket(`ws://${base}/v1/stream`, origin ? { origin } : {});
@@ -79,7 +80,7 @@ test('WebSocket: streamed utterance yields persona, captions, audio and done', a
   const persona = await c.waitFor((e) => e.type === 'utterance.persona');
   assert.equal(persona.persona.id, 'professor_pip');
   assert.equal(persona.readingLevel, 1);
-  assert.deepEqual(persona.style, { humor: true, philosophy: false, accent: 'slow' });
+  assert.deepEqual(persona.style, { paraphrase: false, humor: true, philosophy: false, accent: 'slow' });
   const done = await c.waitFor((e) => e.type === 'utterance.done');
   assert.ok(done.chars > 20);
   const captions = c.events.filter((e) => e.type === 'utterance.caption').map((e) => e.text);
@@ -90,6 +91,55 @@ test('WebSocket: streamed utterance yields persona, captions, audio and done', a
     assert.equal(frame[4], 0xff, 'payload starts on an MP3 frame');
   }
   assert.ok(done.usage.usedChars >= done.chars);
+  c.ws.close();
+});
+
+test('WebSocket: paraphrase waits for the whole answer and returns a short version', async () => {
+  const c = connect();
+  await c.opened;
+  c.ws.send(JSON.stringify({ type: 'auth', token }));
+  await c.waitFor((e) => e.type === 'auth.ok');
+  const long = [
+    'High blood pressure means your heart works harder than it should.',
+    'It often has no symptoms, which is why it is called a silent condition.',
+    'Doctors measure it with a cuff on your arm.',
+    'Many lifestyle factors matter, including salt, sleep, stress and exercise.',
+    'Take 10 mg of lisinopril once a day.',
+    'Some people notice a dry cough.',
+    'Call your doctor right away if you feel faint or your lips swell.',
+  ];
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 9, personaId: 'big_sal', style: { paraphrase: true }, source: 'grok', profile: { name: 'Sergio' } }));
+  for (const s of long.slice(0, 4)) c.ws.send(JSON.stringify({ type: 'utterance.text', seq: 9, text: s }));
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(c.events.filter((e) => e.type === 'utterance.caption').length, 0, 'nothing spoken before the answer is complete');
+  for (const s of long.slice(4)) c.ws.send(JSON.stringify({ type: 'utterance.text', seq: 9, text: s }));
+  c.ws.send(JSON.stringify({ type: 'utterance.end', seq: 9 }));
+  await c.waitFor((e) => e.type === 'utterance.status' && e.status === 'paraphrasing');
+  const done = await c.waitFor((e) => e.type === 'utterance.done');
+  assert.ok(done.text.length < long.join(' ').length * 0.75, `paraphrase is shorter (${done.text.length} vs ${long.join(' ').length})`);
+  assert.match(done.text, /Sergio, basically what Grok is telling you/, 'personal, third-party framing');
+  assert.match(done.text, /10 mg/, 'dose kept');
+  assert.match(done.text, /Call your doctor/, 'warning kept');
+  assert.ok(c.audio.length > 0);
+  c.ws.close();
+});
+
+test('WebSocket: key points and follow-up questions about the last answer', async () => {
+  const c = connect();
+  await c.opened;
+  c.ws.send(JSON.stringify({ type: 'auth', token }));
+  await c.waitFor((e) => e.type === 'auth.ok');
+  const answer = 'Lisinopril lowers blood pressure. Take 10 mg once a day. A dry cough is a common side effect. Call your doctor if your lips swell.';
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 21, personaId: 'old_oakley', task: 'keypoints', source: 'claude', text: answer, final: true }));
+  const kp = await c.waitFor((e) => e.type === 'utterance.done' && e.seq === 21);
+  assert.match(kp.text, /First, .*Second, /);
+  const persona = c.events.find((e) => e.type === 'utterance.persona' && e.seq === 21);
+  assert.equal(persona.task, 'keypoints');
+  assert.equal(persona.persona.id, 'old_oakley');
+
+  c.ws.send(JSON.stringify({ type: 'utterance.start', seq: 22, personaId: 'big_sal', task: 'ask', question: 'What about the cough?', source: 'claude', text: answer, final: true, profile: { name: 'Sergio' } }));
+  const ans = await c.waitFor((e) => e.type === 'utterance.done' && e.seq === 22);
+  assert.match(ans.text, /Claude said: A dry cough/);
   c.ws.close();
 });
 

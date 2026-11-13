@@ -8,6 +8,11 @@ const DEFAULTS = {
   token: '',
   personaId: 'big_sal',
   readingLevel: 2,
+  paraphrase: false,
+  userName: '',
+  aboutMe: '',
+  ageGroup: '',
+  language: 'auto',
   humor: false,
   philosophy: false,
   accent: 'none',
@@ -72,6 +77,10 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 chrome.runtime.onMessage.addListener((m, _sender, reply) => {
+  if (m.op === 'openOptions') {
+    chrome.runtime.openOptionsPage();
+    return false;
+  }
   if (m.op !== 'fetchJson') return false;
   allowed(m.url)
     .then((ok) => {

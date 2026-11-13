@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "The Vernaculator",
-  "short_name": "Vernaculator",
-  "version": "0.1.0",
-  "description": "Reads AI chat replies aloud in the voice and vernacular of a family-friendly character.",
+  "name": "__MSG_extName__",
+  "short_name": "__MSG_extShortName__",
+  "version": "0.2.0",
+  "description": "__MSG_extDescription__",
   "minimum_chrome_version": "126",
   "icons": {
     "16": "assets/icons/icon16.png",
@@ -11,18 +11,29 @@
     "128": "assets/icons/icon128.png"
   },
   "action": {
-    "default_title": "Show / hide the Vernaculator"
+    "default_title": "__MSG_actionTitle__"
   },
   "background": {
     "service_worker": "background.js"
   },
   "options_page": "options/options.html",
-  "permissions": ["storage"],
-  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
-  "optional_host_permissions": ["https://*/*"],
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
   "content_scripts": [
     {
-      "matches": ["https://claude.ai/*", "https://grok.com/*", "https://gemini.google.com/*"],
+      "matches": [
+        "https://claude.ai/*",
+        "https://grok.com/*",
+        "https://gemini.google.com/*"
+      ],
       "js": [
         "content/ns.js",
         "content/platforms.js",
@@ -40,8 +51,16 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["assets/sprites/*", "assets/audio/*"],
-      "matches": ["https://claude.ai/*", "https://grok.com/*", "https://gemini.google.com/*"]
+      "resources": [
+        "assets/sprites/*",
+        "assets/audio/*"
+      ],
+      "matches": [
+        "https://claude.ai/*",
+        "https://grok.com/*",
+        "https://gemini.google.com/*"
+      ]
     }
-  ]
+  ],
+  "default_locale": "en"
 }

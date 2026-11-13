@@ -2,14 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Vernaculator settings</title>
+  <title data-i18n="optTitle">Vernaculator settings</title>
   <style>
     :root { color-scheme: light dark; font: 14px/1.5 system-ui, sans-serif; }
-    body { max-width: 520px; margin: 32px auto; padding: 0 16px; }
+    body { max-width: 560px; margin: 32px auto; padding: 0 16px; }
     h1 { font-size: 20px; margin: 0 0 4px; }
-    p.sub { margin: 0 0 24px; opacity: .7; }
+    h2 { font-size: 16px; margin: 32px 0 2px; }
+    p.sub { margin: 0 0 8px; opacity: .7; }
     label { display: block; font-weight: 600; margin: 16px 0 4px; }
-    input, select { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #8886; font: inherit; }
+    input, select, textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #8886; font: inherit; }
+    textarea { min-height: 80px; resize: vertical; }
     .row { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
     .row input { width: auto; }
     button { margin-top: 24px; padding: 8px 16px; border-radius: 8px; border: 0; background: #6b4eff; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
@@ -18,20 +20,43 @@
   </style>
 </head>
 <body>
-  <h1>The Vernaculator</h1>
-  <p class="sub">Connect the extension to your Vernaculator middleware.</p>
+  <h1 data-i18n="extName">The Vernaculator</h1>
 
-  <label for="backendUrl">Middleware URL</label>
+  <h2 data-i18n="optAboutYou">About you</h2>
+  <p class="sub" data-i18n="optAboutSub">Optional. Stays in this browser and is only used so characters can talk to you personally.</p>
+
+  <label for="userName" data-i18n="optName">Your name</label>
+  <input id="userName" type="text" maxlength="40" autocomplete="given-name">
+  <div class="hint" data-i18n="optNameHint">Characters will use it.</div>
+
+  <label for="aboutMe" data-i18n="optAbout">About me</label>
+  <textarea id="aboutMe" maxlength="600" data-i18n-placeholder="optAboutPlaceholder"></textarea>
+  <div class="hint" data-i18n="optAboutHint">Your job, skills and interests.</div>
+
+  <label for="ageGroup" data-i18n="optAge">Age group</label>
+  <select id="ageGroup">
+    <option value="" data-i18n="optAgeNone">Prefer not to say</option>
+    <option value="kid" data-i18n="optAgeKid">Kid</option>
+    <option value="teen" data-i18n="optAgeTeen">Teen</option>
+    <option value="adult" data-i18n="optAgeAdult">Adult</option>
+    <option value="senior" data-i18n="optAgeSenior">Senior</option>
+  </select>
+
+  <label for="language" data-i18n="optLanguage">Language characters speak</label>
+  <select id="language"></select>
+
+  <h2 data-i18n="optConnection">Connection</h2>
+  <p class="sub" data-i18n="optConnectSub">Connect the extension to your Vernaculator middleware.</p>
+
+  <label for="backendUrl" data-i18n="optBackendUrl">Middleware URL</label>
   <input id="backendUrl" type="url" placeholder="http://localhost:8787">
-  <div class="hint">Use https:// in production; the extension connects over wss:// to /v1/stream.</div>
 
-  <label for="token">Session token</label>
+  <label for="token" data-i18n="optToken">Session token</label>
   <input id="token" type="password" placeholder="vk_...">
-  <div class="hint">Create one on the server with <code>npm run token:create</code>.</div>
 
-  <div class="row"><input id="autoRead" type="checkbox"><span>Auto-read new replies</span></div>
+  <div class="row"><input id="autoRead" type="checkbox"><span data-i18n="optAutoRead">Auto-read new replies</span></div>
 
-  <button id="save">Save</button><span id="status"></span>
+  <button id="save" data-i18n="optSave">Save</button><span id="status"></span>
   <script src="options.js"></script>
 </body>
 </html>

@@ -6,6 +6,12 @@
     token: '',
     personaId: 'big_sal',
     readingLevel: 2, // 1 = super simple ... 5 = expert; plain language by default
+    paraphrase: false,
+    // About-you profile (stays in this browser; sent with each request so characters can personalize)
+    userName: '',
+    aboutMe: '',
+    ageGroup: '',
+    language: 'auto', // 'auto' = browser language
     humor: false,
     philosophy: false,
     accent: 'none',
@@ -48,7 +54,26 @@
   });
 
   const log = (...a) => console.debug('[Vernaculator]', ...a);
+  const t = (key, fallback = '') => {
+    try {
+      return chrome.i18n.getMessage(key) || fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  const browserLanguage = () => {
+    try {
+      return chrome.i18n.getUILanguage() || navigator.language || 'en';
+    } catch {
+      return navigator.language || 'en';
+    }
+  };
+  /** The listener profile sent to the middleware. Language defaults to the browser's. */
+  const profile = () => {
+    const v = settings.values;
+    return { name: v.userName, about: v.aboutMe, ageGroup: v.ageGroup, language: v.language && v.language !== 'auto' ? v.language : browserLanguage() };
+  };
   const assetUrl = (p) => chrome.runtime.getURL(p);
 
-  window.Vern = { DEFAULTS, settings, log, assetUrl };
+  window.Vern = { DEFAULTS, settings, log, assetUrl, t, profile, browserLanguage };
 })();

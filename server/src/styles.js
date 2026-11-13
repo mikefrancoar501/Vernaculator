@@ -48,6 +48,16 @@ export const FIDELITY_RULE = [
   '- Never add medical, legal, or financial advice that is not in the source.',
 ].join('\n');
 
+/** Paraphrase mode: retell the key points briefly instead of voicing the whole answer. */
+export const PARAPHRASE_RULE = [
+  'PARAPHRASE MODE (the listener asked for a paraphrase, not the full answer):',
+  '- Do not read the source out. Retell what it says in your own words, as a short paraphrase.',
+  '- Lead with the main answer in one sentence, then only the key points that matter to the listener.',
+  '- Aim for about a quarter of the source\'s length: usually 3 to 6 spoken sentences, never more than about 120 words.',
+  '- Drop repetition, filler, disclaimers that add nothing, and long lists; turn lists into one flowing sentence.',
+  '- Still keep every number, dose, date, warning, and "see a professional" instruction that matters. If something important must be left out, say there is more detail in the full answer.',
+].join('\n');
+
 export const ADDONS = {
   humor: {
     label: 'Humor',
@@ -91,6 +101,7 @@ export const SPEAKING_STYLES = {
 /** Normalizes untrusted client input into a known-good style object. */
 export function parseStyle(input = {}) {
   return {
+    paraphrase: input.paraphrase === true,
     humor: input.humor === true,
     philosophy: input.philosophy === true,
     accent: Object.hasOwn(SPEAKING_STYLES, input.accent) ? input.accent : 'none',
@@ -109,7 +120,7 @@ export function stylePrompt(style) {
 export function styleCatalog() {
   return {
     readingLevels: Object.fromEntries(Object.entries(READING_LEVELS).map(([k, v]) => [k, v.label])),
-    addons: Object.fromEntries(Object.entries(ADDONS).map(([k, v]) => [k, v.label])),
+    addons: { paraphrase: 'Paraphrase', ...Object.fromEntries(Object.entries(ADDONS).map(([k, v]) => [k, v.label])) },
     speakingStyles: Object.fromEntries(Object.entries(SPEAKING_STYLES).map(([k, v]) => [k, v.label])),
   };
 }

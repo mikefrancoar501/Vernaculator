@@ -1,23 +1,16 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { userMessage } from './tasks.js';
 
 /**
  * LLM providers for style transfer. Each provider exposes:
- *   stream({ system, text, context }) -> AsyncIterable<string>  (text deltas)
+ *   stream({ system, task, text, context, question, research, onSources }) -> AsyncIterable<string>  (text deltas)
+ *     research: allow web search (expound); onSources([{ title, url }]) reports cited pages
  *   classify(text, personas) -> Promise<personaId | null>
  */
 
 export function createLLM(cfg) {
   if (cfg.llm.provider === 'anthropic') return new AnthropicLLM(cfg.llm);
   return new MockLLM();
-}
-
-function userMessage(text, context) {
-  const parts = [];
-  if (context) {
-    parts.push(`For continuity, here is what you already said aloud for the earlier part of this message (do not repeat it):\n<already_spoken>\n${context}\n</already_spoken>`);
-  }
-  parts.push(`Rewrite this next part of the assistant's message in character:\n<source>\n${text}\n</source>`);
-  return parts.join('\n\n');
 }
 
 export class AnthropicLLM {
@@ -35,27 +28,40 @@ export class AnthropicLLM {
       : {};
   }
 
-  async *stream({ system, text, context, signal }) {
-    const stream = this.client.beta.messages.stream(
-      {
-        model: this.model,
-        max_tokens: 4096,
-        system,
-        output_config: { effort: this.effort },
-        messages: [{ role: 'user', content: userMessage(text, context) }],
-        ...this.#fallbackParams(),
-      },
-      { signal },
-    );
-    for await (const event of stream) {
-      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-        yield event.delta.text;
+  async *stream({ system, task = 'speak', text, context, question, research = false, onSources, signal }) {
+    const messages = [{ role: 'user', content: userMessage({ task, text, context, question }) }];
+    const tools = research ? [{ type: 'web_search_20260209', name: 'web_search', max_uses: 3 }] : undefined;
+    const sources = new Map();
+    // Server tools can pause a long turn (stop_reason "pause_turn"); continue it a few times.
+    for (let round = 0; round < 3; round++) {
+      const stream = this.client.beta.messages.stream(
+        {
+          model: this.model,
+          max_tokens: research ? 8192 : 4096,
+          system,
+          output_config: { effort: this.effort },
+          messages,
+          ...(tools ? { tools } : {}),
+          ...this.#fallbackParams(),
+        },
+        { signal },
+      );
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+          yield event.delta.text;
+        }
       }
+      const final = await stream.finalMessage();
+      for (const block of final.content) {
+        for (const c of block.citations || []) if (c.url) sources.set(c.url, { title: c.title || c.url, url: c.url });
+      }
+      if (final.stop_reason === 'refusal') {
+        throw Object.assign(new Error('The style-transfer model declined this text.'), { code: 'refusal' });
+      }
+      if (final.stop_reason !== 'pause_turn') break;
+      messages.push({ role: 'assistant', content: final.content });
     }
-    const final = await stream.finalMessage();
-    if (final.stop_reason === 'refusal') {
-      throw Object.assign(new Error('The style-transfer model declined this text.'), { code: 'refusal' });
-    }
+    if (sources.size) onSources?.([...sources.values()].slice(0, 6));
   }
 
   async classify(text, personas) {
@@ -86,9 +92,26 @@ export class AnthropicLLM {
 
 /** Offline provider for development and tests: light "in-character" wrapper, streamed word by word. */
 export class MockLLM {
-  async *stream({ system, text, context }) {
+  async *stream({ system, task = 'speak', text, context, question }) {
     const name = /performing as "([^"]+)"/.exec(system)?.[1] || 'Narrator';
-    const out = context ? text : `${name} here. ${text}`;
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    const listener = /Name: ([^.<]+)\./.exec(system)?.[1];
+    const source = /written by (\w+)/.exec(system)?.[1] || 'the AI';
+    let body = text;
+    if (task === 'keypoints') {
+      body = `Here are the key points. ${sentences.slice(0, 3).map((s, i) => `${['First', 'Second', 'Third'][i]}, ${s.trim()}`).join(' ')}`;
+    } else if (task === 'ask') {
+      const words = (question || '').toLowerCase().match(/[a-z]{4,}/g) || [];
+      const hit = sentences.find((s) => words.some((w) => s.toLowerCase().includes(w)));
+      body = hit ? `Good question. ${source} said: ${hit.trim()}` : `${source} didn't say anything about that. Tap Expound to go deeper.`;
+    } else if (task === 'expound') {
+      body = `Let's go deeper. ${text} There is more to it than that, and here is the bigger picture.`;
+    } else if (/PARAPHRASE MODE/.test(system)) {
+      // Crude stand-in for a real paraphrase: first sentence + any sentence carrying a number or warning.
+      const keep = [sentences[0], ...sentences.slice(1).filter((s) => /\d|warn|right away|emergency|call /i.test(s))].slice(0, 4);
+      body = `${listener ? `${listener}, b` : 'B'}asically what ${source} is telling you is this. ${keep.join(' ').trim()}`;
+    }
+    const out = context ? body : `${name} here. ${body}`;
     for (const word of out.split(/(\s+)/)) {
       if (word) yield word;
       await new Promise((r) => setTimeout(r, 2));

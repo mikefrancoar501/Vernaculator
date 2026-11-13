@@ -1,0 +1,236 @@
+{
+  "extName": {
+    "message": "The Vernaculator"
+  },
+  "extShortName": {
+    "message": "Vernaculator"
+  },
+  "extDescription": {
+    "message": "Escucha las respuestas de la IA explicadas por un personaje, en lenguaje sencillo y en tu idioma."
+  },
+  "actionTitle": {
+    "message": "Mostrar / ocultar Vernaculator"
+  },
+  "hudProfile": {
+    "message": "Sobre ti"
+  },
+  "hudCollapse": {
+    "message": "Contraer"
+  },
+  "hudTickle": {
+    "message": "Tócame rápido..."
+  },
+  "hudCaptionPlaceholder": {
+    "message": "Aquí se leerán en voz alta las nuevas respuestas."
+  },
+  "hudPlayPause": {
+    "message": "Reproducir / pausar"
+  },
+  "hudReplay": {
+    "message": "Repetir la última"
+  },
+  "hudStop": {
+    "message": "Detener"
+  },
+  "hudReadSelection": {
+    "message": "Leer el texto seleccionado (o la última respuesta)"
+  },
+  "hudTabListen": {
+    "message": "Escuchar"
+  },
+  "hudTabAsk": {
+    "message": "Preguntar"
+  },
+  "hudCharacter": {
+    "message": "Personaje"
+  },
+  "hudAutoCharacter": {
+    "message": "Automático (según el tema)"
+  },
+  "hudReadingLevel": {
+    "message": "Nivel de lectura"
+  },
+  "hudLevelLow": {
+    "message": "Claro y sencillo"
+  },
+  "hudLevelHigh": {
+    "message": "Experto"
+  },
+  "level1": {
+    "message": "Muy sencillo"
+  },
+  "level2": {
+    "message": "Sencillo"
+  },
+  "level3": {
+    "message": "Cotidiano"
+  },
+  "level4": {
+    "message": "Detallado"
+  },
+  "level5": {
+    "message": "Experto"
+  },
+  "hudParaphrase": {
+    "message": "Parafrasear"
+  },
+  "hudHumor": {
+    "message": "Humor"
+  },
+  "hudPhilosophy": {
+    "message": "Filosofía"
+  },
+  "hudSpeakingStyle": {
+    "message": "Estilo de habla"
+  },
+  "style_none": {
+    "message": "El del personaje"
+  },
+  "style_slow": {
+    "message": "Lento y paciente"
+  },
+  "style_british": {
+    "message": "Inglés británico"
+  },
+  "style_storyteller": {
+    "message": "Cuentacuentos de antaño"
+  },
+  "style_hype": {
+    "message": "Locutor entusiasta"
+  },
+  "style_pirate": {
+    "message": "Pirata amistoso"
+  },
+  "hudAutoRead": {
+    "message": "Leer respuestas automáticamente"
+  },
+  "hudMeme": {
+    "message": "Meme"
+  },
+  "hudMemeTitle": {
+    "message": "Exportar la última respuesta como video"
+  },
+  "hudAskHint": {
+    "message": "Sobre la última respuesta de la IA:"
+  },
+  "hudKeyPoints": {
+    "message": "Puntos clave"
+  },
+  "hudParaphraseNow": {
+    "message": "Parafrasear"
+  },
+  "hudOakley": {
+    "message": "🌳 Parafrasear con Oakley"
+  },
+  "hudAskPlaceholder": {
+    "message": "Pregunta sobre lo que acaba de decir..."
+  },
+  "hudAsk": {
+    "message": "Preguntar"
+  },
+  "hudExpound": {
+    "message": "Profundizar"
+  },
+  "hudExpoundTitle": {
+    "message": "Ir más a fondo, con investigación"
+  },
+  "statusThinking": {
+    "message": "Pensando como el personaje..."
+  },
+  "statusNothing": {
+    "message": "Todavía no hay nada que leer."
+  },
+  "statusAutoPicked": {
+    "message": "elegido automáticamente"
+  },
+  "statusParaphrasing": {
+    "message": "Parafraseando..."
+  },
+  "statusKeyPoints": {
+    "message": "Buscando los puntos clave..."
+  },
+  "statusAnswering": {
+    "message": "Respondiendo..."
+  },
+  "statusExpounding": {
+    "message": "Profundizando..."
+  },
+  "statusCharsLeft": {
+    "message": "Te quedan $1 caracteres este mes"
+  },
+  "statusExportFirst": {
+    "message": "Primero reproduce una respuesta y luego expórtala."
+  },
+  "optTitle": {
+    "message": "Ajustes de Vernaculator"
+  },
+  "optConnection": {
+    "message": "Conexión"
+  },
+  "optConnectSub": {
+    "message": "Conecta la extensión con tu servidor de Vernaculator."
+  },
+  "optBackendUrl": {
+    "message": "URL del servidor"
+  },
+  "optToken": {
+    "message": "Token de sesión"
+  },
+  "optAutoRead": {
+    "message": "Leer automáticamente las respuestas nuevas"
+  },
+  "optAboutYou": {
+    "message": "Sobre ti"
+  },
+  "optAboutSub": {
+    "message": "Opcional. Se queda en este navegador y solo sirve para que los personajes te hablen de forma personal."
+  },
+  "optName": {
+    "message": "Tu nombre"
+  },
+  "optNameHint": {
+    "message": "Los personajes lo usarán, p. ej. \"Sergio, básicamente lo que Claude te está diciendo es...\""
+  },
+  "optAbout": {
+    "message": "Sobre mí"
+  },
+  "optAboutPlaceholder": {
+    "message": "p. ej. Soy electricista, programo en C++ y Python, me encanta el béisbol."
+  },
+  "optAboutHint": {
+    "message": "Tu trabajo, habilidades e intereses. Los personajes los usan para darte ejemplos de tu mundo."
+  },
+  "optAge": {
+    "message": "Grupo de edad"
+  },
+  "optAgeNone": {
+    "message": "Prefiero no decirlo"
+  },
+  "optAgeKid": {
+    "message": "Niño/a"
+  },
+  "optAgeTeen": {
+    "message": "Adolescente"
+  },
+  "optAgeAdult": {
+    "message": "Adulto"
+  },
+  "optAgeSenior": {
+    "message": "Adulto mayor"
+  },
+  "optLanguage": {
+    "message": "Idioma en que hablan los personajes"
+  },
+  "optLanguageAuto": {
+    "message": "El mismo que este navegador ($1)"
+  },
+  "optSave": {
+    "message": "Guardar"
+  },
+  "optSaved": {
+    "message": "Guardado."
+  },
+  "optChecking": {
+    "message": "Comprobando..."
+  }
+}

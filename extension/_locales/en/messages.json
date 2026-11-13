@@ -1,0 +1,236 @@
+{
+  "extName": {
+    "message": "The Vernaculator"
+  },
+  "extShortName": {
+    "message": "Vernaculator"
+  },
+  "extDescription": {
+    "message": "Hear AI answers explained by a character, in plain language and your own language."
+  },
+  "actionTitle": {
+    "message": "Show / hide the Vernaculator"
+  },
+  "hudProfile": {
+    "message": "About you"
+  },
+  "hudCollapse": {
+    "message": "Collapse"
+  },
+  "hudTickle": {
+    "message": "Tap me rapidly..."
+  },
+  "hudCaptionPlaceholder": {
+    "message": "New replies will be read aloud here."
+  },
+  "hudPlayPause": {
+    "message": "Play / pause"
+  },
+  "hudReplay": {
+    "message": "Replay last"
+  },
+  "hudStop": {
+    "message": "Stop"
+  },
+  "hudReadSelection": {
+    "message": "Read selected text (or the last reply)"
+  },
+  "hudTabListen": {
+    "message": "Listen"
+  },
+  "hudTabAsk": {
+    "message": "Ask"
+  },
+  "hudCharacter": {
+    "message": "Character"
+  },
+  "hudAutoCharacter": {
+    "message": "Auto (match the topic)"
+  },
+  "hudReadingLevel": {
+    "message": "Reading level"
+  },
+  "hudLevelLow": {
+    "message": "Plain & simple"
+  },
+  "hudLevelHigh": {
+    "message": "Expert"
+  },
+  "level1": {
+    "message": "Super simple"
+  },
+  "level2": {
+    "message": "Plain"
+  },
+  "level3": {
+    "message": "Everyday"
+  },
+  "level4": {
+    "message": "Detailed"
+  },
+  "level5": {
+    "message": "Expert"
+  },
+  "hudParaphrase": {
+    "message": "Paraphrase"
+  },
+  "hudHumor": {
+    "message": "Humor"
+  },
+  "hudPhilosophy": {
+    "message": "Philosophy"
+  },
+  "hudSpeakingStyle": {
+    "message": "Speaking style"
+  },
+  "style_none": {
+    "message": "Character's own"
+  },
+  "style_slow": {
+    "message": "Slow & patient"
+  },
+  "style_british": {
+    "message": "British English"
+  },
+  "style_storyteller": {
+    "message": "Old-time storyteller"
+  },
+  "style_hype": {
+    "message": "Hype announcer"
+  },
+  "style_pirate": {
+    "message": "Friendly pirate"
+  },
+  "hudAutoRead": {
+    "message": "Auto-read replies"
+  },
+  "hudMeme": {
+    "message": "Meme"
+  },
+  "hudMemeTitle": {
+    "message": "Export the last reply as a video"
+  },
+  "hudAskHint": {
+    "message": "About the last AI answer:"
+  },
+  "hudKeyPoints": {
+    "message": "Key points"
+  },
+  "hudParaphraseNow": {
+    "message": "Paraphrase"
+  },
+  "hudOakley": {
+    "message": "🌳 Paraphrase with Oakley"
+  },
+  "hudAskPlaceholder": {
+    "message": "Ask about what it just said..."
+  },
+  "hudAsk": {
+    "message": "Ask"
+  },
+  "hudExpound": {
+    "message": "Expound"
+  },
+  "hudExpoundTitle": {
+    "message": "Go deeper, with research"
+  },
+  "statusThinking": {
+    "message": "Thinking in character..."
+  },
+  "statusNothing": {
+    "message": "Nothing to read yet."
+  },
+  "statusAutoPicked": {
+    "message": "auto-picked"
+  },
+  "statusParaphrasing": {
+    "message": "Paraphrasing..."
+  },
+  "statusKeyPoints": {
+    "message": "Finding the key points..."
+  },
+  "statusAnswering": {
+    "message": "Answering..."
+  },
+  "statusExpounding": {
+    "message": "Digging deeper..."
+  },
+  "statusCharsLeft": {
+    "message": "$1 characters left this month"
+  },
+  "statusExportFirst": {
+    "message": "Play a reply first, then export it."
+  },
+  "optTitle": {
+    "message": "Vernaculator settings"
+  },
+  "optConnection": {
+    "message": "Connection"
+  },
+  "optConnectSub": {
+    "message": "Connect the extension to your Vernaculator middleware."
+  },
+  "optBackendUrl": {
+    "message": "Middleware URL"
+  },
+  "optToken": {
+    "message": "Session token"
+  },
+  "optAutoRead": {
+    "message": "Auto-read new replies"
+  },
+  "optAboutYou": {
+    "message": "About you"
+  },
+  "optAboutSub": {
+    "message": "Optional. Stays in this browser and is only used so characters can talk to you personally."
+  },
+  "optName": {
+    "message": "Your name"
+  },
+  "optNameHint": {
+    "message": "Characters will use it, e.g. \"Sergio, basically what Claude is telling you is...\""
+  },
+  "optAbout": {
+    "message": "About me"
+  },
+  "optAboutPlaceholder": {
+    "message": "e.g. I'm an electrician, I code in C++ and Python, I love baseball."
+  },
+  "optAboutHint": {
+    "message": "Your job, skills and interests. Characters use it to pick examples from your world."
+  },
+  "optAge": {
+    "message": "Age group"
+  },
+  "optAgeNone": {
+    "message": "Prefer not to say"
+  },
+  "optAgeKid": {
+    "message": "Kid"
+  },
+  "optAgeTeen": {
+    "message": "Teen"
+  },
+  "optAgeAdult": {
+    "message": "Adult"
+  },
+  "optAgeSenior": {
+    "message": "Senior"
+  },
+  "optLanguage": {
+    "message": "Language characters speak"
+  },
+  "optLanguageAuto": {
+    "message": "Same as this browser ($1)"
+  },
+  "optSave": {
+    "message": "Save"
+  },
+  "optSaved": {
+    "message": "Saved."
+  },
+  "optChecking": {
+    "message": "Checking..."
+  }
+}

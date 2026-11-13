@@ -11,9 +11,9 @@ import { encode, decode } from '@msgpack/msgpack';
  * Emits: 'open', 'audio' (Buffer), 'finish' (reason), 'error' (Error).
  */
 export class FishSession extends EventEmitter {
-  constructor({ apiKey, wsUrl, model, latency, voiceId, format = 'mp3', speed = 1 }) {
+  constructor({ apiKey, wsUrl, model, latency, voiceId, format = 'mp3', speed = 1, language = null }) {
     super();
-    this.opts = { apiKey, wsUrl, model, latency, voiceId, format, speed };
+    this.opts = { apiKey, wsUrl, model, latency, voiceId, format, speed, language };
     this.ws = null;
     this.pending = [];
     this.ready = false;
@@ -40,6 +40,7 @@ export class FishSession extends EventEmitter {
           latency: this.opts.latency,
           normalize: true,
           chunk_length: 100, // smaller chunks = lower time-to-first-audio
+          language: this.opts.language, // BCP-47, e.g. "es"; null lets Fish detect it
           prosody: { speed: this.opts.speed, volume: 0 }, // "Slow & patient" style slows the voice down
         },
       }, true);

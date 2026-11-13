@@ -91,16 +91,36 @@
   loadPersonas();
 
   // --- Speaking ---------------------------------------------------------------
-  async function startUtterance({ sourceId = null, text = '', final = false } = {}) {
+  const SOURCE_NAME = { claude: 'Claude', grok: 'Grok', gemini: 'Gemini' }[platform.id];
+
+  /**
+   * Start a spoken request. `task` is speak | keypoints | ask | expound; overrides let the
+   * Ask panel force a one-off character (e.g. Oakley) or a one-off paraphrase.
+   */
+  async function startUtterance({ sourceId = null, text = '', final = false, task = 'speak', question, personaId, paraphrase } = {}) {
     if (current) conn.send({ type: 'utterance.cancel', seq: current.seq }).catch(() => {});
     const seq = ++seqCounter;
-    current = { seq, sourceId, persona: null, sprites: null, text: '' };
+    current = { seq, sourceId, persona: null, sprites: null, text: '', task };
     hud.setCaption('');
-    hud.setStatus('Thinking in character...', 'busy');
+    hud.setSources([]);
+    hud.setStatus(Vern.t('statusThinking', 'Thinking in character...'), 'busy');
     player.begin(seq);
-    const { personaId, readingLevel, humor, philosophy, accent } = Vern.settings.values;
+    const v = Vern.settings.values;
+    const style = { paraphrase: paraphrase ?? v.paraphrase, humor: v.humor, philosophy: v.philosophy, accent: v.accent };
     try {
-      await conn.send({ type: 'utterance.start', seq, personaId, readingLevel, style: { humor, philosophy, accent }, text, final });
+      await conn.send({
+        type: 'utterance.start',
+        seq,
+        personaId: personaId || v.personaId,
+        readingLevel: v.readingLevel,
+        style,
+        task,
+        question,
+        profile: Vern.profile(),
+        source: platform.id,
+        text,
+        final,
+      });
     } catch (err) {
       hud.setStatus(err.message, 'err');
       current = null;
@@ -112,11 +132,15 @@
     conn.send({ type: 'utterance.text', seq, text }).catch(() => {});
   }
 
-  function speak(text) {
-    const clean = text.trim();
-    if (!clean) return hud.setStatus('Nothing to read yet.', 'idle');
-    startUtterance({ text: clean.slice(0, 20000), final: true });
+  function speak(text, extra = {}) {
+    const clean = (text || '').trim();
+    if (!clean) return hud.setStatus(Vern.t('statusNothing', 'Nothing to read yet.'), 'idle');
+    startUtterance({ text: clean.slice(0, 20000), final: true, ...extra });
   }
+
+  // The full text of the most recent AI answer: what Key points / Ask / Expound work from.
+  let lastAnswer = '';
+  const answerText = () => lastAnswer || observer.latestText();
 
   const observer = new Vern.MessageObserver(platform, {
     onStart(id) {
@@ -125,7 +149,8 @@
     onChunk(id, text) {
       if (current?.sourceId === id) sendChunk(current.seq, text);
     },
-    onEnd(id) {
+    onEnd(id, fullText) {
+      if (fullText) lastAnswer = fullText;
       if (current?.sourceId === id) conn.send({ type: 'utterance.end', seq: current.seq }).catch(() => {});
     },
   });
@@ -139,7 +164,16 @@
         current.persona = msg.persona;
         current.applied = { readingLevel: msg.readingLevel, style: msg.style }; // what the server actually used
         current.sprites = await showPersona(msg.persona);
-        hud.setStatus(`${msg.persona.name}${msg.method !== 'manual' ? ' (auto-picked)' : ''}`, 'busy');
+        hud.setStatus(`${msg.persona.name}${msg.method !== 'manual' ? ` (${Vern.t('statusAutoPicked', 'auto-picked')})` : ''}`, 'busy');
+        break;
+      case 'utterance.status': {
+        const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'] };
+        const [k, fb] = labels[msg.status] || ['', msg.status];
+        hud.setStatus(Vern.t(k, fb), 'busy');
+        break;
+      }
+      case 'utterance.sources':
+        hud.setSources(msg.sources);
         break;
       case 'utterance.caption':
         hud.appendCaption(msg.text);
@@ -147,7 +181,7 @@
       case 'utterance.done':
         player.end(msg.seq);
         lastSession = { chunks: player.chunks, text: msg.text, persona: current.persona, sprites: current.sprites };
-        hud.setStatus(`${msg.usage.remainingChars.toLocaleString()} characters left this month`, 'ok');
+        hud.setStatus(Vern.t('statusCharsLeft', '$1 characters left this month').replace('$1', msg.usage.remainingChars.toLocaleString()), 'ok');
         break;
       case 'utterance.cancelled':
         if (msg.reason !== 'superseded' && msg.reason !== 'client') hud.setStatus(`Stopped (${msg.reason})`, 'idle');
@@ -166,9 +200,29 @@
   }
 
   // --- HUD actions --------------------------------------------------------------
-  async function onAction(action) {
+  async function onAction(action, arg) {
     player.ensureAudioGraph();
     switch (action) {
+      case 'profile':
+        chrome.runtime.sendMessage({ op: 'openOptions' });
+        break;
+      case 'keypoints':
+        speak(answerText(), { task: 'keypoints' });
+        break;
+      case 'paraphraseNow':
+        speak(answerText(), { paraphrase: true });
+        break;
+      case 'oakley':
+        speak(answerText(), { paraphrase: true, personaId: 'old_oakley' });
+        break;
+      case 'ask':
+        if (!arg) return;
+        speak(answerText(), { task: 'ask', question: arg });
+        hud.clearQuestion();
+        break;
+      case 'expound':
+        speak(answerText(), { task: 'expound', question: arg || undefined });
+        break;
       case 'playpause':
         if (player.playing) player.pause();
         else if (player.audio.currentSrc && !player.audio.ended) player.resume();
@@ -187,7 +241,7 @@
         speak(window.getSelection()?.toString() || observer.latestText());
         break;
       case 'export':
-        if (!lastSession) return hud.setStatus('Play a reply first, then export it.', 'idle');
+        if (!lastSession) return hud.setStatus(Vern.t('statusExportFirst', 'Play a reply first, then export it.'), 'idle');
         try {
           hud.setStatus('Rendering video...', 'busy');
           hud.setExportProgress(0);

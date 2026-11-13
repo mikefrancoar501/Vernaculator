@@ -9,6 +9,7 @@ import { routeIntent } from './intent.js';
 import { sanitize } from './guardrails.js';
 import { Utterance } from './pipeline.js';
 import { styleCatalog } from './styles.js';
+import { parseTask } from './tasks.js';
 
 const AUTH_TIMEOUT_MS = 10_000;
 const MAX_JSON_BYTES = 64 * 1024;
@@ -66,12 +67,15 @@ export function createApp(cfg, { store, llm } = {}) {
           persona = personas.get(routed.personaId);
           method = routed.method;
         }
-        const system = buildSystemPrompt(persona, { coreValues, readingLevel: body.readingLevel, style: body.style });
+        const task = parseTask(body.task);
+        const system = buildSystemPrompt(persona, { coreValues, readingLevel: body.readingLevel, style: body.style, task, profile: body.profile, source: body.source });
         let out = '';
-        for await (const d of llm.stream({ system, text })) out += d;
+        let sources = [];
+        const question = String(body.question || '').slice(0, 1000);
+        for await (const d of llm.stream({ system, task, text, question, research: task === 'expound', onSources: (s) => (sources = s) })) out += d;
         const { clean, flagged } = sanitize(out);
         gateway.record(user, clean.length);
-        return json(res, 200, { persona: publicPersona(persona), method, text: clean, filtered: flagged });
+        return json(res, 200, { persona: publicPersona(persona), method, task, text: clean, filtered: flagged, sources });
       }
       return json(res, 404, { error: 'not_found' });
     } catch (err) {
@@ -126,7 +130,7 @@ export function createApp(cfg, { store, llm } = {}) {
           current = new Utterance({
             seq,
             user,
-            opts: { personaId: msg.personaId || 'auto', readingLevel: msg.readingLevel, style: msg.style },
+            opts: { personaId: msg.personaId || 'auto', readingLevel: msg.readingLevel, style: msg.style, task: msg.task, question: msg.question, profile: msg.profile, source: msg.source },
             deps,
             send,
           });
@@ -156,7 +160,7 @@ export function createApp(cfg, { store, llm } = {}) {
     });
   }
 
-  return { server, store, gateway, personas, deps };
+  return { server, wss, store, gateway, personas, deps };
 }
 
 function end(res, status) {

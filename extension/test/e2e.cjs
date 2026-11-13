@@ -66,10 +66,10 @@ const assert = (cond, msg) => {
   const box = await page.locator('#vernaculator-hud').boundingBox();
   await page.mouse.move(box.x + 120, box.y + 16);
   await page.mouse.down();
-  await page.mouse.move(box.x - 300, box.y - 120, { steps: 8 });
+  await page.mouse.move(box.x - 300, box.y - 60, { steps: 8 });
   await page.mouse.up();
   const box2 = await page.locator('#vernaculator-hud').boundingBox();
-  assert(Math.abs(box2.x - (box.x - 420)) < 3 && Math.abs(box2.y - (box.y - 136)) < 3, `HUD dragged (${Math.round(box.x)},${Math.round(box.y)}) -> (${Math.round(box2.x)},${Math.round(box2.y)})`);
+  assert(Math.abs(box2.x - (box.x - 420)) < 3 && Math.abs(box2.y - (box.y - 76)) < 3, `HUD dragged (${Math.round(box.x)},${Math.round(box.y)}) -> (${Math.round(box2.x)},${Math.round(box2.y)})`);
   await sleep(300);
   const saved = await sw.evaluate(() => chrome.storage.local.get('hudPos'));
   assert(saved.hudPos && Math.abs(saved.hudPos.x - box2.x) < 2, 'HUD position persisted');
@@ -166,6 +166,43 @@ const assert = (cond, msg) => {
   await (await salDl).saveAs(salFile);
   fs.writeFileSync(path.join(outDir, 'sal-export-path.txt'), salFile);
   assert(fs.statSync(salFile).size > 20000, `Big Sal meme exported (${path.basename(salFile)})`);
+
+  console.log('Paraphrase assistant (profile, paraphrase, Oakley, key points, ask, expound)');
+  await inExt(`Vern.settings.save({ autoRead: false, humor: false, accent: 'none', readingLevel: 2, userName: 'Sergio', aboutMe: 'Electrician who codes in Python', ageGroup: 'adult', language: 'auto' }).then(() => true)`);
+  await page.evaluate(() => window.streamReply('Lisinopril is an ACE inhibitor that lowers blood pressure. The usual starting dose is 10 mg once a day. A dry cough is a common side effect. Many people also benefit from less salt and more exercise. Call your doctor right away if your lips or tongue swell.', { delay: 2 }));
+  for (let i = 0; i < 40 && !(await inExt("Vern.debug.observer.active.size === 0")); i++) await sleep(250);
+  await sleep(1800); // let the observer mark the reply finished
+  const waitCaption = async (re, label) => {
+    let cap = '';
+    for (let i = 0; i < 60; i++) {
+      await sleep(250);
+      cap = await inExt('Vern.debug.hud.caption.textContent');
+      if (re.test(cap)) break;
+    }
+    assert(re.test(cap), `${label}: "${cap.slice(0, 90)}..."`);
+    return cap;
+  };
+  await inExt(`Vern.debug.hud.showTab('ask'), true`);
+  await inExt(`Vern.debug.hud.onAction('paraphraseNow'), true`);
+  const para = await waitCaption(/Sergio, basically what Claude is telling you/, 'Paraphrase is personal and names the AI as a third party');
+  assert(/10 mg/.test(para) && /right away/.test(para), 'Paraphrase keeps the dose and the warning');
+  let applied = await inExt('Vern.debug.current?.applied');
+  assert(applied?.style?.paraphrase === true, 'server ran in paraphrase mode');
+
+  await inExt(`Vern.debug.hud.onAction('oakley'), true`);
+  await waitCaption(/Old Oakley here/, 'Paraphrase with Oakley uses Old Oakley');
+  await sleep(600);
+  assert(/old_oakley_(idle|talking)\.svg/.test(await inExt('Vern.debug.hud.img.src')), "Oakley's sprite is shown");
+  await page.screenshot({ path: path.join(outDir, '5-oakley-ask.png') });
+
+  await inExt(`Vern.debug.hud.onAction('keypoints'), true`);
+  await waitCaption(/First, .*Second, /, 'Key points breakdown');
+  await inExt(`Vern.debug.hud.onAction('ask', 'What about the cough?'), true`);
+  await waitCaption(/Claude said: A dry cough/, 'Follow-up question answered from the original answer');
+  await inExt(`Vern.debug.hud.onAction('expound'), true`);
+  await waitCaption(/go deeper/i, 'Expound goes deeper');
+  const lang = await inExt('Vern.profile().language');
+  assert(/^en/.test(lang), `language defaults to the browser language (${lang})`);
 
   await page.screenshot({ path: path.join(outDir, '3-hud-final.png') });
   await ctx.close();

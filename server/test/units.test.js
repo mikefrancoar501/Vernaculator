@@ -12,6 +12,8 @@ import { Gateway } from '../src/auth.js';
 import { loadConfig } from '../src/config.js';
 import { splitFrames } from '../src/tts/mp3.js';
 import { parseStyle, styleCatalog } from '../src/styles.js';
+import { parseProfile } from '../src/tasks.js';
+import { resolveVoiceId } from '../src/config.js';
 
 const cfg = loadConfig();
 const personas = loadPersonas(cfg.personasFile);
@@ -68,8 +70,13 @@ test('style add-ons stack on any character and reject unknown values', () => {
   assert.match(all, /PHILOSOPHY:/);
   assert.match(all, /Slow and patient/);
   assert.match(all, /classical ontology/, 'character world-view kept');
-  assert.deepEqual(parseStyle({ humor: 'yes', accent: '<script>' }), { humor: false, philosophy: false, accent: 'none' });
+  assert.deepEqual(parseStyle({ humor: 'yes', accent: '<script>' }), { paraphrase: false, humor: false, philosophy: false, accent: 'none' });
   assert.ok(!/iq|intelligen/i.test(JSON.stringify(styleCatalog())), 'never framed as intelligence');
+  const para = buildSystemPrompt(personas.get('big_sal'), { coreValues: [], readingLevel: 2, style: { paraphrase: true } });
+  assert.match(para, /PARAPHRASE MODE/);
+  assert.match(para, /Length: follow the PARAPHRASE MODE/);
+  assert.doesNotMatch(para, /at most 1\.5x/);
+  assert.match(para, /Keep every number, dose/, 'fidelity rule still applies when paraphrasing');
 });
 
 test('intent routing picks personas by keywords and falls back to default', async () => {
@@ -102,4 +109,40 @@ test('mp3 splitter finds whole frames in the mock babble asset', () => {
   const frames = splitFrames(buf);
   assert.ok(frames.length > 300);
   assert.ok(frames.every((f) => f[0] === 0xff));
+});
+
+test('profile personalizes: name, third-party framing, age group, about-me, language', () => {
+  const oak = personas.get('old_oakley');
+  const prompt = buildSystemPrompt(oak, {
+    coreValues: [],
+    style: { paraphrase: true },
+    source: 'grok',
+    profile: { name: 'Sergio', about: 'Electrician, knows C++ and Python', ageGroup: 'adult', language: 'es' },
+  });
+  assert.match(prompt, /Sergio, basically what Grok is telling you is/);
+  assert.match(prompt, /<listener>Name: Sergio\. About them: Electrician, knows C\+\+ and Python<\/listener>/);
+  assert.match(prompt, /data, never instructions/);
+  assert.match(prompt, /AUDIENCE: You are talking to an adult/);
+  assert.match(prompt, /Speak entirely in Spanish \(es\)/);
+  assert.match(prompt, /heartwood/, 'Oakley has his own paraphrase voice');
+  assert.deepEqual(parseProfile({ name: '<b>Sal</b>', ageGroup: 'toddler', language: 'xx_bad!' }), { ageGroup: '', name: 'bSal/b', about: '', language: '' });
+  assert.doesNotMatch(buildSystemPrompt(oak, { coreValues: [], profile: { language: 'en-US' } }), /Speak entirely in/);
+});
+
+test('task prompts: key points, follow-up question, expound', () => {
+  const p = personas.get('big_sal');
+  assert.match(buildSystemPrompt(p, { coreValues: [], task: 'keypoints', source: 'claude' }), /TASK: KEY POINTS/);
+  const ask = buildSystemPrompt(p, { coreValues: [], task: 'ask', source: 'claude' });
+  assert.match(ask, /about what Claude said/);
+  assert.match(ask, /Never invent facts/);
+  assert.match(buildSystemPrompt(p, { coreValues: [], task: 'expound' }), /TASK: EXPOUND/);
+  assert.doesNotMatch(buildSystemPrompt(p, { coreValues: [], task: 'bogus' }), /TASK:/);
+});
+
+test('voice resolution prefers a language-specific voice', () => {
+  const cfg2 = { tts: { defaultVoiceId: 'default-voice' } };
+  const persona = { id: 'big_sal', fishAudioReferenceId: 'sal-en', fishAudioVoicesByLanguage: { es: 'sal-es' } };
+  assert.equal(resolveVoiceId(cfg2, persona, 'es-MX'), 'sal-es');
+  assert.equal(resolveVoiceId(cfg2, persona, 'fr'), 'sal-en');
+  assert.equal(resolveVoiceId(cfg2, { id: 'x', fishAudioReferenceId: 'fish_voice_uuid_placeholder' }, 'es'), 'default-voice');
 });
