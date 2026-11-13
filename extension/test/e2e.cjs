@@ -46,7 +46,7 @@ const assert = (cond, msg) => {
 
   // Evaluate inside the extension's isolated world (where window.Vern lives).
   const inExt = async (expr) => {
-    const c = [...contexts].reverse().find((x) => x.auxData?.type === 'isolated' && x.name === 'The Vernaculator');
+    const c = [...contexts].reverse().find((x) => x.auxData?.type === 'isolated' && x.name === 'Fancy Bot');
     if (!c) throw new Error('extension context not found');
     const r = await cdp.send('Runtime.evaluate', { expression: expr, contextId: c.id, awaitPromise: true, returnByValue: true });
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
@@ -282,7 +282,7 @@ const assert = (cond, msg) => {
   await xp.waitForSelector('#vernaculator-hud', { state: 'attached', timeout: 10000 });
   await sleep(800);
   const inX = async (expr) => {
-    const c = [...xContexts].reverse().find((x) => x.auxData?.type === 'isolated' && x.name === 'The Vernaculator');
+    const c = [...xContexts].reverse().find((x) => x.auxData?.type === 'isolated' && x.name === 'Fancy Bot');
     const r = await xcdp.send('Runtime.evaluate', { expression: expr, contextId: c.id, awaitPromise: true, returnByValue: true });
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
     return r.result.value;

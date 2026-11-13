@@ -119,7 +119,7 @@
     <div class="card" part="card" data-size="M">
       <header>
         <span class="dot" data-tone="idle"></span>
-        <span class="title" data-i18n="extShortName">Vernaculator</span>
+        <span class="title" data-i18n="extShortName">Fancy Bot</span>
         <button class="icon" data-action="profile" data-i18n-title="hudProfile" title="About you" aria-label="About you">👤</button>
         <button class="icon" data-action="collapse" data-i18n-title="hudCollapse" title="Collapse" aria-label="Collapse">▾</button>
       </header>

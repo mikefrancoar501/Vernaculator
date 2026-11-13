@@ -482,7 +482,7 @@
             },
             (f) => hud.setExportProgress(f),
           );
-          const name = `${(s.persona?.name || 'vernaculator').toLowerCase().replace(/\W+/g, '-')}-${Date.now()}.${ext}`;
+          const name = `${(s.persona?.name || 'fancy-bot').toLowerCase().replace(/\W+/g, '-')}-${Date.now()}.${ext}`;
           Vern.downloadBlob(blob, name);
           hud.setStatus(ext === 'mp4' ? 'Saved MP4.' : 'Saved WebM (this Chrome cannot record MP4).', 'ok');
         } catch (err) {

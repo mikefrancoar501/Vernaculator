@@ -1,15 +1,15 @@
 {
   "extName": {
-    "message": "The Vernaculator"
+    "message": "Fancy Bot"
   },
   "extShortName": {
-    "message": "Vernaculator"
+    "message": "Fancy Bot"
   },
   "extDescription": {
     "message": "Escucha las respuestas de la IA explicadas por un personaje, en lenguaje sencillo y en tu idioma."
   },
   "actionTitle": {
-    "message": "Mostrar / ocultar Vernaculator"
+    "message": "Mostrar / ocultar Fancy Bot"
   },
   "hudProfile": {
     "message": "Sobre ti"
@@ -162,13 +162,13 @@
     "message": "Primero reproduce una respuesta y luego expórtala."
   },
   "optTitle": {
-    "message": "Ajustes de Vernaculator"
+    "message": "Ajustes de Fancy Bot"
   },
   "optConnection": {
     "message": "Conexión"
   },
   "optConnectSub": {
-    "message": "Conecta la extensión con tu servidor de Vernaculator."
+    "message": "Conecta la extensión con tu servidor de Fancy Bot."
   },
   "optBackendUrl": {
     "message": "URL del servidor"

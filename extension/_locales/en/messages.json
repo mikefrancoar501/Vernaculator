@@ -1,15 +1,15 @@
 {
   "extName": {
-    "message": "The Vernaculator"
+    "message": "Fancy Bot"
   },
   "extShortName": {
-    "message": "Vernaculator"
+    "message": "Fancy Bot"
   },
   "extDescription": {
     "message": "Hear AI answers explained by a character, in plain language and your own language."
   },
   "actionTitle": {
-    "message": "Show / hide the Vernaculator"
+    "message": "Show / hide the Fancy Bot"
   },
   "hudProfile": {
     "message": "About you"
@@ -162,13 +162,13 @@
     "message": "Play a reply first, then export it."
   },
   "optTitle": {
-    "message": "Vernaculator settings"
+    "message": "Fancy Bot settings"
   },
   "optConnection": {
     "message": "Connection"
   },
   "optConnectSub": {
-    "message": "Connect the extension to your Vernaculator middleware."
+    "message": "Connect the extension to your Fancy Bot middleware."
   },
   "optBackendUrl": {
     "message": "Middleware URL"

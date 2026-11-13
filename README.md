@@ -1,6 +1,8 @@
-# The Vernaculator
+# Fancy Bot
 
-A Manifest V3 Chrome extension plus a Node middleware that reads AI chat replies (claude.ai, grok.com, gemini.google.com) aloud. Each reply is rewritten into a family-friendly character's vernacular by an LLM, voiced through Fish Audio's streaming TTS, and performed by an animated sprite in a draggable on-page widget.
+**Fancy Bot** by Say It Fancy Productions ([getfancybot.com](https://getfancybot.com)). The code base and some internal names still say "Vernaculator" (the project's working name).
+
+Fancy Bot is a Manifest V3 Chrome extension plus a Node middleware that reads AI chat replies (claude.ai, grok.com, gemini.google.com) aloud. Each reply is rewritten into a family-friendly character's vernacular by an LLM, voiced through Fish Audio's streaming TTS, and performed by an animated sprite in a draggable on-page widget.
 
 ```
  host page (claude.ai / grok / gemini)

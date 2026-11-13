@@ -169,7 +169,7 @@
       g.fillRect(24, SIZE - 210, SIZE - 48, 186);
       g.fillStyle = '#fff';
       g.font = '700 26px system-ui, sans-serif';
-      g.fillText(art.name || 'The Vernaculator', 48, SIZE - 172);
+      g.fillText(art.name || 'Fancy Bot', 48, SIZE - 172);
       g.font = '500 24px system-ui, sans-serif';
       if (seg?.line) {
         // Writers' room: show the current speaker's own line.
