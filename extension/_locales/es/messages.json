@@ -276,7 +276,7 @@
     "message": "Publicación"
   },
   "socialHint": {
-    "message": "Toca 🎭 Resumen o 🎬 Hacer video en una publicación. Escribir respuesta usa esa, o la que está en pantalla."
+    "message": "Toca 🎭 Resumir o 🎬 Hacer video en una publicación. Escribir respuesta usa esa, o la que está en pantalla."
   },
   "socialVoice": {
     "message": "Voz cómica"
@@ -285,7 +285,7 @@
     "message": "La misma de mi personaje"
   },
   "socialCrib": {
-    "message": "🎭 Resumen chistoso"
+    "message": "🎭 Resumir"
   },
   "socialReply": {
     "message": "💬 Escribir respuesta"
@@ -306,10 +306,10 @@
     "message": "Tú lo revisas y lo publicas."
   },
   "socialPlaceholder": {
-    "message": "Toca 🎭 Resumen chistoso en una publicación."
+    "message": "Toca 🎭 Resumir en una publicación."
   },
   "socialCribPill": {
-    "message": "🎭 Resumen"
+    "message": "🎭 Resumir"
   },
   "socialCribPillTitle": {
     "message": "Resume esta publicación en unas líneas ingeniosas"
@@ -321,7 +321,7 @@
     "message": "Descarga un video de esta publicación en personaje"
   },
   "statusVideoCrib": {
-    "message": "Escribiendo el resumen y luego el video..."
+    "message": "Resumiendo, y luego el video..."
   },
   "statusVideoAfter": {
     "message": "Terminando esto, y luego hago el video..."
@@ -345,7 +345,7 @@
     "message": "Aún no hay nada que pegar. Escribe primero un borrador de respuesta."
   },
   "statusCrib": {
-    "message": "Escribiendo el resumen..."
+    "message": "Resumiendo..."
   },
   "statusReply": {
     "message": "Escribiendo una respuesta..."
@@ -375,7 +375,7 @@
     "message": "Aún no hay publicaciones con suficiente texto en pantalla. Desplázate un poco y actualiza."
   },
   "hotPicked": {
-    "message": "Elegida. Ahora toca Resumen, Escribir respuesta o la escena."
+    "message": "Elegida. Ahora toca Resumir, Escribir respuesta o la escena."
   },
   "statusPitching": {
     "message": "El cuarto está proponiendo frases..."
@@ -441,7 +441,7 @@
     "message": "📱 Publicaciones sociales"
   },
   "helpSocialBody": {
-    "message": "En X, Facebook e Instagram, toca la etiqueta \"Resumen\" de una publicación. El personaje que elegiste (el único selector del widget) hace el resumen, el borrador de respuesta y los videos. Abre la pestaña Publicar para un borrador y la sala de guionistas; Hacer video está arriba de esa sección, y usa el último resumen, respuesta o escena de esa publicación, o escribe un resumen primero si no hay. Tócala otra vez para cerrarla y dejar una vista compacta. Puedes seleccionar el borrador en el widget y copiarlo. Nunca publico por ti."
+    "message": "En X, Facebook e Instagram, toca la etiqueta \"Resumir\" de una publicación. El personaje que elegiste (el único selector del widget) hace el resumen, el borrador de respuesta y los videos. Abre la pestaña Publicar para un borrador y la sala de guionistas; Hacer video está arriba de esa sección, y usa el último resumen, respuesta o escena de esa publicación, o resume primero si no hay. Tócala otra vez para cerrarla y dejar una vista compacta. Puedes seleccionar el borrador en el widget y copiarlo. Nunca publico por ti."
   },
   "helpRoomTitle": {
     "message": "🎬 Sala de guionistas"

@@ -192,7 +192,7 @@ export class MockLLM {
       const hit = sentences.find((s) => words.some((w) => s.toLowerCase().includes(w)));
       body = hit ? `Good question. ${source} said: ${hit.trim()}` : `${source} didn't say anything about that. Tap Expound to go deeper.`;
     } else if (task === 'crib') {
-      body = `Crib notes: ${sentences[0].trim()} Long story short, ${(sentences.at(-1) || '').trim().replace(/^./, (c) => c.toLowerCase())}`;
+      body = `Summarize: ${sentences[0].trim()} Long story short, ${(sentences.at(-1) || '').trim().replace(/^./, (c) => c.toLowerCase())}`;
     } else if (task === 'reply') {
       body = `Ha, love this. ${question ? `${question.trim().replace(/[.!?]*$/, '.')} ` : ''}Sounds like ${sentences[0].trim().replace(/^./, (c) => c.toLowerCase())}`;
     } else if (task === 'expound') {

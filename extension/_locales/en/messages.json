@@ -276,7 +276,7 @@
     "message": "Post"
   },
   "socialHint": {
-    "message": "Tap 🎭 Crib notes or 🎬 Make video on a post. Draft reply uses that post, or the one on screen."
+    "message": "Tap 🎭 Summarize or 🎬 Make video on a post. Draft reply uses that post, or the one on screen."
   },
   "socialVoice": {
     "message": "Comedic voice"
@@ -285,7 +285,7 @@
     "message": "Same as my character"
   },
   "socialCrib": {
-    "message": "🎭 Crib notes"
+    "message": "🎭 Summarize"
   },
   "socialReply": {
     "message": "💬 Draft reply"
@@ -306,10 +306,10 @@
     "message": "You review it and post it yourself."
   },
   "socialPlaceholder": {
-    "message": "Tap 🎭 Crib notes on a post."
+    "message": "Tap 🎭 Summarize on a post."
   },
   "socialCribPill": {
-    "message": "🎭 Crib notes"
+    "message": "🎭 Summarize"
   },
   "socialCribPillTitle": {
     "message": "Sum up this post in a few witty lines"
@@ -321,7 +321,7 @@
     "message": "Download a video of this post in character"
   },
   "statusVideoCrib": {
-    "message": "Writing crib notes, then making the video..."
+    "message": "Summarizing, then making the video..."
   },
   "statusVideoAfter": {
     "message": "Finishing this, then making the video..."
@@ -345,7 +345,7 @@
     "message": "Nothing to paste yet. Write a draft reply first."
   },
   "statusCrib": {
-    "message": "Writing crib notes..."
+    "message": "Summarizing..."
   },
   "statusReply": {
     "message": "Drafting a reply..."
@@ -375,7 +375,7 @@
     "message": "No posts with enough text on screen yet. Scroll a little and refresh."
   },
   "hotPicked": {
-    "message": "Picked. Now tap Crib notes, Draft reply or the scene."
+    "message": "Picked. Now tap Summarize, Draft reply or the scene."
   },
   "statusPitching": {
     "message": "The room is pitching lines..."
@@ -441,7 +441,7 @@
     "message": "📱 Social posts"
   },
   "helpSocialBody": {
-    "message": "On X, Facebook and Instagram, tap the \"Crib notes\" pill on a post. The character you picked (the one picker in the widget) does crib notes, draft replies and videos. Open the Post tab for a draft reply and the writers' room; Make video is at the top of that section, and uses that post's latest crib notes, reply or scene, or writes crib notes first if there are none. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you."
+    "message": "On X, Facebook and Instagram, tap the \"Summarize\" pill on a post. The character you picked (the one picker in the widget) writes the summary, draft replies and videos. Open the Post tab for a draft reply and the writers' room; Make video is at the top of that section, and uses that post's latest summary, reply or scene, or summarizes first if there are none. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you."
   },
   "helpRoomTitle": {
     "message": "🎬 Writers' room"
