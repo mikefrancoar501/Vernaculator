@@ -8,7 +8,12 @@ import { MockSession } from './tts/mock.js';
 import { parseReadingLevel, parseStyle, SPEAKING_STYLES } from './styles.js';
 import { parseTask, parseProfile, parseSource, SOCIAL_TASKS } from './tasks.js';
 import { parseTown, planTown, townPrompt } from './town.js';
-import { parseCast, assignRoles, rolePrompt, PITCH_RULE, DEFAULT_DIRECTOR, directorSystem, directorUser, cleanScript, scriptFromPitches } from './writersroom.js';
+import { parseCast, assignRoles, rolePrompt, PITCH_RULE, DEFAULT_DIRECTOR, directorSystem, directorUser, cleanScript, includeEveryone, scriptFromPitches } from './writersroom.js';
+
+const sleep = (ms, signal) => new Promise((resolve) => {
+  const t = setTimeout(resolve, ms);
+  signal?.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
+});
 
 const MAX_UTTERANCE_CHARS = 20000;
 
@@ -51,8 +56,9 @@ export class Utterance {
     };
     // Town panel: 2-6 persona ids that share the answer.
     this.town = this.opts.task === 'speak' ? parseTown(opts.town, deps.personas) : [];
-    // Writers' room cast: 2-4 town members (or a default comedic cast).
-    this.cast = this.opts.task === 'scene' ? parseCast(opts.town, deps.personas) : [];
+    // Writers' room cast: 2-4 town members (or a default comedic cast). The extension sends it as `town`.
+    this.requestedCast = this.opts.task === 'scene' ? (Array.isArray(opts.cast) ? opts.cast : opts.town) : null;
+    this.cast = this.opts.task === 'scene' ? parseCast(this.requestedCast, deps.personas) : [];
     this.opts.director = typeof opts.director === 'string' ? opts.director : '';
     this.script = [];
     // Paraphrase, town and the question tasks need the whole answer before anyone starts talking.
@@ -202,29 +208,78 @@ export class Utterance {
     this.send.json({ type: 'utterance.status', seq: this.seq, status: 'pitching' });
     this.send.json({ type: 'scene.cast', seq: this.seq, director: director && publicPersona(director), roles: roles.map((r) => ({ ...r, name: personas.get(r.personaId).name })) });
     const signal = this.abort.signal;
-    const pitches = await Promise.all(roles.map(async ({ personaId, role }) => {
+    const tag = `[utterance ${this.seq}] writers' room:`;
+    const pitchFrom = async ({ personaId, role }) => {
       const p = personas.get(personaId);
       const system = `${buildSystemPrompt(p, { coreValues, readingLevel, style: { ...style, humor: true }, task: 'crib', profile, source, text: post })}\n\n${PITCH_RULE}\n${rolePrompt(role, p)}`;
       try {
         const line = await llm.complete({ system, user: `Here is the social media post:\n<post>\n${post}\n</post>\n\nPitch your one line.`, signal });
-        return { personaId: p.id, line: line.replace(/\s+/g, ' ').trim().slice(0, 240) };
-      } catch {
-        return { personaId: p.id, line: '' };
+        const clean = String(line || '').replace(/\s+/g, ' ').trim().slice(0, 240);
+        if (!clean) console.warn(`${tag} ${p.name} pitched an empty line`);
+        return { personaId: p.id, line: clean };
+      } catch (err) {
+        if (!this.cancelled) console.warn(`${tag} ${p.name}'s pitch failed: ${err.message}`);
+        return { personaId: p.id, line: '', error: err.message };
       }
-    }));
+    };
+    const pitches = await Promise.all(roles.map(pitchFrom));
+    // A burst of parallel calls is what usually trips the AI provider's rate limit, so anyone who
+    // came back empty gets one more try, one at a time.
+    for (const [i, p] of pitches.entries()) {
+      if (p.line || this.cancelled) continue;
+      await sleep(750, signal);
+      if (this.cancelled) return;
+      pitches[i] = await pitchFrom(roles[i]);
+    }
     if (this.cancelled) return;
+    const pitched = pitches.filter((p) => p.line);
     this.send.json({ type: 'utterance.status', seq: this.seq, status: 'directing' });
     let script = null;
-    try {
-      script = cleanScript(await llm.direct({ system: directorSystem(cast, { roles, director }), user: directorUser(post, pitches.filter((p) => p.line)), castIds: this.cast, signal }), this.cast);
-    } catch (err) {
+    let directorProblem = '';
+    for (let attempt = 0; attempt < 2 && !script; attempt++) {
+      if (attempt) await sleep(750, signal);
       if (this.cancelled) return;
-      console.warn(`[utterance ${this.seq}] director failed, using the raw pitches:`, err.message);
+      try {
+        const lines = await llm.direct({ system: directorSystem(cast, { roles, director }), user: directorUser(post, pitched), castIds: this.cast, signal });
+        script = cleanScript(lines, this.cast, personas);
+        if (!script) {
+          directorProblem = Array.isArray(lines) && lines.length ? 'the director gave every line to one character' : 'the director returned no script';
+          console.warn(`${tag} ${directorProblem} (attempt ${attempt + 1})`);
+        }
+      } catch (err) {
+        if (this.cancelled) return;
+        directorProblem = `the director failed: ${err.message}`;
+        console.warn(`${tag} ${directorProblem} (attempt ${attempt + 1})`);
+      }
     }
-    script ||= scriptFromPitches(pitches);
+    const directed = !!script;
+    if (script) script = includeEveryone(script, pitches);
+    else {
+      console.warn(`${tag} using the raw pitches (${pitched.length} of ${roles.length})`);
+      script = scriptFromPitches(pitches);
+    }
     if (!script.length) {
-      this.send.json({ type: 'error', seq: this.seq, code: 'llm_error', message: 'The writers\' room came up empty. Try again.' });
+      this.send.json({ type: 'error', seq: this.seq, code: 'llm_error', message: 'The writers\' room came up empty: the AI didn\'t answer. Wait a minute and try again.' });
       return;
+    }
+    // Tell the widget when fewer characters speak than were cast, and why.
+    const speaking = new Set(script.map((l) => l.personaId));
+    const missing = cast.filter((p) => !speaking.has(p.id));
+    const requested = Array.isArray(this.requestedCast) ? [...new Set(this.requestedCast.filter((id) => typeof id === 'string'))] : [];
+    const unknown = requested.filter((id) => !personas.get(id));
+    if (missing.length || unknown.length) {
+      const failed = missing.filter((p) => !pitches.find((x) => x.personaId === p.id)?.line);
+      const reason = failed.length ? 'pitch_failed' : !missing.length ? 'unknown_cast' : directed ? 'director_skipped' : 'director_failed';
+      this.send.json({
+        type: 'scene.notice',
+        seq: this.seq,
+        reason,
+        speakers: [...speaking].map((id) => ({ id, name: personas.get(id).name })),
+        missing: missing.map((p) => ({ id: p.id, name: p.name })),
+        unknown,
+        detail: failed.length ? (pitches.find((x) => x.error)?.error || 'no answer from the AI') : directorProblem || undefined,
+      });
+      console.warn(`${tag} ${speaking.size} of ${cast.length} characters speak${missing.length ? ` (missing: ${missing.map((p) => p.name).join(', ')})` : ''}${unknown.length ? `; unknown cast ids ignored: ${unknown.join(', ')}` : ''}`);
     }
     this.send.json({ type: 'town.plan', seq: this.seq, members: cast.map(publicPersona), segments: script.map((l) => l.personaId) });
     for (const [index, line] of script.entries()) {

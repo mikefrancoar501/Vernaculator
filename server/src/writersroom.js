@@ -74,7 +74,7 @@ export function directorSystem(members, { roles = [], director = null } = {}) {
     ...members.filter((p) => p.arc === 'redemption').map((p) => `REDEMPTION ARC: ${p.name} is a former troublemaker learning to be good. Let him start grumpy or tempted, and by his last line have him choose the kind or honest option and enjoy it. The scene should leave the feeling that being on the good side is more fun.`),
     'SPIRIT: this is a social-emotional learning show set in Big Sal\'s town. Characters can disagree and tease ideas, but they model kindness, honesty, and fairness.',
     'SCENE RULES:',
-    `- 4 to ${MAX_LINES} lines in total, at least 2 different characters, each line at most 30 words, under 700 characters overall.`,
+    `- 4 to ${MAX_LINES} lines in total. Every cast member gets at least one line. Each line at most 30 words, under 700 characters overall.`,
     '- Use the best pitches (edit them freely) and keep each line in its character\'s voice.',
     '- Observational humor about everyday life: notice small specific details, let the characters escalate a tiny point, use a callback, and end on a short button line.',
     '- Someone who never reads the post must come away knowing what it actually says: keep the key facts and numbers right.',
@@ -93,13 +93,59 @@ export function directorUser(post, pitches) {
   ].join('\n\n');
 }
 
-/** Validates a director script against the cast; drops bad lines, caps length. */
-export function cleanScript(lines, castIds) {
+/**
+ * Matches a speaker label to a cast id. Models usually return the id, but sometimes the display
+ * name ("Comic Marty"), the full name, or just a first name; any of those counts.
+ */
+export function resolveSpeaker(label, castIds, personas) {
+  if (typeof label !== 'string' || !label.trim()) return null;
+  if (castIds.includes(label.trim())) return label.trim();
+  const norm = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/^comic /, '');
+  const want = norm(label);
+  const namesOf = (id) => {
+    const p = personas?.get(id);
+    // Comedians' full names ("Marty Midstep") are in their ids; display names are "Comic Marty".
+    return [id.replace(/_/g, ' '), p?.name].map(norm).filter(Boolean);
+  };
+  const exact = castIds.filter((id) => namesOf(id).includes(want));
+  if (exact.length === 1) return exact[0];
+  // A first name alone ("Marty", "Oakley"), only when it points at one cast member.
+  const first = castIds.filter((id) => namesOf(id).some((n) => n.split(' ').includes(want)));
+  return first.length === 1 ? first[0] : null;
+}
+
+/**
+ * Validates a director script against the cast; drops bad lines, caps length.
+ * Returns null unless at least MIN_CAST different characters speak.
+ */
+export function cleanScript(lines, castIds, personas = null) {
   const out = (Array.isArray(lines) ? lines : [])
-    .filter((l) => l && castIds.includes(l.personaId) && typeof l.line === 'string' && l.line.trim())
-    .map((l) => ({ personaId: l.personaId, line: l.line.replace(/\s+/g, ' ').trim().slice(0, 240) }))
+    .map((l) => l && typeof l.line === 'string' && l.line.trim() ? { personaId: resolveSpeaker(l.personaId, castIds, personas), line: l.line.replace(/\s+/g, ' ').trim().slice(0, 240) } : null)
+    .filter((l) => l && l.personaId)
     .slice(0, MAX_LINES);
   return new Set(out.map((l) => l.personaId)).size >= MIN_CAST ? out : null;
+}
+
+/**
+ * Makes sure every cast member who pitched a line gets to speak: a director script that left
+ * someone out gets their pitch slotted in before the closing line.
+ */
+export function includeEveryone(script, pitches) {
+  const out = [...script];
+  const spoke = new Set(out.map((l) => l.personaId));
+  const missing = pitches.filter((p) => p.line && !spoke.has(p.personaId));
+  if (!missing.length) return out;
+  const closing = out.length > 1 ? out.pop() : null;
+  for (const p of missing) out.push({ personaId: p.personaId, line: p.line });
+  if (closing) out.push(closing);
+  // Keep the cap without cutting anyone out: drop extra middle lines from repeat speakers first.
+  while (out.length > MAX_LINES) {
+    const counts = out.reduce((m, l) => m.set(l.personaId, (m.get(l.personaId) || 0) + 1), new Map());
+    const i = out.slice(1, -1).findIndex((l) => counts.get(l.personaId) > 1);
+    if (i === -1) break;
+    out.splice(i + 1, 1);
+  }
+  return out.slice(0, MAX_LINES);
 }
 
 /** Fallback when the director fails: the pitches in cast order. */
