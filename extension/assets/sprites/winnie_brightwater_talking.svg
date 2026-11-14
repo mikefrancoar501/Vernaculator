@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="400" height="400" role="img" aria-label="Winnie Brightwater (talking)">
+  <g transform="translate(19.50 8.00) scale(1.1500)">
+<g class="body"><g fill="#C8501E"><circle cx="20" cy="50" r="17"/><circle cx="16" cy="74" r="17"/><circle cx="20" cy="98" r="17"/><circle cx="30" cy="116" r="17"/><circle cx="120" cy="50" r="17"/><circle cx="124" cy="74" r="17"/><circle cx="120" cy="98" r="17"/><circle cx="110" cy="116" r="17"/><circle cx="36" cy="28" r="17"/><circle cx="70" cy="18" r="17"/><circle cx="104" cy="28" r="17"/></g><path d="M24 160 q4 -30 46 -32 q42 2 46 32 z" fill="#F4C430"/><path d="M58 130 q12 18 24 0 z" fill="#EAC39C"/><g transform="translate(92 132) rotate(14)"><circle cx="5" cy="4" r="5" fill="#9A9A9A" stroke="#17161F" stroke-width=".8"/><path d="M1.5 3 h7 M1.5 5.5 h7" stroke="#6A6A6A" stroke-width=".8"/><rect x="3" y="8" width="4" height="17" rx="2" fill="#17161F"/></g></g>
+  <g class="head">
+    <rect x="58" y="116" width="24" height="16" fill="#EAC39C"/>
+    <path d="M22 70 q0 -44 48 -46 q48 2 48 46 q0 34 -14 48 q-14 12 -34 12 q-20 0 -34 -12 q-14 -14 -14 -48 z" fill="#EAC39C"/>
+    <path d="M30 104 q8 22 40 24 q32 -2 40 -24 q-4 18 -20 24 q-20 6 -40 0 q-16 -6 -20 -24 z" fill="#c0a080" opacity=".55"/>
+    <ellipse cx="22" cy="76" rx="6" ry="10" fill="#EAC39C"/><ellipse cx="118" cy="76" rx="6" ry="10" fill="#EAC39C"/>
+    <circle cx="20" cy="94" r="9" fill="none" stroke="#2EC4B6" stroke-width="3"/><circle cx="120" cy="94" r="9" fill="none" stroke="#2EC4B6" stroke-width="3"/>
+    <g fill="#C8501E"><circle cx="30" cy="44" r="16"/><circle cx="46" cy="30" r="16"/><circle cx="70" cy="24" r="16"/><circle cx="94" cy="30" r="16"/><circle cx="110" cy="44" r="16"/></g>
+    
+    <path d="M36 60 q12 -14 28 -4 M76 56 q16 -10 28 4" stroke="#C8501E" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <g class="eyes"><ellipse cx="50" cy="69" rx="8" ry="7" fill="#fff"/><ellipse cx="90" cy="69" rx="8" ry="7" fill="#fff"/><circle cx="52" cy="70" r="4" fill="#17161F"/><circle cx="88" cy="70" r="4" fill="#17161F"/><path d="M42 64 l-5 -4 M45 62 l-3 -5 M98 64 l5 -4 M95 62 l3 -5" stroke="#17161F" stroke-width="2.2" stroke-linecap="round"/></g>
+    <path d="M62 64 q-14 14 -10 26 q8 9 18 9 q10 0 18 -9 q4 -12 -10 -26 z" fill="#c9a886"/>
+    <g class="m2"><ellipse cx="70" cy="117" rx="14" ry="11" fill="#5A1010" stroke="#E85D9A" stroke-width="3.5"/><ellipse cx="70" cy="123" rx="7" ry="4" fill="#D9536A"/></g>
+    
+    
+    
+    
+    
+  </g>
+  </g>
+</svg>
