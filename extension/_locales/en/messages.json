@@ -155,6 +155,9 @@
   "statusExpounding": {
     "message": "Digging deeper..."
   },
+  "statusTestVoices": {
+    "message": "Test voices: you will hear beeps, not words. Save your Fish Audio key with fancybot-keys.bat, then rerun fancybot-setup.bat."
+  },
   "statusCharsLeft": {
     "message": "$1 characters left this month"
   },

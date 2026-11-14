@@ -15,9 +15,19 @@ if (Test-Path $KeysFile) {
 }
 function Saved($k) { if ($vals[$k]) { ' [saved, press Enter to keep]' } else { '' } }
 function Ask-Secret($prompt, $key) {
-  $s = Read-Host -AsSecureString "$prompt$(Saved $key)"
-  $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s))
-  if ($plain.Trim()) { $vals[$key] = $plain.Trim() }
+  # Hidden prompts sometimes drop a paste: ask again (up to 3 times) instead of saving nothing.
+  for ($try = 1; $try -le 3; $try++) {
+    $s = Read-Host -AsSecureString "$prompt$(Saved $key)"
+    $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s)).Trim().Trim('"', "'")
+    if ($plain) {
+      $vals[$key] = $plain
+      Write-Host "   Got it: $($plain.Length) characters, ending in ...$($plain.Substring([Math]::Max(0, $plain.Length - 4)))" -ForegroundColor Green
+      return
+    }
+    if ($vals[$key]) { Write-Host '   Kept the saved key.' -ForegroundColor Green; return }
+    Write-Host '   Nothing came through. Right-click to paste (or Ctrl+V), then press Enter.' -ForegroundColor Yellow
+  }
+  Write-Host "   No $key saved." -ForegroundColor Yellow
 }
 function Ask-Plain($prompt, $key) {
   $v = Read-Host "$prompt$(Saved $key)"
@@ -43,10 +53,13 @@ if (-not $vals['FISH_DEFAULT_VOICE_ID']) { $vals['FISH_DEFAULT_VOICE_ID'] = '5ed
 $vals['LLM_PROVIDER'] = if ($vals['ANTHROPIC_API_KEY']) { 'anthropic' } else { 'mock' }
 $vals['TTS_PROVIDER'] = if ($vals['FISH_API_KEY'] -and $vals['FISH_DEFAULT_VOICE_ID']) { 'fish' } else { 'mock' }
 
-$lines = @('# Fancy Bot keys. Private: do not share or upload this file.') + ($vals.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" })
+# Never write blank keys: an empty KEY= line would hide the real one.
+$lines = @('# Fancy Bot keys. Private: do not share or upload this file.') + ($vals.GetEnumerator() | Where-Object { "$($_.Value)".Trim() } | ForEach-Object { "$($_.Key)=$($_.Value)" })
 [IO.File]::WriteAllLines($KeysFile, $lines)
 
 Write-Host "`nSaved to $KeysFile" -ForegroundColor Green
 Write-Host "  Words: $($vals['LLM_PROVIDER'])   Voices: $($vals['TTS_PROVIDER'])   (mock = test mode)" -ForegroundColor Green
+if ($vals['TTS_PROVIDER'] -ne 'fish') { Write-Host '  Voices are still in TEST MODE (beeps, no words): run this again and type your Fish Audio key.' -ForegroundColor Yellow }
+if ($vals['LLM_PROVIDER'] -ne 'anthropic') { Write-Host '  Words are still in TEST MODE: run this again and type your Anthropic key.' -ForegroundColor Yellow }
 Write-Host "`nNow close any Fancy Bot server window and double-click fancybot-setup.bat to restart with your keys." -ForegroundColor Green
 Read-Host 'Press Enter to close'

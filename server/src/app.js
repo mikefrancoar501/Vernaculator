@@ -129,7 +129,7 @@ export function createApp(cfg, { store, llm } = {}) {
           return ws.close(4401, 'unauthorized');
         }
         clearTimeout(authTimer);
-        return send.json({ type: 'auth.ok', userId: user.id, usage: gateway.usage(user) });
+        return send.json({ type: 'auth.ok', userId: user.id, usage: gateway.usage(user), voices: cfg.tts.provider === 'fish' ? 'real' : 'test' });
       }
       if (!user) return send.json({ type: 'error', code: 'unauthenticated' });
 

@@ -155,6 +155,9 @@
   "statusExpounding": {
     "message": "Profundizando..."
   },
+  "statusTestVoices": {
+    "message": "Voces de prueba: oirás pitidos, no palabras. Guarda tu clave de Fish Audio con fancybot-keys.bat y vuelve a ejecutar fancybot-setup.bat."
+  },
   "statusCharsLeft": {
     "message": "Te quedan $1 caracteres este mes"
   },

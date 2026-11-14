@@ -185,9 +185,19 @@ if (Test-Path $KeysFile) {
   foreach ($line in Get-Content $KeysFile) {
     if ($line -match '^\s*([A-Z0-9_]+)\s*=\s*(.+)$') { Set-Item -Path "env:$($Matches[1])" -Value $Matches[2].Trim() }
   }
+  # Turn on whatever has a key, even if the file is missing the *_PROVIDER lines or still says mock.
+  $env:LLM_PROVIDER = if ($env:ANTHROPIC_API_KEY) { 'anthropic' } else { 'mock' }
+  $env:TTS_PROVIDER = if ($env:FISH_API_KEY) { 'fish' } else { 'mock' }
+  if (-not $env:FISH_API_KEY) { Write-Host "Your Fish Audio key is blank in $KeysFile." -ForegroundColor Yellow }
+  if (-not $env:ANTHROPIC_API_KEY) { Write-Host "Your Anthropic key is blank in $KeysFile." -ForegroundColor Yellow }
   Write-Host "Using your keys from $KeysFile (words: $env:LLM_PROVIDER, voices: $env:TTS_PROVIDER)" -ForegroundColor Green
 } else {
   Write-Host 'Test mode (no API keys yet). Double-click fancybot-keys.bat to add them.' -ForegroundColor Yellow
+}
+$env:FANCYBOT_KEYS = $KeysFile # the server reads this same file if it is ever started on its own
+if ($env:TTS_PROVIDER -ne 'fish') {
+  Write-Host 'Voices are in TEST MODE: characters will make beeping, squeaky sounds instead of words.' -ForegroundColor Yellow
+  Write-Host 'For real voices, double-click fancybot-keys.bat, type your Fish Audio key, then run this again.' -ForegroundColor Yellow
 }
 Say 'Starting the Fancy Bot server on http://localhost:8787'
 $server = Start-Process -FilePath 'node' -ArgumentList '--env-file-if-exists=.env', 'src/index.js' -WorkingDirectory (Get-Location).Path -NoNewWindow -PassThru
