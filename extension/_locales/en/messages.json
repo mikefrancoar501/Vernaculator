@@ -110,6 +110,9 @@
   "hudMemeTitle": {
     "message": "Export the last reply as a video"
   },
+  "hudMakeVideoTitle": {
+    "message": "Make a video of the last post, or of the last reply"
+  },
   "hudAskHint": {
     "message": "About the last AI answer:"
   },
@@ -411,7 +414,7 @@
     "message": "🎧 Listening to answers"
   },
   "helpListenBody": {
-    "message": "Ask Claude, Grok or Gemini anything. Tap Listen for reading level, voice and auto-read; tap it again to close the panel. With Listen off, the widget stays compact and I won't auto-read new answers, but Play and Read selection still work. The slider is 1 super simple, 5 expert."
+    "message": "Ask Claude, Grok or Gemini anything. Tap Listen for reading level, voice and auto-read; tap it again to close the panel. With Listen off, the widget stays compact and I won't auto-read new answers, but Play, Read selection and Make video still work. Make video, at the bottom of the widget, exports the last reply you played. The slider is 1 super simple, 5 expert."
   },
   "helpGesturesTitle": {
     "message": "👆 Gestures"
@@ -441,13 +444,13 @@
     "message": "📱 Social posts"
   },
   "helpSocialBody": {
-    "message": "On X, Facebook and Instagram, tap the \"Summarize\" pill on a post. The character you picked (the one picker in the widget) writes the summary, draft replies and videos. Open the Post tab for a draft reply and the writers' room; Make video is at the top of that section, and uses that post's latest summary, reply or scene, or summarizes first if there are none. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you."
+    "message": "On X, Facebook and Instagram, tap the \"Summarize\" pill on a post. The character you picked (the one picker in the widget) writes the summary, draft replies and videos. The Make video button at the bottom of the widget is always there, even if Post is closed: it uses that post's latest summary, reply or scene, or summarizes first if there are none. Open the Post tab for a draft reply; the writers' room stays on the widget, and Make video is also at the top of that section. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you."
   },
   "helpRoomTitle": {
     "message": "🎬 Writers' room"
   },
   "helpRoomBody": {
-    "message": "On the Post tab, pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Make video is at the top of this section. You can close Post while a scene plays, and you can select the draft in the widget to copy it. Jokes are about ideas, never people."
+    "message": "On X, Facebook and Instagram, the writers' room stays on the widget even if Listen is open or Post is closed. Pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Make video is at the top of this section, and also at the bottom of the widget. You can close Post while a scene plays, and you can select the draft in the widget to copy it. Jokes are about ideas, never people."
   },
   "helpHotTitle": {
     "message": "🔥 What's hot"

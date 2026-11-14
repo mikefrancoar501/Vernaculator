@@ -559,6 +559,10 @@
         break;
       case 'postVideo':
         return videoForPost();
+      case 'makeVideo':
+        // Always-visible bottom button: social posts use the writers' room path,
+        // AI chat sites export the last played session.
+        return social ? videoForPost() : exportSession(lastSession);
       case 'export':
         return exportSession(lastSession);
     }
