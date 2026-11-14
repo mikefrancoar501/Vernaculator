@@ -252,7 +252,17 @@
     hud.showTab('social', false);
     if (hud.card.dataset.size === 'S') hud.applySettings({ hudSize: 'M' }); // show the result, without changing the saved size
     const v = Vern.settings.values;
-    if (task === 'scene') return speak(text, { task, cast: v.sceneCast, director: v.sceneDirector });
+    if (task === 'scene') {
+      // Only send characters this server knows, once each; fall back to the core four if fewer than 2 are left.
+      const known = (ids) => [...new Set(Array.isArray(ids) ? ids : [])].filter((id) => personas.some((p) => p.id === id));
+      let cast = known(v.sceneCast).slice(0, 4);
+      if (cast.length < 2) {
+        cast = known(Vern.DEFAULTS.sceneCast);
+        hud.setStatus(Vern.t('sceneCastTooSmall', 'Tick 2 to 4 characters for the scene. Using the core four this time.'), 'busy');
+      }
+      const director = personas.some((p) => p.id === v.sceneDirector) ? v.sceneDirector : undefined;
+      return speak(text, { task, cast, director });
+    }
     speak(text, { task, question: angle || undefined, personaId: v.cribPersonaId || undefined });
   }
   async function copyResult() {
@@ -291,7 +301,7 @@
         hud.setStatus(`${Vern.personaName(msg.persona)}${msg.method !== 'manual' ? ` (${Vern.t('statusAutoPicked', 'auto-picked')})` : ''}`, 'busy');
         break;
       case 'utterance.status': {
-        const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'], crib: ['statusCrib', 'Writing crib notes...'], reply: ['statusReply', 'Drafting a reply...'], pitching: ['statusPitching', 'The room is pitching lines...'], directing: ['statusDirecting', 'The director is putting the scene together...'] };
+        const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'], crib: ['statusCrib', 'Writing crib notes...'], reply: ['statusReply', 'Drafting a reply...'], scene: ['statusPitching', 'The room is pitching lines...'], pitching: ['statusPitching', 'The room is pitching lines...'], directing: ['statusDirecting', 'The director is putting the scene together...'] };
         const [k, fb] = labels[msg.status] || ['', msg.status];
         hud.setStatus(Vern.t(k, fb), 'busy');
         break;
@@ -299,6 +309,21 @@
       case 'scene.cast':
         hud.setStatus(`${Vern.t('sceneRoom', "Writers' room")}: ${msg.roles.map((r) => Vern.personaName({ id: r.personaId, name: r.name })).join(', ')}${msg.director ? ` · ${Vern.t('sceneDirector', 'Director')}: ${Vern.personaName(msg.director)}` : ''}`, 'busy');
         break;
+      case 'scene.notice': {
+        // Fewer characters speak than were cast: say who and why instead of failing quietly.
+        const names = (list) => list.map((p) => Vern.personaName(p)).join(', ');
+        let text;
+        if (msg.reason === 'unknown_cast') {
+          text = Vern.t('sceneUnknownCast', 'Some picked characters aren\'t on this server yet (rerun fancybot-setup.bat). The scene used the others.');
+        } else if (msg.speakers.length <= 1) {
+          text = Vern.t('sceneOneSpeaker', `Only ${names(msg.speakers)} could speak this time: the AI didn't answer for ${names(msg.missing)}. Wait a minute and try again.`, [names(msg.speakers), names(msg.missing)]);
+        } else {
+          text = Vern.t('sceneFewerSpeakers', `${names(msg.missing)} sat this one out: the AI didn't answer for them. Wait a minute and try again for the full cast.`, [names(msg.missing)]);
+        }
+        current.notice = text;
+        hud.setStatus(text, 'busy');
+        break;
+      }
       case 'town.plan':
         if (current.task === 'scene') {
           // Show the scene's cast along the top while it plays.
@@ -331,7 +356,7 @@
         if (msg.script) current.segments.forEach((seg, i) => { seg.line = msg.script[i]?.line || ''; });
         lastSession = { chunks: player.chunks, text: msg.text, persona: current.persona, sprites: current.sprites, segments: current.segments, task: current.task };
         if (['crib', 'reply', 'scene'].includes(current.task)) hud.setSocialResult(true);
-        hud.setStatus((() => { const n = msg.usage.remainingChars.toLocaleString(); return Vern.t('statusCharsLeft', `${n} characters left this month`, [n]); })(), 'ok');
+        hud.setStatus((() => { const n = msg.usage.remainingChars.toLocaleString(); const left = Vern.t('statusCharsLeft', `${n} characters left this month`, [n]); return current.notice ? `${current.notice} · ${left}` : left; })(), current.notice ? 'busy' : 'ok');
         break;
       case 'utterance.cancelled':
         if (msg.reason !== 'superseded' && msg.reason !== 'client') hud.setStatus(`Stopped (${msg.reason})`, 'idle');

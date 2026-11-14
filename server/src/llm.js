@@ -67,8 +67,12 @@ export class AnthropicLLM {
   }
 
   async complete({ system, user, signal, maxTokens = 400 }) {
-    const res = await this.client.messages.create(
-      { model: this.model, max_tokens: maxTokens, system, output_config: { effort: this.effort }, messages: [{ role: 'user', content: user }], ...this.#fallbackParams() },
+    // The fallback params (`betas`, `fallbacks`) only exist on the beta endpoint. The plain
+    // endpoint would forward them as unknown body fields and the API rejects the call.
+    const fallback = this.#fallbackParams();
+    const api = fallback.betas ? this.client.beta.messages : this.client.messages;
+    const res = await api.create(
+      { model: this.model, max_tokens: maxTokens, system, output_config: { effort: this.effort }, messages: [{ role: 'user', content: user }], ...fallback },
       { signal },
     );
     if (res.stop_reason === 'refusal') throw Object.assign(new Error('The model declined this text.'), { code: 'refusal' });

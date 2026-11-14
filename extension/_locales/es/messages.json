@@ -463,5 +463,17 @@
   },
   "persona_priya_nair": {
     "message": "Comic Priya"
+  },
+  "sceneCastTooSmall": {
+    "message": "Marca de 2 a 4 personajes para la escena. Esta vez se usan los cuatro principales."
+  },
+  "sceneUnknownCast": {
+    "message": "Algunos personajes elegidos aún no están en este servidor (vuelve a ejecutar fancybot-setup.bat). La escena usó a los demás."
+  },
+  "sceneOneSpeaker": {
+    "message": "Esta vez solo pudo hablar $1: la IA no respondió por $2. Espera un minuto e inténtalo de nuevo."
+  },
+  "sceneFewerSpeakers": {
+    "message": "$1 no participó esta vez: la IA no respondió por ellos. Espera un minuto e inténtalo de nuevo para tener a todo el elenco."
   }
 }
