@@ -47,11 +47,13 @@
     }
 
     setVisible(v) {
+      if (!this.host) return;
       this.host.style.display = v && this.members.length ? '' : 'none';
     }
 
     setMembers(members) {
       this.members = members;
+      if (!this.strip) return;
       this.strip.replaceChildren(...members.map((m) => {
         const b = document.createElement('button');
         b.dataset.id = m.id;
@@ -68,6 +70,7 @@
 
     setActive(id) {
       this.active = id;
+      if (!this.strip) return;
       for (const b of this.strip.querySelectorAll('button')) {
         const on = b.dataset.id === id;
         b.dataset.active = String(on);
@@ -80,6 +83,7 @@
 
     /** Mirror the speaking character's mouth onto their avatar. */
     setMouth(open) {
+      if (!this.strip) return;
       if (open === this.lastMouth) return;
       this.lastMouth = open;
       const m = this.members.find((x) => x.id === this.active);
@@ -88,7 +92,7 @@
     }
 
     rect() {
-      return this.host.getBoundingClientRect();
+      return this.host ? this.host.getBoundingClientRect() : DOMRect.fromRect({ x: 0, y: 0, width: 0, height: 0 });
     }
   }
 

@@ -276,7 +276,7 @@
     "message": "Post"
   },
   "socialHint": {
-    "message": "Tap 🎭 on any post, or use the post on screen:"
+    "message": "Tap 🎭 Crib notes or 🎬 Make video on a post. Draft reply uses that post, or the one on screen."
   },
   "socialVoice": {
     "message": "Comedic voice"
@@ -300,7 +300,7 @@
     "message": "🎬 Make video"
   },
   "socialOpenReply": {
-    "message": "↩ Open reply box"
+    "message": "Paste into reply"
   },
   "socialYouPost": {
     "message": "You review it and post it yourself."
@@ -314,6 +314,18 @@
   "socialCribPillTitle": {
     "message": "Sum up this post in a few witty lines"
   },
+  "socialVideoPill": {
+    "message": "🎬 Make video"
+  },
+  "socialVideoPillTitle": {
+    "message": "Download a video of this post in character"
+  },
+  "statusVideoCrib": {
+    "message": "Writing crib notes, then making the video..."
+  },
+  "statusVideoAfter": {
+    "message": "Finishing this, then making the video..."
+  },
   "socialNoPost": {
     "message": "No post found. Scroll a post into view or tap 🎭 on one."
   },
@@ -324,10 +336,13 @@
     "message": "Could not copy; select the caption text instead."
   },
   "socialReplyOpened": {
-    "message": "Reply box opened. Paste the text and attach your video, then post it yourself."
+    "message": "Pasted into the reply box. Attach your video if you want, then post it yourself."
   },
   "socialReplyNotFound": {
-    "message": "Could not find the reply button on this post."
+    "message": "Could not find the reply box on this post. You can select the draft in the widget and copy it."
+  },
+  "socialNoDraft": {
+    "message": "Nothing to paste yet. Write a draft reply first."
   },
   "statusCrib": {
     "message": "Writing crib notes..."
@@ -396,7 +411,7 @@
     "message": "🎧 Listening to answers"
   },
   "helpListenBody": {
-    "message": "Ask Claude, Grok or Gemini anything. When the answer finishes, your character reads it out loud. Use the reading level slider: 1 is super simple, 5 is expert. Pick a voice style too."
+    "message": "Ask Claude, Grok or Gemini anything. Tap Listen for reading level, voice and auto-read; tap it again to close the panel. With Listen off, the widget stays compact and I won't auto-read new answers, but Play and Read selection still work. The slider is 1 super simple, 5 expert."
   },
   "helpGesturesTitle": {
     "message": "👆 Gestures"
@@ -414,7 +429,7 @@
     "message": "❓ Ask tab"
   },
   "helpAskBody": {
-    "message": "Key points gives the short version. Paraphrase says it in plain words. Oakley adds a wise thought. Ask a follow-up, or Expound to go deeper."
+    "message": "Tap Ask to open it, or tap it again to close. Key points gives the short version. Paraphrase says it in plain words in your chosen character. Ask a follow-up, or Expound to go deeper."
   },
   "helpTownTitle": {
     "message": "🏘️ The town"
@@ -426,13 +441,13 @@
     "message": "📱 Social posts"
   },
   "helpSocialBody": {
-    "message": "On X, Facebook and Instagram, tap the \"Crib notes\" pill on a post. Get crib notes (a witty summary) or a draft reply. Then copy it, make a video, or open the reply box. I never post for you: you choose what to post."
+    "message": "On X, Facebook and Instagram, tap the \"Crib notes\" pill on a post. The character you picked (the one picker in the widget) does crib notes, draft replies and videos. Open the Post tab for a draft reply and the writers' room; Make video is at the top of that section, and uses that post's latest crib notes, reply or scene, or writes crib notes first if there are none. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you."
   },
   "helpRoomTitle": {
     "message": "🎬 Writers' room"
   },
   "helpRoomBody": {
-    "message": "Pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Jokes are about ideas, never people."
+    "message": "On the Post tab, pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Make video is at the top of this section. You can close Post while a scene plays, and you can select the draft in the widget to copy it. Jokes are about ideas, never people."
   },
   "helpHotTitle": {
     "message": "🔥 What's hot"

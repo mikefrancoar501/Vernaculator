@@ -33,7 +33,7 @@
     .stage.giggle img { animation: wiggle .5s ease-in-out; }
     @keyframes wiggle { 0%,100% { transform: rotate(0) } 20% { transform: rotate(-8deg) } 40% { transform: rotate(7deg) } 60% { transform: rotate(-5deg) } 80% { transform: rotate(3deg) } }
     .who { position: absolute; left: 8px; bottom: 6px; font-size: 11px; color: var(--muted); }
-    .caption { min-height: 2.8em; max-height: 6.5em; overflow: auto; color: var(--fg); font-size: 12.5px; user-select: text; -webkit-user-select: text; }
+    .caption { min-height: 2.8em; max-height: 6.5em; overflow: auto; color: var(--fg); font-size: 12.5px; user-select: text; -webkit-user-select: text; cursor: text; }
     .caption:empty::before { content: attr(data-placeholder); color: var(--muted); }
     .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .row.controls button { flex: 1; }
@@ -54,6 +54,7 @@
     .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
     .tabs button { flex: 1; border: 0; border-radius: 8px 8px 0 0; background: transparent; color: var(--muted); font-weight: 600; min-height: 30px; }
     .tabs button[aria-selected="true"] { color: var(--fg); box-shadow: inset 0 -2px 0 var(--accent); }
+    .card[data-tab=""] .tabs { border-bottom-color: transparent; }
     section { display: grid; gap: 10px; }
     .chip.strong { font-weight: 600; }
     .town-box { display: grid; gap: 6px; }
@@ -76,7 +77,6 @@
     .card[data-size="S"] .body > :not(.stage):not(.status) { display: none; }
     .card[data-size="S"] .stage { height: 100px; }
     .card[data-size="S"] .stage img { max-height: 96px; }
-    .card[data-size="S"] .who { display: none; }
     .card[data-size="S"] .status { font-size: 10px; text-align: center; min-height: 0; }
     .card[data-size="L"] { width: 380px; font-size: 14px; }
     .card[data-size="L"] .stage { height: 210px; }
@@ -122,7 +122,7 @@
   // Text comes from _locales via chrome.i18n (data-i18n*), with English fallbacks in the markup.
   const HTML = `
     <div class="wrap">
-    <div class="card" part="card" data-size="M">
+    <div class="card" part="card" data-size="M" data-tab="listen">
       <header>
         <span class="dot" data-tone="idle"></span>
         <span class="title" data-i18n="extShortName">Fancy Bot</span>
@@ -143,13 +143,13 @@
           <button data-action="stop" data-i18n-title="hudStop" title="Stop" aria-label="Stop">■</button>
           <button data-action="readSelection" data-i18n-title="hudReadSelection" title="Read selected text (or last reply)" aria-label="Read selection">❝</button>
         </div>
+        <label class="field character-pick"><span data-i18n="hudCharacter">Character</span><select data-setting="personaId"></select></label>
         <div class="tabs" role="tablist">
           <button role="tab" data-tab="listen" aria-selected="true" data-i18n="hudTabListen">Listen</button>
           <button role="tab" data-tab="ask" aria-selected="false" data-i18n="hudTabAsk">Ask</button>
           <button role="tab" data-tab="social" aria-selected="false" data-i18n="hudTabPost" hidden>Post</button>
         </div>
         <section data-panel="listen">
-          <label class="field"><span data-i18n="hudCharacter">Character</span><select data-setting="personaId"></select></label>
           <div class="level">
             <div class="level-head"><span data-i18n="hudReadingLevel">Reading level</span><b class="level-name"></b></div>
             <input type="range" min="1" max="5" step="1" data-setting="readingLevel" data-i18n-aria="hudReadingLevel" aria-label="Reading level">
@@ -176,7 +176,7 @@
           <div class="row quick">
             <button data-action="keypoints" data-i18n="hudKeyPoints">Key points</button>
             <button data-action="paraphraseNow" data-i18n="hudParaphraseNow">Paraphrase</button>
-            <button data-action="oakley" class="oak" data-i18n="hudOakley">🌳 Paraphrase with Oakley</button>
+            <button data-action="oakley" class="oak" data-i18n="hudOakley" hidden>🌳 Paraphrase with Oakley</button>
           </div>
           <form class="ask">
             <input type="text" name="q" maxlength="500" autocomplete="off" data-i18n-placeholder="hudAskPlaceholder" placeholder="Ask about what it just said...">
@@ -187,19 +187,20 @@
           </form>
         </section>
         <section data-panel="social" hidden>
-          <div class="hint" data-i18n="socialHint">Tap 🎭 on any post, or use the post on screen:</div>
-          <label class="field"><span data-i18n="socialVoice">Comedic voice</span><select data-setting="cribPersonaId"></select></label>
+          <div class="hint" data-i18n="socialHint">Tap 🎭 Crib notes on a post. Draft reply uses that post, or the one on screen.</div>
+          <label class="field" hidden><span data-i18n="socialVoice">Comedic voice</span><select data-setting="cribPersonaId"></select></label>
           <div class="row quick">
-            <button data-action="crib" data-i18n="socialCrib">🎭 Crib notes</button>
+            <button data-action="crib" data-i18n="socialCrib" hidden>🎭 Crib notes</button>
             <button data-action="reply" data-i18n="socialReply">💬 Draft reply</button>
           </div>
           <div class="scene-box">
+            <button data-action="postVideo" data-i18n="socialVideo">🎬 Make video</button>
             <button data-action="scene" class="primary" data-i18n="sceneButton">🎬 Writers' room scene</button>
             <div class="hint" data-i18n="sceneHint">The cast pitch lines and the director turns them into a mini-scene.</div>
             <div class="scene-members" data-i18n-aria="sceneCast" aria-label="Scene cast (2 to 4)"></div>
             <label class="field"><span data-i18n="sceneDirector">Director</span><select data-setting="sceneDirector"></select></label>
           </div>
-          <div class="hot-box">
+          <div class="hot-box" hidden>
             <label class="chip strong"><input type="checkbox" data-setting="whatsHot"> <span data-i18n="hotToggle">🔥 What's hot on this page</span></label>
             <div class="hot-body">
               <div class="row"><span class="hint" style="flex:1" data-i18n="hotHint">Posts you're viewing, by reach and shared topics. Pick one:</span><button class="icon" data-action="refreshHot" title="Refresh" aria-label="Refresh">↻</button></div>
@@ -207,15 +208,15 @@
             </div>
           </div>
           <form class="angle"><input type="text" name="q" maxlength="200" autocomplete="off" data-i18n-placeholder="socialAngle" placeholder="Your angle for the reply (optional)"></form>
-          <div class="social-out" hidden>
-            <div class="row quick">
-              <button data-action="copyText" data-i18n="socialCopy">📋 Copy text</button>
-              <button data-action="export" data-i18n="socialVideo">🎬 Make video</button>
-              <button data-action="openReply" data-i18n="socialOpenReply">↩ Open reply box</button>
-            </div>
-            <div class="hint" data-i18n="socialYouPost">You review it and post it yourself.</div>
-          </div>
         </section>
+        <div class="social-out" hidden>
+          <div class="row quick">
+            <button data-action="copyText" data-i18n="socialCopy" hidden>📋 Copy text</button>
+            <button data-action="export" data-i18n="socialVideo" hidden>🎬 Make video</button>
+            <button data-action="openReply" data-i18n="socialOpenReply" hidden>Paste into reply</button>
+          </div>
+          <div class="hint" data-i18n="socialYouPost">You review it and post it yourself.</div>
+        </div>
         <progress hidden max="1" value="0"></progress>
         <div class="status"></div>
       </div>
@@ -239,13 +240,13 @@
     <div class="pop help" hidden>
       <div class="pop-title" data-i18n="helpTitle">How Fancy Bot works</div>
       <p class="help-intro" data-i18n="helpIntro">I read AI answers out loud in fun voices and help you understand them. Tap a topic:</p>
-      <details><summary data-i18n="helpListenTitle">🎧 Listening to answers</summary><p data-i18n="helpListenBody">Ask Claude, Grok or Gemini anything. When the answer finishes, your character reads it out loud. Use the reading level slider: 1 is super simple, 5 is expert. Pick a voice style too.</p></details>
+      <details><summary data-i18n="helpListenTitle">🎧 Listening to answers</summary><p data-i18n="helpListenBody">Ask Claude, Grok or Gemini anything. Tap Listen for reading level, voice and auto-read; tap it again to close the panel. With Listen off, the widget stays compact and I won't auto-read new answers, but Play and Read selection still work. The slider is 1 super simple, 5 expert.</p></details>
       <details><summary data-i18n="helpGesturesTitle">👆 Gestures</summary><p data-i18n="helpGesturesBody">Drag me by the top bar. Long-press me for the menu (size, characters, mute). Double-tap me to open the helper. Tap me fast or rub me to tickle me.</p></details>
       <details><summary data-i18n="helpHelperTitle">💬 Helper commands</summary><p data-i18n="helpHelperBody">Double-tap and type or say things like "switch to Old Oakley", "talk slower", "simpler please" or "talk like a genius". I change the setting for you.</p></details>
-      <details><summary data-i18n="helpAskTitle">❓ Ask tab</summary><p data-i18n="helpAskBody">Key points gives the short version. Paraphrase says it in plain words. Oakley adds a wise thought. Ask a follow-up, or Expound to go deeper.</p></details>
+      <details><summary data-i18n="helpAskTitle">❓ Ask tab</summary><p data-i18n="helpAskBody">Tap Ask to open it, or tap it again to close. Key points gives the short version. Paraphrase says it in plain words in your chosen character. Ask a follow-up, or Expound to go deeper.</p></details>
       <details><summary data-i18n="helpTownTitle">🏘️ The town</summary><p data-i18n="helpTownBody">Pick a few characters and they each take a part of the answer, like a little town meeting. Big Sal, Old Oakley, Big Play Ray and Elias are the core crew.</p></details>
-      <details><summary data-i18n="helpSocialTitle">📱 Social posts</summary><p data-i18n="helpSocialBody">On X, Facebook and Instagram, tap the "Crib notes" pill on a post. Get crib notes (a witty summary) or a draft reply. Then copy it, make a video, or open the reply box. I never post for you: you choose what to post.</p></details>
-      <details><summary data-i18n="helpRoomTitle">🎬 Writers' room</summary><p data-i18n="helpRoomBody">Pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Jokes are about ideas, never people.</p></details>
+      <details><summary data-i18n="helpSocialTitle">📱 Social posts</summary><p data-i18n="helpSocialBody">On X, Facebook and Instagram, tap the "Crib notes" pill on a post. The character you picked (the one picker in the widget) does crib notes, draft replies and videos. Open the Post tab for a draft reply and the writers' room; Make video is at the top of that section, and uses that post's latest crib notes, reply or scene, or writes crib notes first if there are none. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you.</p></details>
+      <details><summary data-i18n="helpRoomTitle">🎬 Writers' room</summary><p data-i18n="helpRoomBody">On the Post tab, pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Make video is at the top of this section. You can close Post while a scene plays, and you can select the draft in the widget to copy it. Jokes are about ideas, never people.</p></details>
       <details><summary data-i18n="helpHotTitle">🔥 What's hot</summary><p data-i18n="helpHotBody">Turn it on to rank the posts already on your screen by likes and shared topics. Pick one to riff on.</p></details>
       <details><summary data-i18n="helpVideoTitle">🎞️ Meme video</summary><p data-i18n="helpVideoBody">After a narration, tap Video to download a clip with the character and captions, ready for you to upload.</p></details>
       <details><summary data-i18n="helpSettingsTitle">👤 Settings</summary><p data-i18n="helpSettingsBody">Tap the person icon to set your name, a little about you, your age range and language. Answers get tailored to you.</p></details>
@@ -335,7 +336,7 @@
         if (q) this.onAction('ask', q);
       });
       for (const tab of this.root.querySelectorAll('[data-tab]')) {
-        tab.addEventListener('click', () => this.showTab(tab.dataset.tab));
+        tab.addEventListener('click', () => this.showTab(this.activeTab() === tab.dataset.tab ? '' : tab.dataset.tab));
       }
       // Keep typing in the Ask box from triggering the host page's keyboard shortcuts.
       this.angleForm = $('form.angle');
@@ -415,6 +416,7 @@
         if (roster && !this.rosterIds?.includes(s.personaId) && roster.some((p) => p.id === s.personaId)) this.setPersonas(this.allPersonas, s.personaId);
       }
       if ('muted' in s) this.root.querySelector('.mute-btn').textContent = s.muted ? Vern.t('menuUnmute', 'Unmute') : Vern.t('menuMute', 'Mute');
+      if ('hudTab' in s) this.showTab(this.#availableTab(s.hudTab || ''), false, false);
     }
 
     #localize() {
@@ -556,10 +558,24 @@
       for (const i of this.root.querySelectorAll('[data-town-member]')) i.checked = ids.includes(i.dataset.townMember);
     }
 
-    showTab(name, focus = true) {
-      for (const t of this.root.querySelectorAll('[data-tab]')) t.setAttribute('aria-selected', String(t.dataset.tab === name));
-      for (const p of this.root.querySelectorAll('[data-panel]')) p.hidden = p.dataset.panel !== name;
-      if (name === 'ask' && focus) this.askForm.q.focus();
+    activeTab() {
+      return this.card?.dataset.tab || '';
+    }
+
+    /** Drop a saved tab that isn't on this kind of site (Ask on social, Post on chat). */
+    #availableTab(name) {
+      const tab = name || '';
+      const btn = tab && this.root.querySelector(`[data-tab="${tab}"]`);
+      return btn && !btn.hidden ? tab : '';
+    }
+
+    showTab(name, focus = true, persist = true) {
+      const tab = name || '';
+      this.card.dataset.tab = tab;
+      for (const t of this.root.querySelectorAll('[data-tab]')) t.setAttribute('aria-selected', String(!!tab && t.dataset.tab === tab));
+      for (const p of this.root.querySelectorAll('[data-panel]')) p.hidden = !tab || p.dataset.panel !== tab;
+      if (tab === 'ask' && focus) this.askForm.q.focus();
+      if (persist && Vern.settings.values.hudTab !== tab) this.onSetting('hudTab', tab);
       requestAnimationFrame(() => this.#apply(this.pos));
     }
 
@@ -568,12 +584,13 @@
       this.root.querySelector('[data-tab="social"]').hidden = !on;
       this.root.querySelector('[data-tab="ask"]').hidden = on;
       this.caption.dataset.placeholder = on ? Vern.t('socialPlaceholder', 'Tap 🎭 Crib notes on a post.') : this.caption.dataset.placeholder;
-      if (on) this.showTab('social', false);
+      // Restore the saved tab, or a compact empty state if that tab isn't on this site.
+      this.showTab(this.#availableTab(Vern.settings.values.hudTab || ''), false, false);
     }
 
-    /** Show Copy / Make video / Open reply once there is something to share. */
+    /** Bottom Copy / Paste / Make video strip stays hidden to free space. */
     setSocialResult(has) {
-      this.socialOut.hidden = !has;
+      this.socialOut.hidden = true;
       requestAnimationFrame(() => this.#apply(this.pos));
     }
 
@@ -597,7 +614,8 @@
 
     setPersonas(all, selectedId) {
       // The picker fills the Character select (categories, search, every voice).
-      this.picker.setList(all, selectedId, { auto: true, catalog: Vern.personaCatalog });
+      // Auto is off: one chosen character speaks everywhere.
+      this.picker.setList(all, selectedId, { auto: false, catalog: Vern.personaCatalog });
       // Cast pickers (crib voice, writers' room, town) keep to a short roster: the original cast
       // plus whoever is chosen right now, so the voice library doesn't bury them.
       const list = Vern.castRoster(all, selectedId);

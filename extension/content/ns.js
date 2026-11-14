@@ -18,12 +18,14 @@
     autoRead: true,
     hudVisible: true,
     hudCollapsed: false,
+    hudTab: 'listen', // '' = no tab open (compact); Listen / Ask / Post are toggles
     hudPos: null,
     hudSize: 'S', // compact by default; long-press the character for M / L / custom
     hudScale: 1,
     muted: false,
     replaceCompanion: true, // on grok.com, sit in place of Grok's own companion avatar
     townEnabled: false,
+    townStrip: false, // page-top face strip is off; TownStrip stays in town.js
     townMembers: ['big_sal', 'old_oakley', 'big_play_ray', 'elias_stillwater'], // the core four
     cribPersonaId: 'big_play_ray', // comedic voice for social crib notes and replies ('' = main character)
     socialPill: true,
@@ -41,6 +43,12 @@
       // Migrate the old named reading levels to the 1-5 slider.
       const named = { kid: 1, preteen: 2, teen: 3, adult: 4, scholar: 5 };
       if (typeof this.values.readingLevel !== 'number') this.values.readingLevel = named[this.values.readingLevel] ?? DEFAULTS.readingLevel;
+      // One character setting drives Listen, crib notes, drafts and videos.
+      // Old "Auto" and a saved Comedic voice must not override the chosen character.
+      if (!this.values.personaId || this.values.personaId === 'auto') {
+        this.values.personaId = DEFAULTS.personaId;
+        chrome.storage.local.set({ personaId: this.values.personaId });
+      }
       return this.values;
     },
     async save(patch) {

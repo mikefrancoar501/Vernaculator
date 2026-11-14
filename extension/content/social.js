@@ -1,6 +1,6 @@
-// Social overlay (X, Facebook, Instagram): a small "Crib notes" pill appears on the post under
-// the pointer (or the finger, on touch). Tapping it hands the post to the HUD. Nothing here
-// writes into the site or posts anything: the user copies, downloads and posts it themselves.
+// Social overlay (X, Facebook, Instagram): a "Crib notes" pill appears on the post under
+// the pointer (or the finger, on touch). Tapping it hands that post to the HUD.
+// Nothing here writes into the site or posts anything: the user copies, downloads and posts it themselves.
 (() => {
   const STYLE = `
     :host { all: initial; }
@@ -273,13 +273,125 @@
       return best;
     }
 
-    /** Opens the site's own reply box for the post, if the button can be found. Never types or sends. */
-    openReply(post) {
-      const btn = post?.isConnected && this.platform.replySelector && post.querySelector(this.platform.replySelector);
+    #isVisible(el) {
+      if (!el || !el.isConnected) return false;
+      const r = el.getBoundingClientRect();
+      if (r.width < 8 || r.height < 8) return false;
+      const s = getComputedStyle(el);
+      return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+    }
+
+    /** Reply/Post submit buttons that would send the reply — never click these. */
+    #isSubmit(el) {
+      const id = el.getAttribute('data-testid') || '';
+      if (/^tweetButton(Inline)?$/i.test(id)) return true;
+      return (el.getAttribute('type') || '') === 'submit';
+    }
+
+    #looksLikeReplyBox(el) {
+      if (this.#isSubmit(el)) return false;
+      const label = `${el.getAttribute('aria-label') || ''} ${el.getAttribute('placeholder') || ''} ${el.getAttribute('data-testid') || ''}`;
+      // Home-timeline compose and search boxes, not a reply field.
+      if (/(what's happening|what is happening|post text|\bsearch\b)/i.test(label) && !/reply|comment/i.test(label)) return false;
+      return true;
+    }
+
+    #findReplyBox(post) {
+      const sel = [
+        '[data-testid="tweetTextarea_0"]',
+        '[data-testid^="tweetTextarea_"]',
+        '[aria-label*="Post your reply" i]',
+        '[aria-label*="Tweet your reply" i]',
+        '[aria-label*="Your reply" i]',
+        '[placeholder*="Post your reply" i]',
+        '[placeholder*="your reply" i]',
+        '[aria-label*="Write a comment" i]',
+        '[aria-label*="Leave a comment" i]',
+        '[aria-label*="Add a comment" i]',
+        '[placeholder*="comment" i]',
+        'textarea',
+        'div[role="textbox"][contenteditable="true"]',
+        '[contenteditable="true"]',
+      ].join(', ');
+      const pick = (root) => {
+        for (const el of root.querySelectorAll(sel)) {
+          if (this.#isVisible(el) && this.#looksLikeReplyBox(el)) return el;
+        }
+        return null;
+      };
+      const inside = pick(post);
+      if (inside) return inside;
+      // On an X post page the reply box is always visible and often sits just after the post, not inside it.
+      let n = post.nextElementSibling;
+      for (let i = 0; n && i < 10; i++, n = n.nextElementSibling) {
+        if (n.matches?.(sel) && this.#isVisible(n) && this.#looksLikeReplyBox(n)) return n;
+        const found = pick(n);
+        if (found) return found;
+      }
+      for (const el of document.querySelectorAll('[aria-label*="Post your reply" i], [aria-label*="Tweet your reply" i], [placeholder*="Post your reply" i], [placeholder*="your reply" i]')) {
+        if (this.#isVisible(el) && this.#looksLikeReplyBox(el)) return el;
+      }
+      return null;
+    }
+
+    /** Reveals a hidden composer (timeline) by clicking the reply/comment icon, never a submit button. */
+    #openComposer(post) {
+      const sel = this.platform.replySelector;
+      if (!post?.isConnected || !sel) return false;
+      const btn = post.querySelector(sel);
       const target = btn?.closest('button, [role="button"]') || btn;
-      if (!target) return false;
+      if (!target || this.#isSubmit(target)) return false;
       target.click();
       return true;
+    }
+
+    #fillBox(el, text) {
+      el.focus();
+      if (el.matches('textarea, input')) {
+        const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+        const desc = Object.getOwnPropertyDescriptor(proto, 'value');
+        desc?.set?.call(el, text);
+        if (el.value !== text) el.value = text;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        return el.value === text;
+      }
+      // X uses a contenteditable editor; insertText is what it listens for.
+      try {
+        document.execCommand('selectAll', false, null);
+        if (document.execCommand('insertText', false, text)) return true;
+      } catch {}
+      try {
+        const dt = new DataTransfer();
+        dt.setData('text/plain', text);
+        el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+        if ((el.innerText || '').includes(text.slice(0, 40))) return true;
+      } catch {}
+      el.textContent = text;
+      el.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: 'insertText' }));
+      return true;
+    }
+
+    /**
+     * Puts `text` into the post's visible reply/comment box. On an X post page the box is
+     * already showing, so this only clicks the reply icon if the box isn't there yet (e.g. on
+     * the timeline). It never clicks Reply or Post to send.
+     */
+    async pasteIntoReply(post, text) {
+      if (!text) return false;
+      const target = post?.isConnected ? post : this.postInView();
+      if (!target) return false;
+      let box = this.#findReplyBox(target);
+      if (!box) {
+        this.#openComposer(target);
+        box = this.#findReplyBox(target);
+        if (!box) {
+          await new Promise((r) => setTimeout(r, 300));
+          box = this.#findReplyBox(target);
+        }
+      }
+      if (!box) return false;
+      return this.#fillBox(box, text);
     }
   }
 

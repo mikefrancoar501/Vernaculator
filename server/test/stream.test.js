@@ -62,14 +62,20 @@ test('REST: health, personas, auth, transform', async () => {
     body: JSON.stringify({ text: 'Who will win the big game tonight?', personaId: 'auto' }),
   });
   const body = await res.json();
-  assert.equal(body.persona.id, 'big_play_ray');
+  assert.equal(body.persona.id, 'big_sal', 'auto/missing persona falls back to the default character, not topic routing');
+  const kept = await (await fetch(`http://${base}/v1/transform`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: 'Who will win the big game tonight?', personaId: 'professor_pip' }),
+  })).json();
+  assert.equal(kept.persona.id, 'professor_pip', 'an explicit persona is kept even when the topic would have routed elsewhere');
   const asst = await (await fetch(`http://${base}/v1/assistant`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: 'switch to Big Sal', current: { size: 'S' } }),
   })).json();
   assert.equal(asst.action.personaId, 'big_sal');
-  assert.match(body.text, /Big Play Ray here/);
+  assert.match(body.text, /Big Sal here/);
 });
 
 test('WebSocket: streamed utterance yields persona, captions, audio and done', async () => {
@@ -84,7 +90,7 @@ test('WebSocket: streamed utterance yields persona, captions, audio and done', a
   c.ws.send(JSON.stringify({ type: 'utterance.end', seq: 7 }));
 
   const persona = await c.waitFor((e) => e.type === 'utterance.persona');
-  assert.equal(persona.persona.id, 'professor_pip');
+  assert.equal(persona.persona.id, 'big_sal', 'auto does not switch to a science persona');
   assert.equal(persona.readingLevel, 1);
   assert.deepEqual(persona.style, { paraphrase: false, humor: true, philosophy: false, accent: 'slow' });
   const done = await c.waitFor((e) => e.type === 'utterance.done');
