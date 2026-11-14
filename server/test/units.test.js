@@ -224,8 +224,10 @@ test('mini-assistant maps requests to settings and validates them', async () => 
   const r1 = ruleAssistant('switch to Old Oakley and talk slower', personas, { readingLevel: 3 });
   assert.equal(r1.action.personaId, 'old_oakley');
   assert.equal(r1.action.accent, 'slow');
-  assert.equal(ruleAssistant('who would explain this like a coach?', personas).action.personaId, 'big_play_ray');
+  assert.equal(ruleAssistant('who would explain this like a coach?', personas).action.personaId, undefined, 'a question does not change the character');
+  assert.match(ruleAssistant('who would explain this like a coach?', personas).reply, /Big Play Ray/);
   assert.equal(ruleAssistant('Big Sal please', personas).action.personaId, 'big_sal');
+  assert.equal(ruleAssistant('talk like a coach', personas).action.personaId, 'big_play_ray', 'an explicit "talk like" request may switch');
   assert.equal(ruleAssistant('that was too complicated', personas, { readingLevel: 3 }).action.readingLevel, 2);
   assert.equal(ruleAssistant('make it bigger', personas, { size: 'S' }).action.size, 'M');
   assert.equal(ruleAssistant('make me laugh', personas).action.humor, true);

@@ -32,7 +32,9 @@
   hud.mount(settings);
   const viseme = new Vern.VisemeDriver(hud.img, player);
   const town = new Vern.TownStrip({ onPick: (id) => Vern.settings.save({ personaId: id }) });
-  town.mount();
+  // Face strip along the top is off by default: it couldn't be moved and clicks did nothing useful.
+  // Town panel and writers' room still work through the HUD sprite. TownStrip stays in town.js.
+  if (settings.townStrip) town.mount();
   viseme.setSprites(FALLBACK);
 
   // Web Audio may only start after a user gesture; hook the first one on the page.
@@ -168,7 +170,7 @@
       await conn.send({
         type: 'utterance.start',
         seq,
-        personaId: personaId || v.personaId,
+        personaId: personaId || (v.personaId && v.personaId !== 'auto' ? v.personaId : 'big_sal'),
         readingLevel: v.readingLevel,
         style,
         task,
@@ -228,12 +230,14 @@
   // No AI replies to watch: the user picks a post. The character writes crib notes or a reply
   // draft; the user copies it, makes a video, and posts it themselves. We never post for them.
   let lastPost = null; // { el, text }
+  const sessionsByPost = new Map(); // post text -> last crib/reply/scene session for that post
+  let pendingVideo = null; // { key } export this post's session once its utterance finishes
   const social = platform.social ? new Vern.SocialOverlay(platform, { onCrib: (el) => socialTask('crib', el) }) : null;
   if (social) {
     social.mount();
     hud.setSocial(true);
   }
-  let sceneStrip = false; // the town strip is showing a writers' room cast
+  let sceneStrip = false; // writers' room is playing a multi-character cast
   let hotItems = [];
   function refreshHot() {
     if (!social || !Vern.settings.values.whatsHot) return;
@@ -243,7 +247,7 @@
   if (social) {
     let queued = false;
     new MutationObserver(() => {
-      if (queued || !Vern.settings.values.whatsHot) return;
+      if (queued || !Vern.settings.values.whatsHot || hud.activeTab() !== 'social') return;
       queued = true;
       setTimeout(() => { queued = false; refreshHot(); }, 3000);
     }).observe(document.body, { childList: true, subtree: true });
@@ -255,7 +259,7 @@
     if (!text) return hud.setStatus(Vern.t('socialNoPost', 'No post found. Scroll a post into view or tap 🎭 on one.'), 'idle');
     lastPost = { el: post, text, picked: post === lastPost?.el && lastPost.picked };
     hud.setSocialResult(false);
-    hud.showTab('social', false);
+    // Don't force the Post tab open: explicit crib / scene / video still run in the compact view.
     if (hud.card.dataset.size === 'S') hud.applySettings({ hudSize: 'M' }); // show the result, without changing the saved size
     const v = Vern.settings.values;
     if (task === 'scene') {
@@ -269,7 +273,7 @@
       const director = personas.some((p) => p.id === v.sceneDirector) ? v.sceneDirector : undefined;
       return speak(text, { task, cast, director });
     }
-    speak(text, { task, question: angle || undefined, personaId: v.cribPersonaId || undefined });
+    speak(text, { task, question: angle || undefined, personaId: v.personaId && v.personaId !== 'auto' ? v.personaId : 'big_sal' });
   }
   async function copyResult() {
     const text = lastSession?.text;
@@ -284,7 +288,7 @@
 
   const observer = social ? { start() {}, latestText: () => lastPost?.text || '' } : new Vern.MessageObserver(platform, {
     onStart(id) {
-      if (Vern.settings.values.autoRead) startUtterance({ sourceId: id });
+      if (Vern.settings.values.autoRead && hud.activeTab() === 'listen') startUtterance({ sourceId: id });
     },
     onChunk(id, text) {
       if (current?.sourceId === id) sendChunk(current.seq, text);
@@ -332,7 +336,7 @@
       }
       case 'town.plan':
         if (current.task === 'scene') {
-          // Show the scene's cast along the top while it plays.
+          // Remember the scene cast (used if the optional page-top strip is enabled).
           sceneStrip = true;
           Promise.all(msg.members.map(async (p) => ({ id: p.id, name: Vern.personaName(p), sprites: await spritesFor(p) }))).then((members) => {
             if (!sceneStrip) return;
@@ -361,19 +365,28 @@
         player.end(msg.seq);
         if (msg.script) current.segments.forEach((seg, i) => { seg.line = msg.script[i]?.line || ''; });
         lastSession = { chunks: player.chunks, text: msg.text, persona: current.persona, sprites: current.sprites, segments: current.segments, task: current.task };
-        if (['crib', 'reply', 'scene'].includes(current.task)) hud.setSocialResult(true);
+        if (['crib', 'reply', 'scene'].includes(current.task)) {
+          hud.setSocialResult(true);
+          if (lastPost?.text) sessionsByPost.set(lastPost.text.trim(), lastSession);
+        }
         hud.setStatus((() => { const n = msg.usage.remainingChars.toLocaleString(); const left = Vern.t('statusCharsLeft', `${n} characters left this month`, [n]); const note = [current.notice, testVoices && testVoicesNote()].filter(Boolean).join(' · '); return note ? `${note} · ${left}` : left; })(), current.notice || testVoices ? 'busy' : 'ok');
+        if (pendingVideo && lastPost?.text?.trim() === pendingVideo.key && lastSession) {
+          pendingVideo = null;
+          exportSession(lastSession);
+        }
         break;
       case 'utterance.cancelled':
+        if (pendingVideo && msg.reason !== 'superseded') pendingVideo = null;
         if (msg.reason !== 'superseded' && msg.reason !== 'client') hud.setStatus(`Stopped (${msg.reason})`, 'idle');
         break;
       case 'error':
+        pendingVideo = null;
         hud.setStatus(msg.message || msg.code, msg.recoverable ? 'busy' : 'err');
         break;
     }
   }
 
-  // While a town-panel reply plays, switch the active speaker (HUD sprite + strip) by playhead position.
+  // While a town-panel reply plays, switch the active speaker (HUD sprite) by playhead position.
   let townRaf = 0;
   let activeSeg = null;
   function startTownLoop() {
@@ -410,6 +423,51 @@
     if (state === 'error') hud.setStatus('This site blocked audio playback; captions only.', 'err');
   }
 
+  async function exportSession(s) {
+    if (!s) return hud.setStatus(Vern.t('statusExportFirst', 'Play a reply first, then export it.'), 'idle');
+    try {
+      hud.setStatus('Rendering video...', 'busy');
+      hud.setExportProgress(0);
+      const { blob, ext } = await Vern.exportMeme(
+        {
+          chunks: s.chunks,
+          text: s.text,
+          persona: s.persona,
+          hue: s.sprites?.hue || 0,
+          sprites: { idle: s.sprites?.idle || FALLBACK.idle, talking: s.sprites?.talking || FALLBACK.talking, fallbackIdle: FALLBACK.idle, fallbackTalking: FALLBACK.talking },
+          segments: s.segments,
+        },
+        (f) => hud.setExportProgress(f),
+      );
+      const name = `${(Vern.personaName(s.persona) || 'fancy-bot').toLowerCase().replace(/\W+/g, '-')}-${Date.now()}.${ext}`;
+      Vern.downloadBlob(blob, name);
+      hud.setStatus(ext === 'mp4' ? 'Saved MP4.' : 'Saved WebM (this Chrome cannot record MP4).', 'ok');
+    } catch (err) {
+      hud.setStatus(err.message, 'err');
+    } finally {
+      hud.setExportProgress(null);
+    }
+  }
+
+  /** Make a video of this post: reuse its latest crib/reply/scene audio, or write crib notes first. */
+  function videoForPost(el) {
+    const post = el?.isConnected ? el : (lastPost?.el?.isConnected ? lastPost.el : social?.postInView());
+    const text = post ? Vern.postText(platform, post) : '';
+    if (!text) return hud.setStatus(Vern.t('socialNoPost', 'No post found. Scroll a post into view or tap 🎭 on one.'), 'idle');
+    lastPost = { el: post, text, picked: post === lastPost?.el && lastPost.picked };
+    const key = text.trim();
+    const session = sessionsByPost.get(key);
+    if (session) return exportSession(session);
+    const already = current && !current.done && ['crib', 'reply', 'scene'].includes(current.task) && lastPost?.text?.trim() === key;
+    pendingVideo = { key };
+    if (already) {
+      hud.setStatus(Vern.t('statusVideoAfter', 'Finishing this, then making the video...'), 'busy');
+      return;
+    }
+    hud.setStatus(Vern.t('statusVideoCrib', 'Writing crib notes, then making the video...'), 'busy');
+    socialTask('crib', post);
+  }
+
   // --- HUD actions --------------------------------------------------------------
   async function onAction(action, arg) {
     player.ensureAudioGraph();
@@ -434,7 +492,8 @@
         speak(answerText(), { paraphrase: true });
         break;
       case 'oakley':
-        speak(answerText(), { paraphrase: true, personaId: 'old_oakley' });
+        // Used to force Old Oakley; now paraphrases in the chosen character.
+        speak(answerText(), { paraphrase: true });
         break;
       case 'ask':
         if (!arg) return;
@@ -468,13 +527,14 @@
         hud.setStatus((await copyResult()) ? Vern.t('socialCopied', 'Copied. Paste it wherever you like.') : Vern.t('socialCopyFailed', 'Could not copy; select the caption text instead.'), 'ok');
         break;
       case 'openReply': {
-        const copied = await copyResult();
-        const opened = social?.openReply(lastPost?.el);
+        const text = lastSession?.text || '';
+        if (!text) return hud.setStatus(Vern.t('socialNoDraft', 'Nothing to paste yet. Write a draft reply first.'), 'idle');
+        const ok = await social?.pasteIntoReply(lastPost?.el, text);
         hud.setStatus(
-          opened
-            ? Vern.t('socialReplyOpened', 'Reply box opened. Paste the text and attach your video, then post it yourself.')
-            : Vern.t('socialReplyNotFound', 'Could not find the reply button on this post.') + (copied ? ` ${Vern.t('socialCopied', 'Copied. Paste it wherever you like.')}` : ''),
-          opened ? 'ok' : 'idle',
+          ok
+            ? Vern.t('socialReplyOpened', 'Pasted into the reply box. Attach your video if you want, then post it yourself.')
+            : Vern.t('socialReplyNotFound', 'Could not find the reply box on this post. You can select the draft in the widget and copy it.'),
+          ok ? 'ok' : 'idle',
         );
         break;
       }
@@ -496,32 +556,10 @@
       case 'readSelection':
         speak(window.getSelection()?.toString() || observer.latestText());
         break;
+      case 'postVideo':
+        return videoForPost();
       case 'export':
-        if (!lastSession) return hud.setStatus(Vern.t('statusExportFirst', 'Play a reply first, then export it.'), 'idle');
-        try {
-          hud.setStatus('Rendering video...', 'busy');
-          hud.setExportProgress(0);
-          const s = lastSession;
-          const { blob, ext } = await Vern.exportMeme(
-            {
-              chunks: s.chunks,
-              text: s.text,
-              persona: s.persona,
-              hue: s.sprites?.hue || 0,
-              sprites: { idle: s.sprites?.idle || FALLBACK.idle, talking: s.sprites?.talking || FALLBACK.talking, fallbackIdle: FALLBACK.idle, fallbackTalking: FALLBACK.talking },
-              segments: s.segments,
-            },
-            (f) => hud.setExportProgress(f),
-          );
-          const name = `${(Vern.personaName(s.persona) || 'fancy-bot').toLowerCase().replace(/\W+/g, '-')}-${Date.now()}.${ext}`;
-          Vern.downloadBlob(blob, name);
-          hud.setStatus(ext === 'mp4' ? 'Saved MP4.' : 'Saved WebM (this Chrome cannot record MP4).', 'ok');
-        } catch (err) {
-          hud.setStatus(err.message, 'err');
-        } finally {
-          hud.setExportProgress(null);
-        }
-        break;
+        return exportSession(lastSession);
     }
   }
 
@@ -529,7 +567,7 @@
     hud.applySettings(patch);
     if ('muted' in patch) player.audio.muted = !!patch.muted;
     if ('townEnabled' in patch || 'townMembers' in patch) refreshTown();
-    if ('whatsHot' in patch) refreshHot();
+    if ('whatsHot' in patch || patch.hudTab === 'social') refreshHot();
     if ('replaceCompanion' in patch) companion.sync();
     if ('backendUrl' in patch || 'token' in patch) {
       conn.reset();

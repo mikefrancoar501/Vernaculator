@@ -40,20 +40,31 @@ export function ruleAssistant(text, personas, current = {}) {
   const notes = [];
 
   const named = findPersonaByName(t, personas);
-  if (named) {
+  const explicitSwitch = /\b(switch(?:ing)?(?:\s+me)?\s+to|change(?:\s+to)?|use|set(?:\s+the)?\s+character|be(?:come)?|talk(?:ing)?\s+(?:as|like))\b/.test(t)
+    || /\bplease\b/.test(t);
+  const role = /\blike (?:a|an|my)\s+([a-z]+)/.exec(t)?.[1] || /\b(coach|scientist|grandma|granny|grandmother|teacher|engineer|banker|philosopher|announcer|mentor|guide)\b/.exec(t)?.[1];
+  const whoWould = /\bwho would\b|\bwhich character\b|\bwho should\b/.test(t);
+
+  if (named && explicitSwitch && !whoWould) {
     action.personaId = named.id;
     notes.push(`Switching to ${named.name}.`);
-  } else {
-    const role = /\blike (?:a|an|my)\s+([a-z]+)/.exec(t)?.[1] || /\b(coach|scientist|grandma|granny|grandmother|teacher|engineer|banker|philosopher|announcer|mentor|guide)\b/.exec(t)?.[1];
-    if (role) {
-      const cue = ROLE_HINTS[role] || role;
-      const [best] = scorePersonas(cue, personas.list).filter((r) => r.score > 0);
-      const byArchetype = personas.list.find((p) => p.archetype.toLowerCase().includes(role));
-      const pick = byArchetype || (best && personas.get(best.id));
-      if (pick) {
-        action.personaId = pick.id;
-        notes.push(`${pick.name}, the ${pick.archetype}, would explain it like a ${role}.`);
-      }
+  } else if (role) {
+    const cue = ROLE_HINTS[role] || role;
+    const [best] = scorePersonas(cue, personas.list).filter((r) => r.score > 0);
+    const byArchetype = personas.list.find((p) => p.archetype.toLowerCase().includes(role));
+    const pick = byArchetype || (best && personas.get(best.id));
+    if (pick && explicitSwitch && !whoWould) {
+      action.personaId = pick.id;
+      notes.push(`Switching to ${pick.name}, the ${pick.archetype}.`);
+    } else if (pick) {
+      notes.push(`${pick.name}, the ${pick.archetype}, would explain it like a ${role}. Say "switch to ${pick.name}" if you want them.`);
+    }
+  } else if (named && !whoWould) {
+    // A short "Big Sal please" is an explicit request; a passing mention is not.
+    const leftover = t.replace(named.name.toLowerCase(), '').replace(/\b(comic|the|please|now)\b/g, '').trim();
+    if (leftover.length < 4) {
+      action.personaId = named.id;
+      notes.push(`Switching to ${named.name}.`);
     }
   }
 

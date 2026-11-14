@@ -47,6 +47,7 @@ Levels and styles live in `server/src/styles.js` and are served to the HUD with 
 ## Gestures, Grok companion and the mini-assistant
 
 - The HUD starts compact (size S). Drag only by the header, so gestures on the character never fight with dragging.
+- **Listen, Ask and Post are toggles:** tap the active tab to close it. With no tab open, the widget stays compact. Auto-read only runs while Listen is open; What's hot only auto-refreshes while Post is open. Explicit actions (Play, the Crib notes pill, Draft reply, a writers' room scene, Make video) still work. The last open tab (or none) is saved.
 - **Long-press the character:** menu with size S/M/L or a custom scale, quick character switch, Paraphrase, mute and settings.
 - **Double-tap:** a small voice/text assistant ("switch to Old Oakley", "who would explain this like a coach?", "slower please"). Simple commands are handled by rules; anything else goes to `POST /v1/assistant`. It waits 320 ms so a triple-tap still counts as a tickle.
 - **Triple-tap or rub:** tickle and giggle, as before.
@@ -54,24 +55,24 @@ Levels and styles live in `server/src/styles.js` and are served to the HUD with 
 
 ## Town panel
 
-Turn on *Town* in the HUD and pick 2 to 6 characters. They sit in a strip along the top of the screen (scrolls sideways on phones, respects the notch). The server splits the answer by paragraphs, gives each part to the member whose interests fit it best (`server/src/town.js`), and each member speaks their part in their own voice with a short handoff to the next. The speaking member is highlighted and their mouth moves; tap a member to make them your main character.
+Turn on *Town* in the Listen tab and pick 2 to 6 characters. The server splits the answer by paragraphs, gives each part to the member whose interests fit it best (`server/src/town.js`), and each member speaks their part in their own voice with a short handoff to the next. The widget switches to the speaking member and their mouth moves.
 
 ## Social media crib notes (X, Facebook, Instagram)
 
 On x.com, facebook.com and instagram.com the extension does not watch for AI replies. Instead:
 
-- Hover or tap a post and a **🎭 Crib notes** pill appears on it. Tap it and the character sums the post up in 2 or 3 witty lines (under 280 characters, key facts kept, jokes about ideas never about the person, and no jokes on serious topics). The HUD's **Post** tab (it replaces Ask on these sites) also has *Crib notes* for the post on screen.
-- **Comedic voice** defaults to Big Play Ray and can be any character (or "same as my character").
-- **💬 Draft reply** writes a short reply in that voice, optionally following "your angle".
-- Then **📋 Copy text**, **🎬 Make video** (the same MP4 export, with the character's voice and moving mouth) or **↩ Open reply box**, which copies the text and clicks the site's own reply button.
+- Hover or tap a post and a **🎭 Crib notes** pill appears on it. Tap it and the character sums the post up in 2 or 3 witty lines (under 280 characters, key facts kept, jokes about ideas never about the person, and no jokes on serious topics). That is the way to run crib notes: the Post tab no longer has a second Crib notes button, so it's clear which post you picked.
+- **One character** (the picker above the Listen / Ask / Post tabs) reads answers, writes crib notes and draft replies, and appears in Make video. A saved Comedic voice no longer overrides it. The writers' room still uses its own cast and director, and the Town panel only if you turn it on.
+- **💬 Draft reply** (Post tab) writes a short reply in that voice, optionally following "your angle". It uses the last post whose Crib notes pill was tapped, or the post on screen.
+- **🎬 Make video** sits at the top of the Writers' room section on the Post tab. It uses that post's latest crib notes, reply or scene audio, or writes crib notes first if there are none. The bottom Copy text / Paste into reply strip is hidden to free up space; the draft in the widget stays selectable so you can copy it by hand.
 - **Nothing is ever posted or typed for the user.** They paste the text, attach the video and press post themselves, which keeps the extension within the platforms' automation rules.
 
 ### Writers' room scenes and What's hot
 
-- **🎬 Writers' room scene** (Post tab): pick a cast of 2 to 4 characters and a director (Big Sal by default). Each cast member fills a role slot and pitches one line in their own voice, all in parallel: the **Realist** sets up the premise, the **Overthinker** escalates a tiny detail, the **Free spirit** offers a left-field fix, and the **Straight shooter** lands the clean summary line. The director pass then picks and edits the pitches into a 4 to 8 line mini-scene in that beat order. Each line is voiced by its own character, the cast sits in the strip along the top with the speaker highlighted, and **Make video** renders a multi-character MP4 (cast row, speaker in the middle, each line captioned under its speaker).
+- **🎬 Writers' room scene** (Post tab): pick a cast of 2 to 4 characters and a director (Big Sal by default). Each cast member fills a role slot and pitches one line in their own voice, all in parallel: the **Realist** sets up the premise, the **Overthinker** escalates a tiny detail, the **Free spirit** offers a left-field fix, and the **Straight shooter** lands the clean summary line. The director pass then picks and edits the pitches into a 4 to 8 line mini-scene in that beat order. Each line is voiced by its own character, the widget switches to the speaker, and **Make video** renders a multi-character MP4 (cast row, speaker in the middle, each line captioned under its speaker).
 - Preferred slots live in personas.json (`writersRoomRole`); any character can fill any slot. The humor is observational and original: prompts forbid imitating existing shows or comedians, profanity, and jokes about the poster, and serious posts get a kind, joke-free scene. Code: `server/src/writersroom.js`.
 - Every cast member gets a line: pitches that fail (usually the AI provider's rate limit after several scenes in a row) are retried one at a time, the director call is retried once, and anyone the director leaves out gets their pitch slotted in before the closing line. If someone still can't speak, the server sends `scene.notice` and the widget says who sat out and why, instead of quietly playing a smaller scene. Failures are logged in the server window.
-- **🔥 What's hot on this page** (optional, off by default) ranks only the posts already loaded on the page you are viewing, by the reach shown on them (likes, reposts, replies, views) and by topics they share with the other visible posts. Tap one to scroll to it and make it the target. It never fetches other posts or looks up accounts or follower counts. A real trend feed can be plugged in later.
+- **🔥 What's hot on this page** (code remains, but the box is hidden in the widget and stays off by default) ranks only the posts already loaded on the page you are viewing, by the reach shown on them (likes, reposts, replies, views) and by topics they share with the other visible posts. It never fetches other posts or looks up accounts or follower counts.
 - **Rate limit:** crib notes, replies and scenes are limited per user (`SOCIAL_RATE_PER_MIN`, default 6, and `SOCIAL_RATE_PER_DAY`, default 120) on top of the monthly quota, so the tool stays a personal helper and never a bulk-reply engine. There is still no auto-posting, auto-typing or scheduled replying.
 
 Server side these are the `crib`, `reply` and `scene` tasks (`server/src/tasks.js`) with sources `x`, `facebook` and `instagram`; the prompt treats the text as a real person's post, not an AI answer. Post selectors in `platforms.js` are placeholders to verify on the live sites.
@@ -162,7 +163,7 @@ npm start &                                # in server/, mock mode
 node extension/test/e2e.cjs <token> /tmp/vern-e2e
 ```
 
-The e2e test checks HUD injection, dragging and persistence, auto-read of a streamed reply (intent routing, captions, MediaSource playback), amplitude-driven sprite swaps, tickle → giggle without interrupting TTS, MP4 export, read-selection, and a Big Sal run at reading level 1 with humor and the slow style (sprite, mouth movement, server-applied settings, MP4 export), paraphrase with a name and profile, Old Oakley, key points, ask, expound with sources, long-press menu and sizes, double-tap assistant without triggering a tickle, triple-tap tickle, assistant-driven character switch, a three-member town panel with handoffs, and on a fake X timeline: the Crib notes pill, crib notes in Big Play Ray's voice, a reply draft, Open reply box (copies, never types), the reply video, the What's hot ranking, and a four-character writers' room scene with its video.
+The e2e test checks HUD injection, dragging and persistence, auto-read of a streamed reply (intent routing, captions, MediaSource playback), amplitude-driven sprite swaps, tickle → giggle without interrupting TTS, MP4 export, read-selection, and a Big Sal run at reading level 1 with humor and the slow style (sprite, mouth movement, server-applied settings, MP4 export), paraphrase with a name and profile, Old Oakley, key points, ask, expound with sources, long-press menu and sizes, double-tap assistant without triggering a tickle, triple-tap tickle, assistant-driven character switch, a three-member town panel with handoffs, and on a fake X timeline: the Crib notes pill in the chosen character's voice, a reply draft, Make video from the Post tab, the What's hot ranking (box hidden), and a four-character writers' room scene with its video.
 
 ## Open decisions (need the product owner)
 

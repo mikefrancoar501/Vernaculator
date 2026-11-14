@@ -276,7 +276,7 @@
     "message": "Publicación"
   },
   "socialHint": {
-    "message": "Toca 🎭 en cualquier publicación, o usa la que está en pantalla:"
+    "message": "Toca 🎭 Resumen o 🎬 Hacer video en una publicación. Escribir respuesta usa esa, o la que está en pantalla."
   },
   "socialVoice": {
     "message": "Voz cómica"
@@ -300,7 +300,7 @@
     "message": "🎬 Crear video"
   },
   "socialOpenReply": {
-    "message": "↩ Abrir respuesta"
+    "message": "Pegar en la respuesta"
   },
   "socialYouPost": {
     "message": "Tú lo revisas y lo publicas."
@@ -314,6 +314,18 @@
   "socialCribPillTitle": {
     "message": "Resume esta publicación en unas líneas ingeniosas"
   },
+  "socialVideoPill": {
+    "message": "🎬 Hacer video"
+  },
+  "socialVideoPillTitle": {
+    "message": "Descarga un video de esta publicación en personaje"
+  },
+  "statusVideoCrib": {
+    "message": "Escribiendo el resumen y luego el video..."
+  },
+  "statusVideoAfter": {
+    "message": "Terminando esto, y luego hago el video..."
+  },
   "socialNoPost": {
     "message": "No encontré ninguna publicación. Desplázate hasta una o toca 🎭 en ella."
   },
@@ -324,10 +336,13 @@
     "message": "No se pudo copiar; selecciona el texto del subtítulo."
   },
   "socialReplyOpened": {
-    "message": "Se abrió la respuesta. Pega el texto y adjunta tu video, y luego publícalo tú."
+    "message": "Lo pegué en la respuesta. Adjunta tu video si quieres, y luego publícalo tú."
   },
   "socialReplyNotFound": {
-    "message": "No encontré el botón de responder en esta publicación."
+    "message": "No encontré la caja de respuesta en esta publicación. Puedes seleccionar el borrador en el widget y copiarlo."
+  },
+  "socialNoDraft": {
+    "message": "Aún no hay nada que pegar. Escribe primero un borrador de respuesta."
   },
   "statusCrib": {
     "message": "Escribiendo el resumen..."
@@ -396,7 +411,7 @@
     "message": "🎧 Escuchar respuestas"
   },
   "helpListenBody": {
-    "message": "Pregúntale lo que quieras a Claude, Grok o Gemini. Cuando termine la respuesta, tu personaje la lee en voz alta. Usa el control de nivel de lectura: 1 es muy sencillo, 5 es experto. También puedes elegir un estilo de voz."
+    "message": "Pregúntale lo que quieras a Claude, Grok o Gemini. Toca Escuchar para nivel de lectura, voz y lectura automática; tócalo otra vez para cerrar el panel. Con Escuchar apagado, el widget se queda compacto y no leeré las respuestas nuevas, pero Reproducir y Leer selección siguen funcionando. El control es 1 muy sencillo, 5 experto."
   },
   "helpGesturesTitle": {
     "message": "👆 Gestos"
@@ -414,7 +429,7 @@
     "message": "❓ Pestaña Preguntar"
   },
   "helpAskBody": {
-    "message": "Puntos clave da la versión corta. Parafrasear lo dice con palabras sencillas. Oakley añade una reflexión sabia. Haz otra pregunta, o Ampliar para profundizar."
+    "message": "Toca Preguntar para abrirla, o tócala otra vez para cerrarla. Puntos clave da la versión corta. Parafrasear lo dice con palabras sencillas en el personaje que elegiste. Haz otra pregunta, o Ampliar para profundizar."
   },
   "helpTownTitle": {
     "message": "🏘️ El pueblo"
@@ -426,13 +441,13 @@
     "message": "📱 Publicaciones sociales"
   },
   "helpSocialBody": {
-    "message": "En X, Facebook e Instagram, toca la etiqueta \"Resumen\" de una publicación. Obtén un resumen ingenioso o un borrador de respuesta. Luego cópialo, haz un video o abre la caja de respuesta. Nunca publico por ti: tú eliges qué publicar."
+    "message": "En X, Facebook e Instagram, toca la etiqueta \"Resumen\" de una publicación. El personaje que elegiste (el único selector del widget) hace el resumen, el borrador de respuesta y los videos. Abre la pestaña Publicar para un borrador y la sala de guionistas; Hacer video está arriba de esa sección, y usa el último resumen, respuesta o escena de esa publicación, o escribe un resumen primero si no hay. Tócala otra vez para cerrarla y dejar una vista compacta. Puedes seleccionar el borrador en el widget y copiarlo. Nunca publico por ti."
   },
   "helpRoomTitle": {
     "message": "🎬 Sala de guionistas"
   },
   "helpRoomBody": {
-    "message": "Elige de 2 a 4 personajes y un director. Proponen frases, el director escoge las mejores y obtienes una escena corta sobre la publicación. Los chistes son sobre ideas, nunca sobre personas."
+    "message": "En la pestaña Publicar, elige de 2 a 4 personajes y un director. Proponen frases, el director escoge las mejores y obtienes una escena corta sobre la publicación. Hacer video está arriba de esta sección. Puedes cerrar Publicar mientras suena, y puedes seleccionar el borrador en el widget para copiarlo. Los chistes son sobre ideas, nunca sobre personas."
   },
   "helpHotTitle": {
     "message": "🔥 Lo más popular"

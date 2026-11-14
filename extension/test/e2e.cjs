@@ -31,7 +31,7 @@ const assert = (cond, msg) => {
   sw ??= await ctx.waitForEvent('serviceworker');
   // Let onInstalled seed defaults first so it can't overwrite our test settings.
   await sw.evaluate(async () => { for (let i = 0; i < 50 && !('autoRead' in (await chrome.storage.local.get('autoRead'))); i++) await new Promise((r) => setTimeout(r, 100)); });
-  await sw.evaluate(async ({ token, backendUrl }) => chrome.storage.local.set({ token, backendUrl, autoRead: true, personaId: 'auto', hudSize: 'M' }), { token, backendUrl });
+  await sw.evaluate(async ({ token, backendUrl }) => chrome.storage.local.set({ token, backendUrl, autoRead: true, personaId: 'big_sal', hudSize: 'M' }), { token, backendUrl });
 
   const html = fs.readFileSync(path.join(__dirname, 'fake-claude.html'), 'utf8');
   await ctx.route('https://claude.ai/**', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: html }));
@@ -85,10 +85,10 @@ const assert = (cond, msg) => {
     if (state.playing && state.t > 1) break;
   }
   await page.screenshot({ path: path.join(outDir, '2-hud-speaking.png') });
-  assert(state.who === 'Professor Pip', `intent routing picked a persona (${state.who})`);
+  assert(state.who === 'Big Sal', `chosen character speaks (${state.who})`);
   assert(state.chunks > 0, `received streamed MP3 chunks (${state.chunks})`);
   assert(state.playing && state.t > 1, `MediaSource playback running (t=${state.t.toFixed(2)}s)`);
-  assert(/Professor Pip here/.test(state.caption), 'captions shown in HUD');
+  assert(/Big Sal here/.test(state.caption), 'captions shown in HUD in the chosen character');
   assert(!/old reply/.test(state.caption), 'history messages were not auto-read');
 
   await sleep(1500);
@@ -189,10 +189,10 @@ const assert = (cond, msg) => {
   let applied = await inExt('Vern.debug.current?.applied');
   assert(applied?.style?.paraphrase === true, 'server ran in paraphrase mode');
 
+  const personaBeforeOakley = await inExt('Vern.settings.values.personaId');
   await inExt(`Vern.debug.hud.onAction('oakley'), true`);
-  await waitCaption(/Old Oakley here/, 'Paraphrase with Oakley uses Old Oakley');
-  await sleep(600);
-  assert(/old_oakley_(idle|talking)\.svg/.test(await inExt('Vern.debug.hud.img.src')), "Oakley's sprite is shown");
+  await waitCaption(/Sergio, basically what Claude is telling you/, 'Paraphrase with Oakley no longer switches character');
+  assert(await inExt('Vern.settings.values.personaId') === personaBeforeOakley, 'Oakley action leaves the chosen character unchanged');
   await page.screenshot({ path: path.join(outDir, '5-oakley-ask.png') });
 
   await inExt(`Vern.debug.hud.onAction('keypoints'), true`);
@@ -261,10 +261,25 @@ const assert = (cond, msg) => {
   await inExt(`Vern.settings.save({ hudSize: 'S' }).then(() => true)`);
   await sleep(300);
 
+  console.log('Tab toggles');
+  assert(await inExt(`Vern.debug.hud.activeTab() === 'listen'`), 'Listen is on by default');
+  await inExt(`Vern.debug.hud.root.querySelector('[data-tab="listen"]').click(), true`);
+  await sleep(200);
+  assert(await inExt(`Vern.debug.hud.activeTab() === '' && Vern.debug.hud.root.querySelector('[data-panel="listen"]').hidden`), 'clicking Listen again closes it');
+  const beforeOff = await inExt(`Vern.debug.lastSession?.text || ''`);
+  await inExt(`Vern.settings.save({ autoRead: true }).then(() => true)`);
+  await page.evaluate(() => window.streamReply('This reply should stay quiet because the Listen tab is off.', { delay: 2 }));
+  await sleep(2000);
+  const afterOff = await inExt(`({ cur: !!Vern.debug.current, text: Vern.debug.lastSession?.text || '' })`);
+  assert(!afterOff.cur && afterOff.text === beforeOff, 'no auto-read when Listen is off');
+  await inExt(`Vern.debug.hud.root.querySelector('[data-tab="listen"]').click(), true`);
+  await sleep(200);
+  assert(await inExt(`Vern.debug.hud.activeTab() === 'listen'`), 'clicking Listen opens it again');
+
   console.log('Town panel');
-  await inExt(`Vern.settings.save({ hudSize: 'M', personaId: 'auto', accent: 'none', autoRead: true, paraphrase: false, townEnabled: true, townMembers: ['big_sal', 'professor_pip', 'sir_reginald_ledger'] }).then(() => true)`);
+  await inExt(`Vern.settings.save({ hudSize: 'M', personaId: 'big_sal', accent: 'none', autoRead: true, paraphrase: false, townEnabled: true, townMembers: ['big_sal', 'professor_pip', 'sir_reginald_ledger'] }).then(() => true)`);
   await sleep(500);
-  assert(await page.locator('#vernaculator-town').isVisible(), 'town strip shows along the top');
+  assert((await page.locator('#vernaculator-town').count()) === 0, 'town face strip is not rendered');
   await page.evaluate(() => window.streamReply('Your doctor wants to explain the diagnosis simply, so let me break it down.\nIn science terms, the experiment shows how stars and space work, which is fun to learn.\nFor your budget, the cost is low and you can save money with a simple plan.', { delay: 2 }));
   const speakers = new Set();
   let segCount = 0;
@@ -304,6 +319,16 @@ const assert = (cond, msg) => {
   const tabs = await inX(`({ post: !Vern.debug.hud.root.querySelector('[data-tab="social"]').hidden, ask: !Vern.debug.hud.root.querySelector('[data-tab="ask"]').hidden })`);
   assert(tabs.post && !tabs.ask, 'Post tab replaces Ask on social sites');
   assert(!(await inX('Vern.debug.observer instanceof Vern.MessageObserver')), 'no AI-reply observer on social sites');
+  assert(await inX(`Vern.debug.hud.root.querySelector('[data-action="crib"]').hidden`), 'Post tab Crib notes button is hidden; the on-post pill remains');
+  assert(await inX(`Vern.debug.hud.root.querySelector('.hot-box').hidden`), "What's hot box is hidden in the widget");
+
+  await inX(`Vern.debug.hud.showTab('social'), true`);
+  await sleep(200);
+  assert(await inX(`Vern.debug.hud.activeTab() === 'social'`), 'Post tab can be opened');
+  await inX(`Vern.debug.hud.root.querySelector('[data-tab="social"]').click(), true`);
+  await sleep(200);
+  assert(await inX(`Vern.debug.hud.activeTab() === ''`), 'clicking Post again closes it');
+
 
   const art = await xp.locator('article').first().boundingBox();
   await xp.mouse.move(art.x + 200, art.y + 60);
@@ -321,9 +346,13 @@ const assert = (cond, msg) => {
     crib = await inX(`Vern.debug.lastSession?.task === 'crib' ? { text: Vern.debug.lastSession.text, who: Vern.debug.lastSession.persona?.id } : null`);
   }
   assert(crib && /^Crib notes: Big news/.test(crib.text), `crib notes for the tapped post ("${crib?.text.slice(0, 60)}...")`);
-  assert(crib.who === 'big_play_ray', 'crib notes use the comedic voice (Big Play Ray)');
-  const ui = await inX(`({ out: !Vern.debug.hud.socialOut.hidden, size: Vern.debug.hud.card.dataset.size })`);
-  assert(ui.out && ui.size === 'M', 'HUD grows from compact to show the result and share buttons');
+  assert(crib.who === 'big_sal', 'crib notes use the same chosen character as Listen (Big Sal)');
+  const ui = await inX(`({ out: Vern.debug.hud.socialOut.hidden, size: Vern.debug.hud.card.dataset.size, copy: Vern.debug.hud.root.querySelector('[data-action="copyText"]').hidden, paste: Vern.debug.hud.root.querySelector('[data-action="openReply"]').hidden, videoFirst: Vern.debug.hud.root.querySelector('.scene-box button')?.dataset.action, pick: Vern.debug.hud.root.querySelector('.character-pick [data-setting="personaId"]').value, capSel: getComputedStyle(Vern.debug.hud.caption).userSelect })`);
+  assert(ui.size === 'M', 'HUD grows from compact so the draft is readable');
+  assert(ui.out && ui.copy && ui.paste, 'bottom Copy / Paste / extra Make video strip stays hidden');
+  assert(ui.videoFirst === 'postVideo', 'Make video sits at the top of the writers\' room section');
+  assert(ui.pick === 'big_sal', 'one character picker shows the chosen character');
+  assert(/text/i.test(ui.capSel), 'draft caption stays selectable so you can copy it by hand');
   await sleep(500);
   await xp.screenshot({ path: path.join(outDir, '10-social-crib.png') });
 
@@ -334,15 +363,8 @@ const assert = (cond, msg) => {
     reply = await inX(`Vern.debug.lastSession?.task === 'reply' ? Vern.debug.lastSession.text : null`);
   }
   assert(reply && /Bright idea\./.test(reply), `reply draft follows the angle ("${reply}")`);
-  await inX(`Vern.debug.hud.onAction('openReply'), true`);
-  await sleep(400);
-  assert(await xp.evaluate(() => window.__replyClicked === true), "Open reply box opens the site's own reply box");
-  assert(await xp.evaluate(() => document.querySelector('textarea').value === ''), 'nothing is typed or posted for the user');
-  const clip = await xp.evaluate(() => navigator.clipboard.readText());
-  assert(clip === reply, 'reply text copied to the clipboard');
-
   const vidP = xp.waitForEvent('download', { timeout: 60000 });
-  await inX(`Vern.debug.hud.onAction('export'), true`);
+  await inX(`Vern.debug.hud.onAction('postVideo'), true`);
   const vid = await vidP;
   const vidFile = path.join(outDir, `social-${vid.suggestedFilename()}`);
   await vid.saveAs(vidFile);
@@ -369,7 +391,7 @@ const assert = (cond, msg) => {
   if (!scene) console.log('    debug', JSON.stringify(await inX(`({ status: Vern.debug.hud.statusEl.textContent, task: Vern.debug.current?.task, done: Vern.debug.current?.done, segs: Vern.debug.current?.segments.length, last: Vern.debug.lastSession?.task, playing: Vern.debug.player.playing, cap: Vern.debug.hud.caption.textContent })`)));
   assert(scene && /^Big Play Ray: So council streetlight vote/m.test(scene.text), `scene about the picked post:\n      ${scene?.text.split('\n').join('\n      ')}`);
   assert(new Set(scene.segs).size >= 3 && scene.lines.every(Boolean), `cast took turns in beat order: ${scene.segs.join(' -> ')}`);
-  assert(await xp.locator('#vernaculator-town').isVisible(), 'scene cast shown along the top');
+  assert((await xp.locator('#vernaculator-town').count()) === 0, 'scene does not render a face strip along the top');
   const sceneVidP = xp.waitForEvent('download', { timeout: 90000 });
   await inX(`Vern.debug.hud.onAction('export'), true`);
   const sceneVid = await sceneVidP;

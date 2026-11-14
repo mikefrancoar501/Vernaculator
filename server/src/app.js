@@ -5,7 +5,6 @@ import { JsonStore } from './store.js';
 import { Gateway, bearer } from './auth.js';
 import { loadPersonas, publicPersona, buildSystemPrompt } from './personas.js';
 import { createLLM } from './llm.js';
-import { routeIntent } from './intent.js';
 import { sanitize } from './guardrails.js';
 import { Utterance } from './pipeline.js';
 import { styleCatalog } from './styles.js';
@@ -65,12 +64,11 @@ export function createApp(cfg, { store, llm } = {}) {
         const text = String(body.text || '').slice(0, 8000);
         if (!text) return json(res, 400, { error: 'text required' });
         if (!gateway.canSpend(user, text.length)) return json(res, 402, { error: 'quota_exceeded', usage: gateway.usage(user) });
-        let persona = personas.get(body.personaId);
+        let persona = body.personaId && body.personaId !== 'auto' ? personas.get(body.personaId) : null;
         let method = 'manual';
         if (!persona) {
-          const routed = await routeIntent(text, personas, { mode: cfg.intentMode, llm });
-          persona = personas.get(routed.personaId);
-          method = routed.method;
+          persona = personas.defaultPersona();
+          method = 'default';
         }
         const task = parseTask(body.task);
         if (task === 'scene') return json(res, 400, { error: 'scenes are voiced: use the /v1/stream WebSocket' });
@@ -140,7 +138,7 @@ export function createApp(cfg, { store, llm } = {}) {
           current = new Utterance({
             seq,
             user,
-            opts: { personaId: msg.personaId || 'auto', readingLevel: msg.readingLevel, style: msg.style, task: msg.task, question: msg.question, profile: msg.profile, source: msg.source, town: msg.town, director: msg.director },
+            opts: { personaId: msg.personaId, readingLevel: msg.readingLevel, style: msg.style, task: msg.task, question: msg.question, profile: msg.profile, source: msg.source, town: msg.town, director: msg.director },
             deps,
             send,
           });

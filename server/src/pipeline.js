@@ -1,7 +1,6 @@
 import { SentenceBuffer } from './text.js';
 import { sanitize } from './guardrails.js';
 import { buildSystemPrompt, publicPersona } from './personas.js';
-import { routeIntent } from './intent.js';
 import { resolveVoiceId, resolveVoiceSpeed } from './config.js';
 import { FishSession } from './tts/fish.js';
 import { MockSession } from './tts/mock.js';
@@ -111,9 +110,10 @@ export class Utterance {
     let method = 'manual';
     let persona = this.opts.personaId && this.opts.personaId !== 'auto' ? personas.get(this.opts.personaId) : null;
     if (!persona) {
-      const routed = await routeIntent(firstText, personas, { mode: cfg.intentMode, llm });
-      persona = personas.get(routed.personaId);
-      method = routed.method;
+      // The chosen character is always used. "Auto" and missing ids fall back to the default
+      // persona, not topic-based intent routing. Town panel and writers' room still use their casts.
+      persona = personas.defaultPersona();
+      method = 'default';
     }
     this.persona = persona;
     const { readingLevel, style, task, profile, source } = this.opts;
