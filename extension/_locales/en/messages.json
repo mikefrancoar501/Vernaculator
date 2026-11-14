@@ -493,5 +493,230 @@
   },
   "sceneFewerSpeakers": {
     "message": "$1 sat this one out: the AI didn't answer for them. Wait a minute and try again for the full cast."
+  },
+  "pickerCategory": {
+    "message": "Category"
+  },
+  "pickerAll": {
+    "message": "All characters"
+  },
+  "pickerAllIn": {
+    "message": "All $1"
+  },
+  "pickerSearch": {
+    "message": "Search: Southern, British, pirate..."
+  },
+  "pickerSearchLabel": {
+    "message": "Search characters"
+  },
+  "pickerCurrent": {
+    "message": "Current"
+  },
+  "pickerOther": {
+    "message": "Other"
+  },
+  "pickerNoMatch": {
+    "message": "No characters match. Try \"Southern\", \"British\" or \"pirate\"."
+  },
+  "pickerMore": {
+    "message": "$1 matches: the first $2 are above, all of them are in the list."
+  },
+  "pickerTapToPick": {
+    "message": "Tap a name to pick it (or press Enter for the first)."
+  },
+  "pickerCount": {
+    "message": "$1 characters in this category."
+  },
+  "pickerPreview": {
+    "message": "▶ Preview"
+  },
+  "pickerStop": {
+    "message": "■ Stop"
+  },
+  "pickerPreviewTitle": {
+    "message": "Hear a short sample of this voice"
+  },
+  "pickerPreviewPick": {
+    "message": "Pick a character first, then press Preview."
+  },
+  "pickerPreviewLoading": {
+    "message": "Loading a sample of $1..."
+  },
+  "pickerPreviewSample": {
+    "message": "Sample of $1 from Fish Audio."
+  },
+  "pickerPreviewSpoken": {
+    "message": "$1, saying hello."
+  },
+  "pickerPreviewToken": {
+    "message": "Add your token in the options to hear previews."
+  },
+  "pickerPreviewQuota": {
+    "message": "Your monthly voice allowance is used up."
+  },
+  "pickerPreviewTestMode": {
+    "message": "This character's preview needs the real voices: the server is in test mode (keys not loaded)."
+  },
+  "pickerPreviewBusy": {
+    "message": "Lots of previews! Wait a few seconds and try again."
+  },
+  "pickerPreviewError": {
+    "message": "Couldn't load a preview. Is the Fancy Bot server running?"
+  },
+  "pickerSynonyms": {
+    "message": "nyc=new york;uk=british;england=english;aussie=australian;cowgirl=cowboy;granny=grandma;nana=grandma;grandmother=grandma;grandfather=grandpa;spooky=halloween;scary=spooky;commentator=sportscaster"
+  },
+  "catgroup_accents": {
+    "message": "Accents"
+  },
+  "cat_bigsal": {
+    "message": "Big Sal's World"
+  },
+  "cat_comics": {
+    "message": "Comics"
+  },
+  "cat_southern": {
+    "message": "Southern & Texas"
+  },
+  "cat_british": {
+    "message": "British"
+  },
+  "cat_irish": {
+    "message": "Irish"
+  },
+  "cat_scottish": {
+    "message": "Scottish"
+  },
+  "cat_australian": {
+    "message": "Australian"
+  },
+  "cat_new_york": {
+    "message": "New York"
+  },
+  "cat_canadian": {
+    "message": "Canadian"
+  },
+  "cat_world": {
+    "message": "Around the world"
+  },
+  "cat_narrators": {
+    "message": "Narrators"
+  },
+  "cat_announcers": {
+    "message": "Announcers & radio"
+  },
+  "cat_family": {
+    "message": "Grandparents & kids"
+  },
+  "cat_fun": {
+    "message": "Fun & spooky"
+  },
+  "accent_australian": {
+    "message": "Australian"
+  },
+  "accent_british": {
+    "message": "British"
+  },
+  "accent_british_butler": {
+    "message": "British butler"
+  },
+  "accent_canadian": {
+    "message": "Canadian"
+  },
+  "accent_computer": {
+    "message": "Computer"
+  },
+  "accent_documentary": {
+    "message": "Documentary"
+  },
+  "accent_emergency_broadcast": {
+    "message": "Emergency broadcast"
+  },
+  "accent_epic_narrator": {
+    "message": "Epic narrator"
+  },
+  "accent_filipino": {
+    "message": "Filipino"
+  },
+  "accent_ghost": {
+    "message": "Ghost"
+  },
+  "accent_grandma": {
+    "message": "Grandma"
+  },
+  "accent_grandpa": {
+    "message": "Grandpa"
+  },
+  "accent_indian": {
+    "message": "Indian"
+  },
+  "accent_irish": {
+    "message": "Irish"
+  },
+  "accent_kid_8": {
+    "message": "Kid (8)"
+  },
+  "accent_london": {
+    "message": "London"
+  },
+  "accent_meditation_guide": {
+    "message": "Meditation guide"
+  },
+  "accent_motivational": {
+    "message": "Motivational"
+  },
+  "accent_new_york": {
+    "message": "New York"
+  },
+  "accent_nigerian": {
+    "message": "Nigerian"
+  },
+  "accent_noir_detective": {
+    "message": "Noir detective"
+  },
+  "accent_old_time_radio": {
+    "message": "Old-time radio"
+  },
+  "accent_robot": {
+    "message": "Robot"
+  },
+  "accent_scottish": {
+    "message": "Scottish"
+  },
+  "accent_south_african": {
+    "message": "South African"
+  },
+  "accent_southern": {
+    "message": "Southern"
+  },
+  "accent_southern_auctioneer": {
+    "message": "Southern auctioneer"
+  },
+  "accent_sportscaster": {
+    "message": "Sportscaster"
+  },
+  "accent_storytelling_grandma": {
+    "message": "Storytelling grandma"
+  },
+  "accent_texas_cowboy": {
+    "message": "Texas cowboy"
+  },
+  "accent_vampire": {
+    "message": "Vampire"
+  },
+  "accent_veteran_narrator": {
+    "message": "Veteran narrator"
+  },
+  "accent_warm_narrator": {
+    "message": "Warm narrator"
+  },
+  "accent_witch": {
+    "message": "Witch"
+  },
+  "accent_wizard": {
+    "message": "Wizard"
+  },
+  "accent_zombie": {
+    "message": "Zombie"
   }
 }

@@ -493,5 +493,230 @@
   },
   "sceneFewerSpeakers": {
     "message": "$1 no participó esta vez: la IA no respondió por ellos. Espera un minuto e inténtalo de nuevo para tener a todo el elenco."
+  },
+  "pickerCategory": {
+    "message": "Categoría"
+  },
+  "pickerAll": {
+    "message": "Todos los personajes"
+  },
+  "pickerAllIn": {
+    "message": "Todos: $1"
+  },
+  "pickerSearch": {
+    "message": "Buscar: sureño, británico, pirata..."
+  },
+  "pickerSearchLabel": {
+    "message": "Buscar personajes"
+  },
+  "pickerCurrent": {
+    "message": "Actual"
+  },
+  "pickerOther": {
+    "message": "Otros"
+  },
+  "pickerNoMatch": {
+    "message": "Ningún personaje coincide. Prueba \"sureño\", \"británico\" o \"pirata\"."
+  },
+  "pickerMore": {
+    "message": "$1 resultados: arriba ves los primeros $2 y todos están en la lista."
+  },
+  "pickerTapToPick": {
+    "message": "Toca un nombre para elegirlo (o pulsa Intro para el primero)."
+  },
+  "pickerCount": {
+    "message": "$1 personajes en esta categoría."
+  },
+  "pickerPreview": {
+    "message": "▶ Escuchar"
+  },
+  "pickerStop": {
+    "message": "■ Detener"
+  },
+  "pickerPreviewTitle": {
+    "message": "Escucha una muestra corta de esta voz"
+  },
+  "pickerPreviewPick": {
+    "message": "Primero elige un personaje y luego pulsa Escuchar."
+  },
+  "pickerPreviewLoading": {
+    "message": "Cargando una muestra de $1..."
+  },
+  "pickerPreviewSample": {
+    "message": "Muestra de $1 de Fish Audio."
+  },
+  "pickerPreviewSpoken": {
+    "message": "$1 te saluda."
+  },
+  "pickerPreviewToken": {
+    "message": "Añade tu token en las opciones para escuchar las muestras."
+  },
+  "pickerPreviewQuota": {
+    "message": "Ya usaste tu cupo de voz de este mes."
+  },
+  "pickerPreviewTestMode": {
+    "message": "La muestra de este personaje necesita las voces reales: el servidor está en modo de prueba (no cargó las claves)."
+  },
+  "pickerPreviewBusy": {
+    "message": "¡Muchas muestras seguidas! Espera unos segundos y vuelve a intentarlo."
+  },
+  "pickerPreviewError": {
+    "message": "No se pudo cargar la muestra. ¿Está encendido el servidor de Fancy Bot?"
+  },
+  "pickerSynonyms": {
+    "message": "sureno=southern;surena=southern;sur=southern;tejano=texas;vaquero=cowboy;subastador=auctioneer;britanico=british;britanica=british;ingles=english;inglesa=english;mayordomo=butler;londres=london;irlandes=irish;irlandesa=irish;escoces=scottish;escocesa=scottish;australiano=australian;australiana=australian;canadiense=canadian;neoyorquino=nyc;nueva york=nyc;sudafricano=south africa;nigeriana=nigeria;indio=india;filipino=philippines;narrador=narrator;narradora=narrator;documental=documentary;meditacion=meditation;locutor=announcer;locutora=announcer;radio=radio;deportes=sports;comentarista=commentator;noticias=news;abuelo=grandpa;abuela=grandma;nino=kid;nina=kid;ninos=kid;pirata=pirate;robot=robot;computadora=computer;vampiro=vampire;bruja=witch;zombi=zombie;fantasma=ghost;detective=detective;mago=wizard;comico=comic;comica=comic;comediante=comedian;sabio=wise;tranquilo=calm"
+  },
+  "catgroup_accents": {
+    "message": "Acentos"
+  },
+  "cat_bigsal": {
+    "message": "El mundo de Big Sal"
+  },
+  "cat_comics": {
+    "message": "Cómicos"
+  },
+  "cat_southern": {
+    "message": "Sur de EE. UU. y Texas"
+  },
+  "cat_british": {
+    "message": "Británicos"
+  },
+  "cat_irish": {
+    "message": "Irlandeses"
+  },
+  "cat_scottish": {
+    "message": "Escoceses"
+  },
+  "cat_australian": {
+    "message": "Australianos"
+  },
+  "cat_new_york": {
+    "message": "Nueva York"
+  },
+  "cat_canadian": {
+    "message": "Canadienses"
+  },
+  "cat_world": {
+    "message": "Por el mundo"
+  },
+  "cat_narrators": {
+    "message": "Narradores"
+  },
+  "cat_announcers": {
+    "message": "Locutores y radio"
+  },
+  "cat_family": {
+    "message": "Abuelos y niños"
+  },
+  "cat_fun": {
+    "message": "Divertidos y de miedo"
+  },
+  "accent_australian": {
+    "message": "australiano"
+  },
+  "accent_british": {
+    "message": "británico"
+  },
+  "accent_british_butler": {
+    "message": "mayordomo británico"
+  },
+  "accent_canadian": {
+    "message": "canadiense"
+  },
+  "accent_computer": {
+    "message": "computadora"
+  },
+  "accent_documentary": {
+    "message": "documental"
+  },
+  "accent_emergency_broadcast": {
+    "message": "aviso de emergencia"
+  },
+  "accent_epic_narrator": {
+    "message": "narrador épico"
+  },
+  "accent_filipino": {
+    "message": "filipino"
+  },
+  "accent_ghost": {
+    "message": "fantasma"
+  },
+  "accent_grandma": {
+    "message": "abuela"
+  },
+  "accent_grandpa": {
+    "message": "abuelo"
+  },
+  "accent_indian": {
+    "message": "indio"
+  },
+  "accent_irish": {
+    "message": "irlandés"
+  },
+  "accent_kid_8": {
+    "message": "niño de 8"
+  },
+  "accent_london": {
+    "message": "londinense"
+  },
+  "accent_meditation_guide": {
+    "message": "guía de meditación"
+  },
+  "accent_motivational": {
+    "message": "motivador"
+  },
+  "accent_new_york": {
+    "message": "neoyorquino"
+  },
+  "accent_nigerian": {
+    "message": "nigeriana"
+  },
+  "accent_noir_detective": {
+    "message": "detective noir"
+  },
+  "accent_old_time_radio": {
+    "message": "radio antigua"
+  },
+  "accent_robot": {
+    "message": "robot"
+  },
+  "accent_scottish": {
+    "message": "escocés"
+  },
+  "accent_south_african": {
+    "message": "sudafricano"
+  },
+  "accent_southern": {
+    "message": "sureño"
+  },
+  "accent_southern_auctioneer": {
+    "message": "subastador sureño"
+  },
+  "accent_sportscaster": {
+    "message": "comentarista deportivo"
+  },
+  "accent_storytelling_grandma": {
+    "message": "abuela cuentacuentos"
+  },
+  "accent_texas_cowboy": {
+    "message": "vaquero de Texas"
+  },
+  "accent_vampire": {
+    "message": "vampiro"
+  },
+  "accent_veteran_narrator": {
+    "message": "narrador veterano"
+  },
+  "accent_warm_narrator": {
+    "message": "narradora cálida"
+  },
+  "accent_witch": {
+    "message": "bruja"
+  },
+  "accent_wizard": {
+    "message": "mago"
+  },
+  "accent_zombie": {
+    "message": "zombi"
   }
 }

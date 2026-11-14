@@ -77,6 +77,16 @@ On x.com, facebook.com and instagram.com the extension does not watch for AI rep
 
 Server side these are the `crib`, `reply` and `scene` tasks (`server/src/tasks.js`) with sources `x`, `facebook` and `instagram`; the prompt treats the text as a real person's post, not an AI answer. Post selectors in `platforms.js` are placeholders to verify on the live sites.
 
+## Voice library and the character picker
+
+Besides Big Sal's World and the Comics, Fancy Bot ships 50 voice-library characters: Southern and Texas, British, Irish, Scottish, Australian, New York, Canadian and other accents, plus narrators, announcers and radio voices, grandparents and kids, and fun or spooky voices (robot, vampire, witch, wizard, noir detective...). Each one is an original character name with an accent label, shown as "Tex Calloway (Texas cowboy)".
+
+- **Picking:** under the Character dropdown, a **category** dropdown (All, Big Sal's World, Comics, Accents → Southern, British..., Narrators, Announcers & radio, Grandparents & kids, Fun & spooky) narrows the list, and the **search box** filters as you type by name, accent, role and tags ("southern", "brit", "pirate", "texas cowboy"; every word has to match the start of a word). Matches show as chips: tap one, or press Enter for the first. Spanish searches work too ("vaquero", "pirata", "abuela") through `pickerSynonyms` in `_locales/es`. The picker only changes the one `personaId` setting, the same one the Character dropdown always used.
+- **Preview:** ▶ Preview plays the voice's demo clip from Fish Audio. The server looks the clip up through Fish's public model API and proxies it (`GET /v1/personas/<id>/preview`, token required), so it needs no key and uses no quota. Voices without a public clip (the original cast's private voices) speak their short `previewLine` with Fish TTS instead, a few dozen characters of quota and cached per voice. In test mode (no Fish key) those answer "needs the real voices" instead of playing placeholder beeps. Max 20 previews per minute per user; `PREVIEW_SAMPLES=0` turns the Fish clip lookup off.
+- **Cast lists stay short:** the writers' room, town and crib-voice pickers list the original cast plus whoever you have picked, so the library doesn't bury them.
+- **Data:** in `shared/personas.json` (schema v2) each library character has `category`, `accent`, `tags`, `fishAudioReferenceId`, `previewLine` and a `voice` block (Fish title, author, whether it is a Fish Official voice, model page). They have no `intentKeywords`, so Auto never picks them: they speak only when you choose them. `categories` and `categoryGroups` at the top drive the dropdown. To add a voice: find it on fish.audio, copy its id into a new entry with a category from the list, and run `npm test` (the loader rejects unknown categories). `FISH_VOICE_<ID>` still overrides any voice.
+- **Voice sources:** 42 are Fish Audio's own "Fish Official" voices; 8 are community voices with original, non-celebrity descriptions (cowboy, auctioneer, Scottish grandpa, sportscaster, 1950s announcer, robot, noir detective, wizard). None is titled or described as a real person or a known character; for community voices the training audio isn't published, so listen before shipping one widely.
+
 ## Repository layout
 
 | Path | What it is |
@@ -161,6 +171,9 @@ cd server && npm test                      # 27 unit/integration tests (mock pro
 # Extension end to end (real Chromium, unpacked extension, fake claude.ai page):
 npm start &                                # in server/, mock mode
 node extension/test/e2e.cjs <token> /tmp/vern-e2e
+
+# Character picker search and categories (no browser):
+node --test extension/test/picker.test.cjs
 ```
 
 The e2e test checks HUD injection, dragging and persistence, auto-read of a streamed reply (intent routing, captions, MediaSource playback), amplitude-driven sprite swaps, tickle → giggle without interrupting TTS, MP4 export, read-selection, and a Big Sal run at reading level 1 with humor and the slow style (sprite, mouth movement, server-applied settings, MP4 export), paraphrase with a name and profile, Old Oakley, key points, ask, expound with sources, long-press menu and sizes, double-tap assistant without triggering a tickle, triple-tap tickle, assistant-driven character switch, a three-member town panel with handoffs, and on a fake X timeline: the Crib notes pill in the chosen character's voice, a reply draft, Make video from the Post tab, the What's hot ranking (box hidden), and a four-character writers' room scene with its video.

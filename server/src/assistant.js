@@ -28,8 +28,9 @@ function findPersonaByName(text, personas) {
   const sorted = [...personas.list].sort((a, b) => b.name.length - a.name.length);
   for (const p of sorted) {
     const full = p.name.toLowerCase();
-    const parts = full.split(/\s+/).filter((w) => w.length > 3 && !['the', 'play', 'captain', 'professor', 'granny', 'old', 'big', 'sir', 'comic'].includes(w));
-    if (t.includes(full) || parts.some((w) => new RegExp(`\\b${w}\\b`).test(t))) return p;
+    // Names can hold punctuation (O'Duffy, Dr., "Barbie"), so match plain words only.
+    const parts = full.split(/[^a-z0-9']+/).filter((w) => w.length > 3 && !['the', 'play', 'captain', 'professor', 'granny', 'grandma', 'grandpa', 'aunt', 'auntie', 'uncle', 'little', 'sunny', 'miss', 'lady', 'count', 'unit', 'whisper', 'coach', 'old', 'big', 'sir', 'comic'].includes(w));
+    if (t.includes(full) || parts.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(t))) return p;
   }
   return null;
 }
@@ -51,7 +52,11 @@ export function ruleAssistant(text, personas, current = {}) {
   } else if (role) {
     const cue = ROLE_HINTS[role] || role;
     const [best] = scorePersonas(cue, personas.list).filter((r) => r.score > 0);
-    const byArchetype = personas.list.find((p) => p.archetype.toLowerCase().includes(role));
+    // The original cast first, so "like a coach" still means Big Play Ray; voice-library
+    // characters answer roles nobody in the cast covers ("like a pirate", "like a cowboy").
+    const core = (p) => !p.category || p.category === 'bigsal' || p.category === 'comics';
+    const byArchetype = personas.list.find((p) => core(p) && p.archetype.toLowerCase().includes(role))
+      || (!best && personas.list.find((p) => p.archetype.toLowerCase().includes(role)));
     const pick = byArchetype || (best && personas.get(best.id));
     if (pick && explicitSwitch && !whoWould) {
       action.personaId = pick.id;

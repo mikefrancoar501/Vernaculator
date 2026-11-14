@@ -292,6 +292,8 @@
       this.playBtn = $('[data-action="playpause"]');
       this.progress = $('progress');
       this.personaSelect = $('[data-setting="personaId"]');
+      // Category dropdown + search + Preview in front of the Character select (content/picker.js).
+      this.picker = new Vern.CharacterPicker(this.personaSelect);
       this.levelInput = $('[data-setting="readingLevel"]');
       this.levelName = $('.level-name');
       this.styleSelect = $('[data-setting="accent"]');
@@ -407,6 +409,12 @@
       }
       if ('townMembers' in s) this.#syncTownMembers(s.townMembers || []);
       if ('sceneCast' in s) this.#syncSceneCast(s.sceneCast || []);
+      if ('personaId' in s) {
+        this.picker?.choose(s.personaId);
+        // A voice-library pick joins the cast lists (writers' room, town, crib voice).
+        const roster = this.allPersonas && Vern.castRoster(this.allPersonas, s.personaId);
+        if (roster && !this.rosterIds?.includes(s.personaId) && roster.some((p) => p.id === s.personaId)) this.setPersonas(this.allPersonas, s.personaId);
+      }
       if ('muted' in s) this.root.querySelector('.mute-btn').textContent = s.muted ? Vern.t('menuUnmute', 'Unmute') : Vern.t('menuMute', 'Mute');
       if ('hudTab' in s) this.showTab(this.#availableTab(s.hudTab || ''), false, false);
     }
@@ -453,10 +461,10 @@
     }
 
     openMenu(personas, currentId) {
-      this.personaList.replaceChildren(...personas.map((p) => {
+      this.personaList.replaceChildren(...Vern.castRoster(personas, currentId).map((p) => {
         const b = document.createElement('button');
         b.dataset.personaPick = p.id;
-        b.textContent = Vern.personaName(p);
+        b.textContent = Vern.personaLabel(p);
         b.setAttribute('aria-pressed', String(p.id === currentId));
         return b;
       }));
@@ -604,15 +612,18 @@
       this.sourcesEl.hidden = !list?.length;
     }
 
-    setPersonas(list, selectedId) {
-      this.personaSelect.replaceChildren(
-        ...list.map((p) => new Option(`${Vern.personaName(p)} · ${p.archetype}`, p.id)),
-      );
-      const chosen = list.some((p) => p.id === selectedId && selectedId !== 'auto') ? selectedId : (list[0]?.id || '');
-      this.personaSelect.value = chosen;
+    setPersonas(all, selectedId) {
+      // The picker fills the Character select (categories, search, every voice).
+      // Auto is off: one chosen character speaks everywhere.
+      this.picker.setList(all, selectedId, { auto: false, catalog: Vern.personaCatalog });
+      // Cast pickers (crib voice, writers' room, town) keep to a short roster: the original cast
+      // plus whoever is chosen right now, so the voice library doesn't bury them.
+      const list = Vern.castRoster(all, selectedId);
+      this.allPersonas = all;
+      this.rosterIds = list.map((p) => p.id);
       this.cribSelect.replaceChildren(
         new Option(Vern.t('socialSameCharacter', 'Same as my character'), ''),
-        ...list.map((p) => new Option(Vern.personaName(p), p.id)),
+        ...list.map((p) => new Option(Vern.personaLabel(p), p.id)),
       );
       const scene = this.root.querySelector('.scene-members');
       scene.replaceChildren(...list.map((p) => {
