@@ -100,7 +100,7 @@ export function taskPrompt(task, { profile, source }) {
       ].join('\n');
     case 'crib':
       return [
-        'TASK: CRIB NOTES. Sum up the post in 2 or 3 short, witty lines, like crib notes a friend would whisper to you.',
+        'TASK: CRIB NOTES. Sum up the post in 2 or 3 short, witty lines, like a whispered summary a friend would give you. Do not use the heading "Crib notes".',
         '- Be genuinely funny in this character\'s own comedic voice, but the lines must still tell someone who never reads the post what it actually says. Keep the key facts and numbers.',
         '- Under 280 characters in total so it fits in a post. No hashtags, no @mentions, no links.',
         '- If the post is about something serious (illness, death, disaster, safety), drop the jokes and give a kind, plain two-line summary instead.',
@@ -130,7 +130,7 @@ export function userMessage({ task, text, context, question }) {
   if (task === 'crib' || task === 'reply') {
     const parts = [`Here is the social media post:\n<post>\n${text}\n</post>`];
     if (task === 'reply' && question) parts.push(`The listener's angle for the reply:\n<question>\n${question}\n</question>`);
-    parts.push(task === 'crib' ? 'Give the crib notes in character.' : 'Write the reply in character.');
+    parts.push(task === 'crib' ? 'Give the summary in character.' : 'Write the reply in character.');
     return parts.join('\n\n');
   }
   const parts = [`Here is the AI assistant's full answer:\n<source>\n${text}\n</source>`];

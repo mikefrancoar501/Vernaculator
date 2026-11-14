@@ -263,7 +263,7 @@ const assert = (cond, msg) => {
 
   console.log('Tab toggles');
   assert(await inExt(`Vern.debug.hud.activeTab() === 'listen'`), 'Listen is on by default');
-  await inExt(`Vern.debug.hud.root.querySelector('[data-tab="listen"]').click(), true`);
+  await inExt(`Vern.debug.hud.root.querySelector('.tabs [data-tab="listen"]').click(), true`);
   await sleep(200);
   assert(await inExt(`Vern.debug.hud.activeTab() === '' && Vern.debug.hud.root.querySelector('[data-panel="listen"]').hidden`), 'clicking Listen again closes it');
   const beforeOff = await inExt(`Vern.debug.lastSession?.text || ''`);
@@ -272,7 +272,7 @@ const assert = (cond, msg) => {
   await sleep(2000);
   const afterOff = await inExt(`({ cur: !!Vern.debug.current, text: Vern.debug.lastSession?.text || '' })`);
   assert(!afterOff.cur && afterOff.text === beforeOff, 'no auto-read when Listen is off');
-  await inExt(`Vern.debug.hud.root.querySelector('[data-tab="listen"]').click(), true`);
+  await inExt(`Vern.debug.hud.root.querySelector('.tabs [data-tab="listen"]').click(), true`);
   await sleep(200);
   assert(await inExt(`Vern.debug.hud.activeTab() === 'listen'`), 'clicking Listen opens it again');
 
@@ -316,16 +316,35 @@ const assert = (cond, msg) => {
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
     return r.result.value;
   };
-  const tabs = await inX(`({ post: !Vern.debug.hud.root.querySelector('[data-tab="social"]').hidden, ask: !Vern.debug.hud.root.querySelector('[data-tab="ask"]').hidden })`);
+  const tabs = await inX(`({ post: !Vern.debug.hud.root.querySelector('.tabs [data-tab="social"]').hidden, ask: !Vern.debug.hud.root.querySelector('.tabs [data-tab="ask"]').hidden })`);
   assert(tabs.post && !tabs.ask, 'Post tab replaces Ask on social sites');
   assert(!(await inX('Vern.debug.observer instanceof Vern.MessageObserver')), 'no AI-reply observer on social sites');
-  assert(await inX(`Vern.debug.hud.root.querySelector('[data-action="crib"]').hidden`), 'Post tab Crib notes button is hidden; the on-post pill remains');
+  assert(await inX(`Vern.debug.hud.root.querySelector('[data-action="crib"]').hidden`), 'Post tab Summarize button is hidden; the on-post pill remains');
   assert(await inX(`Vern.debug.hud.root.querySelector('.hot-box').hidden`), "What's hot box is hidden in the widget");
 
-  await inX(`Vern.debug.hud.showTab('social'), true`);
+  await inX(`Vern.debug.hud.root.querySelector('.tabs [data-tab="social"]').click(), true`);
   await sleep(200);
-  assert(await inX(`Vern.debug.hud.activeTab() === 'social'`), 'Post tab can be opened');
-  await inX(`Vern.debug.hud.root.querySelector('[data-tab="social"]').click(), true`);
+  assert(await inX(`Vern.debug.hud.activeTab() === 'social'`), 'clicking Post opens the Post tab');
+  const postUi = await inX(`(() => {
+    const p = Vern.debug.hud.root.querySelector('[data-panel="social"]');
+    const vis = (sel) => { const el = p.querySelector(sel); return !!(el && !el.hidden && getComputedStyle(el).display !== 'none'); };
+    return {
+      hidden: p.hidden,
+      hint: p.querySelector('.hint')?.textContent || '',
+      video: vis('[data-action="postVideo"]'),
+      scene: vis('[data-action="scene"]'),
+      angle: vis('form.angle'),
+      reply: vis('[data-action="reply"]'),
+      crib: p.querySelector('[data-action="crib"]').hidden,
+      hot: p.querySelector('.hot-box').hidden,
+      videoFirst: p.querySelector('.scene-box button')?.dataset.action,
+    };
+  })()`);
+  assert(!postUi.hidden && postUi.video && postUi.scene && postUi.angle && postUi.reply, "Post tab shows writers' room, Make video, Draft reply and Your angle before a post is tapped");
+  assert(/Summarize/.test(postUi.hint), 'Post tab hints to tap 🎭 Summarize on a post');
+  assert(postUi.crib && postUi.hot, "widget Summarize button and What's hot stay hidden");
+  assert(postUi.videoFirst === 'postVideo', "Make video sits at the top of the writers' room section");
+  await inX(`Vern.debug.hud.root.querySelector('.tabs [data-tab="social"]').click(), true`);
   await sleep(200);
   assert(await inX(`Vern.debug.hud.activeTab() === ''`), 'clicking Post again closes it');
 
@@ -336,17 +355,17 @@ const assert = (cond, msg) => {
   const pill = await xp.locator('#vernaculator-crib').boundingBox();
   const more = await xp.locator('article').first().locator('[data-testid="caret"]').boundingBox();
   const grok = await xp.locator('article').first().locator('[aria-label="Grok actions"]').boundingBox();
-  assert(pill && pill.y >= art.y - 2 && pill.x + pill.width <= art.x + art.width + 1, 'Crib notes pill appears on the hovered post');
-  assert(more && pill.x + pill.width <= more.x - 4, 'Crib notes pill sits to the left of the More menu');
-  assert(grok && pill.x + pill.width <= grok.x - 4, 'Crib notes pill does not cover the Grok icon');
+  assert(pill && pill.x + pill.width <= art.x + art.width + 1 && pill.y >= art.y - 2, 'Summarize pill appears on the hovered post');
+  assert(more && pill.x + pill.width <= more.x - 4, 'Summarize pill sits to the left of the More menu');
+  assert(grok && pill.x + pill.width <= grok.x - 4, 'Summarize pill does not cover the Grok icon');
   await xp.mouse.click(pill.x + pill.width / 2, pill.y + pill.height / 2);
   let crib = null;
   for (let i = 0; i < 100 && !crib; i++) {
     await sleep(150);
     crib = await inX(`Vern.debug.lastSession?.task === 'crib' ? { text: Vern.debug.lastSession.text, who: Vern.debug.lastSession.persona?.id } : null`);
   }
-  assert(crib && /^Crib notes: Big news/.test(crib.text), `crib notes for the tapped post ("${crib?.text.slice(0, 60)}...")`);
-  assert(crib.who === 'big_sal', 'crib notes use the same chosen character as Listen (Big Sal)');
+  assert(crib && /^Summarize: Big news/.test(crib.text), `summary for the tapped post ("${crib?.text.slice(0, 60)}...")`);
+  assert(crib.who === 'big_sal', 'summary uses the same chosen character as Listen (Big Sal)');
   const ui = await inX(`({ out: Vern.debug.hud.socialOut.hidden, size: Vern.debug.hud.card.dataset.size, copy: Vern.debug.hud.root.querySelector('[data-action="copyText"]').hidden, paste: Vern.debug.hud.root.querySelector('[data-action="openReply"]').hidden, videoFirst: Vern.debug.hud.root.querySelector('.scene-box button')?.dataset.action, pick: Vern.debug.hud.root.querySelector('.character-pick [data-setting="personaId"]').value, capSel: getComputedStyle(Vern.debug.hud.caption).userSelect })`);
   assert(ui.size === 'M', 'HUD grows from compact so the draft is readable');
   assert(ui.out && ui.copy && ui.paste, 'bottom Copy / Paste / extra Make video strip stays hidden');

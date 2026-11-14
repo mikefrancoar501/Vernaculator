@@ -91,7 +91,7 @@
       const root = this.host.attachShadow({ mode: 'closed' });
       root.innerHTML = `<style>${STYLE}</style><button type="button"></button>`;
       this.btn = root.querySelector('button');
-      this.btn.textContent = Vern.t('socialCribPill', '🎭 Crib notes');
+      this.btn.textContent = Vern.t('socialCribPill', '🎭 Summarize');
       this.btn.title = Vern.t('socialCribPillTitle', 'Sum up this post in a few witty lines');
       this.btn.addEventListener('click', (e) => {
         e.preventDefault();

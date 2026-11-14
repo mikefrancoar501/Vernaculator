@@ -312,7 +312,7 @@
         hud.setStatus(`${Vern.personaName(msg.persona)}${msg.method !== 'manual' ? ` (${Vern.t('statusAutoPicked', 'auto-picked')})` : ''}`, 'busy');
         break;
       case 'utterance.status': {
-        const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'], crib: ['statusCrib', 'Writing crib notes...'], reply: ['statusReply', 'Drafting a reply...'], scene: ['statusPitching', 'The room is pitching lines...'], pitching: ['statusPitching', 'The room is pitching lines...'], directing: ['statusDirecting', 'The director is putting the scene together...'] };
+        const labels = { paraphrasing: ['statusParaphrasing', 'Paraphrasing...'], keypoints: ['statusKeyPoints', 'Finding the key points...'], ask: ['statusAnswering', 'Answering...'], expound: ['statusExpounding', 'Digging deeper...'], crib: ['statusCrib', 'Summarizing...'], reply: ['statusReply', 'Drafting a reply...'], scene: ['statusPitching', 'The room is pitching lines...'], pitching: ['statusPitching', 'The room is pitching lines...'], directing: ['statusDirecting', 'The director is putting the scene together...'] };
         const [k, fb] = labels[msg.status] || ['', msg.status];
         hud.setStatus(Vern.t(k, fb), 'busy');
         break;
@@ -465,7 +465,7 @@
       hud.setStatus(Vern.t('statusVideoAfter', 'Finishing this, then making the video...'), 'busy');
       return;
     }
-    hud.setStatus(Vern.t('statusVideoCrib', 'Writing crib notes, then making the video...'), 'busy');
+    hud.setStatus(Vern.t('statusVideoCrib', 'Summarizing, then making the video...'), 'busy');
     socialTask('crib', post);
   }
 
@@ -521,7 +521,7 @@
         if (!it?.el?.isConnected) return refreshHot();
         it.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         lastPost = { el: it.el, text: it.text, picked: true };
-        hud.setStatus(Vern.t('hotPicked', 'Picked. Now tap Crib notes, Draft reply or the scene.'), 'ok');
+        hud.setStatus(Vern.t('hotPicked', 'Picked. Now tap Summarize, Draft reply or the scene.'), 'ok');
         break;
       }
       case 'copyText':

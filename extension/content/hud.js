@@ -187,10 +187,10 @@
           </form>
         </section>
         <section data-panel="social" hidden>
-          <div class="hint" data-i18n="socialHint">Tap 🎭 Crib notes on a post. Draft reply uses that post, or the one on screen.</div>
+          <div class="hint" data-i18n="socialHint">Tap 🎭 Summarize on a post. Draft reply uses that post, or the one on screen.</div>
           <label class="field" hidden><span data-i18n="socialVoice">Comedic voice</span><select data-setting="cribPersonaId"></select></label>
           <div class="row quick">
-            <button data-action="crib" data-i18n="socialCrib" hidden>🎭 Crib notes</button>
+            <button data-action="crib" data-i18n="socialCrib" hidden>🎭 Summarize</button>
             <button data-action="reply" data-i18n="socialReply">💬 Draft reply</button>
           </div>
           <div class="scene-box">
@@ -245,7 +245,7 @@
       <details><summary data-i18n="helpHelperTitle">💬 Helper commands</summary><p data-i18n="helpHelperBody">Double-tap and type or say things like "switch to Old Oakley", "talk slower", "simpler please" or "talk like a genius". I change the setting for you.</p></details>
       <details><summary data-i18n="helpAskTitle">❓ Ask tab</summary><p data-i18n="helpAskBody">Tap Ask to open it, or tap it again to close. Key points gives the short version. Paraphrase says it in plain words in your chosen character. Ask a follow-up, or Expound to go deeper.</p></details>
       <details><summary data-i18n="helpTownTitle">🏘️ The town</summary><p data-i18n="helpTownBody">Pick a few characters and they each take a part of the answer, like a little town meeting. Big Sal, Old Oakley, Big Play Ray and Elias are the core crew.</p></details>
-      <details><summary data-i18n="helpSocialTitle">📱 Social posts</summary><p data-i18n="helpSocialBody">On X, Facebook and Instagram, tap the "Crib notes" pill on a post. The character you picked (the one picker in the widget) does crib notes, draft replies and videos. Open the Post tab for a draft reply and the writers' room; Make video is at the top of that section, and uses that post's latest crib notes, reply or scene, or writes crib notes first if there are none. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you.</p></details>
+      <details><summary data-i18n="helpSocialTitle">📱 Social posts</summary><p data-i18n="helpSocialBody">On X, Facebook and Instagram, tap the "Summarize" pill on a post. The character you picked (the one picker in the widget) writes the summary, draft replies and videos. Open the Post tab for a draft reply and the writers' room; Make video is at the top of that section, and uses that post's latest summary, reply or scene, or summarizes first if there are none. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you.</p></details>
       <details><summary data-i18n="helpRoomTitle">🎬 Writers' room</summary><p data-i18n="helpRoomBody">On the Post tab, pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Make video is at the top of this section. You can close Post while a scene plays, and you can select the draft in the widget to copy it. Jokes are about ideas, never people.</p></details>
       <details><summary data-i18n="helpHotTitle">🔥 What's hot</summary><p data-i18n="helpHotBody">Turn it on to rank the posts already on your screen by likes and shared topics. Pick one to riff on.</p></details>
       <details><summary data-i18n="helpVideoTitle">🎞️ Meme video</summary><p data-i18n="helpVideoBody">After a narration, tap Video to download a clip with the character and captions, ready for you to upload.</p></details>
@@ -335,7 +335,9 @@
         const q = this.askForm.q.value.trim();
         if (q) this.onAction('ask', q);
       });
-      for (const tab of this.root.querySelectorAll('[data-tab]')) {
+      // Only the tab buttons, not the card (the card also has data-tab for the active panel).
+      // A listener on the card would bubble from a tab click and immediately toggle the panel back off.
+      for (const tab of this.root.querySelectorAll('.tabs [data-tab]')) {
         tab.addEventListener('click', () => this.showTab(this.activeTab() === tab.dataset.tab ? '' : tab.dataset.tab));
       }
       // Keep typing in the Ask box from triggering the host page's keyboard shortcuts.
@@ -562,17 +564,22 @@
       return this.card?.dataset.tab || '';
     }
 
+    /** The tab buttons, never the card (the card also has a data-tab attribute). */
+    #tabButton(name) {
+      return this.root.querySelector(`.tabs [data-tab="${name}"]`);
+    }
+
     /** Drop a saved tab that isn't on this kind of site (Ask on social, Post on chat). */
     #availableTab(name) {
       const tab = name || '';
-      const btn = tab && this.root.querySelector(`[data-tab="${tab}"]`);
+      const btn = tab && this.#tabButton(tab);
       return btn && !btn.hidden ? tab : '';
     }
 
     showTab(name, focus = true, persist = true) {
       const tab = name || '';
       this.card.dataset.tab = tab;
-      for (const t of this.root.querySelectorAll('[data-tab]')) t.setAttribute('aria-selected', String(!!tab && t.dataset.tab === tab));
+      for (const t of this.root.querySelectorAll('.tabs [data-tab]')) t.setAttribute('aria-selected', String(!!tab && t.dataset.tab === tab));
       for (const p of this.root.querySelectorAll('[data-panel]')) p.hidden = !tab || p.dataset.panel !== tab;
       if (tab === 'ask' && focus) this.askForm.q.focus();
       if (persist && Vern.settings.values.hudTab !== tab) this.onSetting('hudTab', tab);
@@ -581,9 +588,9 @@
 
     /** On social sites the Post tab replaces Ask (there is no AI answer to ask about). */
     setSocial(on) {
-      this.root.querySelector('[data-tab="social"]').hidden = !on;
-      this.root.querySelector('[data-tab="ask"]').hidden = on;
-      this.caption.dataset.placeholder = on ? Vern.t('socialPlaceholder', 'Tap 🎭 Crib notes on a post.') : this.caption.dataset.placeholder;
+      this.#tabButton('social').hidden = !on;
+      this.#tabButton('ask').hidden = on;
+      this.caption.dataset.placeholder = on ? Vern.t('socialPlaceholder', 'Tap 🎭 Summarize on a post.') : this.caption.dataset.placeholder;
       // Restore the saved tab, or a compact empty state if that tab isn't on this site.
       this.showTab(this.#availableTab(Vern.settings.values.hudTab || ''), false, false);
     }
