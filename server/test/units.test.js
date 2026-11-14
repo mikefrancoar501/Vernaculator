@@ -248,7 +248,7 @@ test('town panel: members validated, answer split by topic with handoffs', () =>
   assert.match(tp, /Old Oakley continues after you/);
 });
 
-test('town comedians are listed as Comic first names, with fallback art and voices', () => {
+test('town comedians are listed as Comic first names, with their own art and fallback voices', () => {
   const expected = {
     reggie_riff: { name: 'Comic Reggie', full: /Reggie Riff/, voice: 'fish_voice_uuid_placeholder' },
     chuy_carcajadas: { name: 'Comic Chuy', full: /Chuy Carcajadas/, voice: 'fish_voice_uuid_placeholder' },
@@ -265,8 +265,8 @@ test('town comedians are listed as Comic first names, with fallback art and voic
     assert.match(p.systemPromptRules, /Original material only/i);
     assert.match(p.systemPromptRules, /never a person/i);
     assert.equal(p.fishAudioReferenceId, want.voice);
-    assert.equal(p.visemeAssets.idleUrl, 'assets/sprites/default_idle.svg');
-    assert.equal(p.visemeAssets.talkingUrl, 'assets/sprites/default_talking.svg');
+    assert.equal(p.visemeAssets.idleUrl, `assets/sprites/${id}_idle.svg`);
+    assert.equal(p.visemeAssets.talkingUrl, `assets/sprites/${id}_talking.svg`);
     assert.equal(COMEDIAN_IDS[id] !== undefined, true);
     assert.equal(isComedian(p), true);
   }

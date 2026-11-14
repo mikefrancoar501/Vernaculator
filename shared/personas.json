@@ -390,8 +390,8 @@
         "crowd work"
       ],
       "visemeAssets": {
-        "idleUrl": "assets/sprites/default_idle.svg",
-        "talkingUrl": "assets/sprites/default_talking.svg"
+        "idleUrl": "assets/sprites/reggie_riff_idle.svg",
+        "talkingUrl": "assets/sprites/reggie_riff_talking.svg"
       },
       "writersRoomRole": "setup"
     },
@@ -418,8 +418,8 @@
         "órale"
       ],
       "visemeAssets": {
-        "idleUrl": "assets/sprites/default_idle.svg",
-        "talkingUrl": "assets/sprites/default_talking.svg"
+        "idleUrl": "assets/sprites/chuy_carcajadas_idle.svg",
+        "talkingUrl": "assets/sprites/chuy_carcajadas_talking.svg"
       },
       "writersRoomRole": "wildcard"
     },
@@ -445,8 +445,8 @@
         "these people"
       ],
       "visemeAssets": {
-        "idleUrl": "assets/sprites/default_idle.svg",
-        "talkingUrl": "assets/sprites/default_talking.svg"
+        "idleUrl": "assets/sprites/marty_midstep_idle.svg",
+        "talkingUrl": "assets/sprites/marty_midstep_talking.svg"
       },
       "writersRoomRole": "setup"
     },
@@ -472,8 +472,8 @@
         "improv coach"
       ],
       "visemeAssets": {
-        "idleUrl": "assets/sprites/default_idle.svg",
-        "talkingUrl": "assets/sprites/default_talking.svg"
+        "idleUrl": "assets/sprites/winnie_brightwater_idle.svg",
+        "talkingUrl": "assets/sprites/winnie_brightwater_talking.svg"
       },
       "writersRoomRole": "wildcard"
     },
@@ -499,8 +499,8 @@
         "word nerd"
       ],
       "visemeAssets": {
-        "idleUrl": "assets/sprites/default_idle.svg",
-        "talkingUrl": "assets/sprites/default_talking.svg"
+        "idleUrl": "assets/sprites/priya_nair_idle.svg",
+        "talkingUrl": "assets/sprites/priya_nair_talking.svg"
       },
       "writersRoomRole": "closer"
     }
