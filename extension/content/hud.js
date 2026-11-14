@@ -14,9 +14,11 @@
     @media (prefers-color-scheme: dark) {
       .card { --bg: #1e1c27; --fg: #f1effa; --muted: #a29eb8; --line: #34313f; --accent: #8f7bff; --chip: #2a2735; }
     }
-    header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: grab; touch-action: none; border-bottom: 1px solid var(--line); }
+    header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: grab; touch-action: none; border-bottom: 1px solid var(--line); position: relative; z-index: 2; }
     header:active { cursor: grabbing; }
-    .title { font-weight: 700; flex: 1; letter-spacing: .2px; }
+    .title { font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: .2px; }
+    .header-actions { display: flex; align-items: center; margin-left: auto; flex-shrink: 0; gap: 0; }
+    button.icon { flex-shrink: 0; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
     .dot[data-tone="ok"] { background: #2fbf71; } .dot[data-tone="busy"] { background: #f5a524; } .dot[data-tone="err"] { background: #e5484d; }
     button { font: inherit; color: inherit; background: var(--chip); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; cursor: pointer; min-width: 36px; min-height: 32px; }
@@ -126,9 +128,11 @@
       <header>
         <span class="dot" data-tone="idle"></span>
         <span class="title" data-i18n="extShortName">Fancy Bot</span>
-        <button class="icon" data-action="help" data-i18n-title="hudHelp" title="How it works" aria-label="How it works">?</button>
-        <button class="icon" data-action="profile" data-i18n-title="hudProfile" title="About you" aria-label="About you">👤</button>
-        <button class="icon" data-action="collapse" data-i18n-title="hudCollapse" title="Collapse" aria-label="Collapse">▾</button>
+        <div class="header-actions">
+          <button class="icon" data-action="help" data-i18n-title="hudHelp" title="How it works" aria-label="How it works">?</button>
+          <button class="icon" data-action="profile" data-i18n-title="hudProfile" title="About you" aria-label="About you">👤</button>
+          <button class="icon" data-action="collapse" data-i18n-title="hudCollapse" title="Collapse" aria-label="Collapse">▾</button>
+        </div>
       </header>
       <div class="body">
         <div class="stage" data-i18n-title="hudTickle" title="Tap me rapidly...">
