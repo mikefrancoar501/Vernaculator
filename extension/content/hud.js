@@ -37,6 +37,8 @@
     .caption:empty::before { content: attr(data-placeholder); color: var(--muted); }
     .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .row.controls button { flex: 1; }
+    .row.bottom-video { padding-top: 2px; }
+    .row.bottom-video button { flex: 1; font-weight: 600; }
     label.field { display: grid; gap: 3px; flex: 1; font-size: 11px; color: var(--muted); }
     select { font: inherit; color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; width: 100%; }
     .level { display: grid; gap: 2px; }
@@ -84,6 +86,7 @@
     .card[data-size="L"] .caption { max-height: 9em; font-size: 14px; }
     .pop { position: absolute; left: 0; bottom: calc(100% + 8px); width: 260px; z-index: 2; display: grid; gap: 8px; padding: 10px;
       background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 32px rgba(20,10,60,.22);
+      overflow: auto;
       font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; --bg: #fff; --fg: #1d1b26; --muted: #6c6880; --line: #e4e1ee; --accent: #6b4eff; --chip: #f3f1fa; }
     @media (prefers-color-scheme: dark) { .pop { --bg: #1e1c27; --fg: #f1effa; --muted: #a29eb8; --line: #34313f; --accent: #8f7bff; --chip: #2a2735; } }
     .pop.below { bottom: auto; top: calc(100% + 8px); }
@@ -193,13 +196,6 @@
             <button data-action="crib" data-i18n="socialCrib" hidden>🎭 Summarize</button>
             <button data-action="reply" data-i18n="socialReply">💬 Draft reply</button>
           </div>
-          <div class="scene-box">
-            <button data-action="postVideo" data-i18n="socialVideo">🎬 Make video</button>
-            <button data-action="scene" class="primary" data-i18n="sceneButton">🎬 Writers' room scene</button>
-            <div class="hint" data-i18n="sceneHint">The cast pitch lines and the director turns them into a mini-scene.</div>
-            <div class="scene-members" data-i18n-aria="sceneCast" aria-label="Scene cast (2 to 4)"></div>
-            <label class="field"><span data-i18n="sceneDirector">Director</span><select data-setting="sceneDirector"></select></label>
-          </div>
           <div class="hot-box" hidden>
             <label class="chip strong"><input type="checkbox" data-setting="whatsHot"> <span data-i18n="hotToggle">🔥 What's hot on this page</span></label>
             <div class="hot-body">
@@ -209,6 +205,13 @@
           </div>
           <form class="angle"><input type="text" name="q" maxlength="200" autocomplete="off" data-i18n-placeholder="socialAngle" placeholder="Your angle for the reply (optional)"></form>
         </section>
+        <div class="scene-box" hidden>
+          <button data-action="postVideo" data-i18n="socialVideo">🎬 Make video</button>
+          <button data-action="scene" class="primary" data-i18n="sceneButton">🎬 Writers' room scene</button>
+          <div class="hint" data-i18n="sceneHint">The cast pitch lines and the director turns them into a mini-scene.</div>
+          <div class="scene-members" data-i18n-aria="sceneCast" aria-label="Scene cast (2 to 4)"></div>
+          <label class="field"><span data-i18n="sceneDirector">Director</span><select data-setting="sceneDirector"></select></label>
+        </div>
         <div class="social-out" hidden>
           <div class="row quick">
             <button data-action="copyText" data-i18n="socialCopy" hidden>📋 Copy text</button>
@@ -216,6 +219,9 @@
             <button data-action="openReply" data-i18n="socialOpenReply" hidden>Paste into reply</button>
           </div>
           <div class="hint" data-i18n="socialYouPost">You review it and post it yourself.</div>
+        </div>
+        <div class="row controls bottom-video">
+          <button data-action="makeVideo" class="primary" data-i18n="socialVideo" data-i18n-title="hudMakeVideoTitle" title="Make a video of the last post, or of the last reply">🎬 Make video</button>
         </div>
         <progress hidden max="1" value="0"></progress>
         <div class="status"></div>
@@ -240,13 +246,13 @@
     <div class="pop help" hidden>
       <div class="pop-title" data-i18n="helpTitle">How Fancy Bot works</div>
       <p class="help-intro" data-i18n="helpIntro">I read AI answers out loud in fun voices and help you understand them. Tap a topic:</p>
-      <details><summary data-i18n="helpListenTitle">🎧 Listening to answers</summary><p data-i18n="helpListenBody">Ask Claude, Grok or Gemini anything. Tap Listen for reading level, voice and auto-read; tap it again to close the panel. With Listen off, the widget stays compact and I won't auto-read new answers, but Play and Read selection still work. The slider is 1 super simple, 5 expert.</p></details>
+      <details><summary data-i18n="helpListenTitle">🎧 Listening to answers</summary><p data-i18n="helpListenBody">Ask Claude, Grok or Gemini anything. Tap Listen for reading level, voice and auto-read; tap it again to close the panel. With Listen off, the widget stays compact and I won't auto-read new answers, but Play, Read selection and Make video still work. Make video, at the bottom of the widget, exports the last reply you played. The slider is 1 super simple, 5 expert.</p></details>
       <details><summary data-i18n="helpGesturesTitle">👆 Gestures</summary><p data-i18n="helpGesturesBody">Drag me by the top bar. Long-press me for the menu (size, characters, mute). Double-tap me to open the helper. Tap me fast or rub me to tickle me.</p></details>
       <details><summary data-i18n="helpHelperTitle">💬 Helper commands</summary><p data-i18n="helpHelperBody">Double-tap and type or say things like "switch to Old Oakley", "talk slower", "simpler please" or "talk like a genius". I change the setting for you.</p></details>
       <details><summary data-i18n="helpAskTitle">❓ Ask tab</summary><p data-i18n="helpAskBody">Tap Ask to open it, or tap it again to close. Key points gives the short version. Paraphrase says it in plain words in your chosen character. Ask a follow-up, or Expound to go deeper.</p></details>
       <details><summary data-i18n="helpTownTitle">🏘️ The town</summary><p data-i18n="helpTownBody">Pick a few characters and they each take a part of the answer, like a little town meeting. Big Sal, Old Oakley, Big Play Ray and Elias are the core crew.</p></details>
-      <details><summary data-i18n="helpSocialTitle">📱 Social posts</summary><p data-i18n="helpSocialBody">On X, Facebook and Instagram, tap the "Summarize" pill on a post. The character you picked (the one picker in the widget) writes the summary, draft replies and videos. Open the Post tab for a draft reply and the writers' room; Make video is at the top of that section, and uses that post's latest summary, reply or scene, or summarizes first if there are none. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you.</p></details>
-      <details><summary data-i18n="helpRoomTitle">🎬 Writers' room</summary><p data-i18n="helpRoomBody">On the Post tab, pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Make video is at the top of this section. You can close Post while a scene plays, and you can select the draft in the widget to copy it. Jokes are about ideas, never people.</p></details>
+      <details><summary data-i18n="helpSocialTitle">📱 Social posts</summary><p data-i18n="helpSocialBody">On X, Facebook and Instagram, tap the "Summarize" pill on a post. The character you picked (the one picker in the widget) writes the summary, draft replies and videos. The Make video button at the bottom of the widget is always there, even if Post is closed: it uses that post's latest summary, reply or scene, or summarizes first if there are none. Open the Post tab for a draft reply; the writers' room stays on the widget, and Make video is also at the top of that section. Tap Post again to close it and keep a compact view. You can select the draft in the widget and copy it. I never post for you.</p></details>
+      <details><summary data-i18n="helpRoomTitle">🎬 Writers' room</summary><p data-i18n="helpRoomBody">On X, Facebook and Instagram, the writers' room stays on the widget even if Listen is open or Post is closed. Pick 2 to 4 characters and a director. They pitch lines, the director picks the best, and you get a short scene about the post. Make video is at the top of this section, and also at the bottom of the widget. You can close Post while a scene plays, and you can select the draft in the widget to copy it. Jokes are about ideas, never people.</p></details>
       <details><summary data-i18n="helpHotTitle">🔥 What's hot</summary><p data-i18n="helpHotBody">Turn it on to rank the posts already on your screen by likes and shared topics. Pick one to riff on.</p></details>
       <details><summary data-i18n="helpVideoTitle">🎞️ Meme video</summary><p data-i18n="helpVideoBody">After a narration, tap Video to download a clip with the character and captions, ready for you to upload.</p></details>
       <details><summary data-i18n="helpSettingsTitle">👤 Settings</summary><p data-i18n="helpSettingsBody">Tap the person icon to set your name, a little about you, your age range and language. Answers get tailored to you.</p></details>
@@ -447,16 +453,15 @@
       const below = window.innerHeight - r.bottom - 16;
       const goBelow = above < pop.offsetHeight && below > above;
       pop.classList.toggle('below', goBelow);
-      if (pop === this.help) {
-        const room = goBelow ? below : above;
-        if (room < Math.min(pop.offsetHeight, 300)) {
-          // Not enough room above or below: lay the help over the card, under its header.
-          pop.classList.remove('below');
-          pop.classList.add('over');
-          pop.style.maxHeight = `${Math.floor((window.innerHeight - Math.max(r.top, 0) - 56) / z)}px`;
-        } else {
-          pop.style.maxHeight = `${Math.floor(room / z)}px`;
-        }
+      const room = goBelow ? below : above;
+      if (room < Math.min(pop.offsetHeight, 300)) {
+        // Not enough room above or below (the widget is tall, with Make video and the
+        // writers' room always on the card): lay the popover over the card, under its header.
+        pop.classList.remove('below');
+        pop.classList.add('over');
+        pop.style.maxHeight = `${Math.floor((window.innerHeight - Math.max(r.top, 0) - 56) / z)}px`;
+      } else {
+        pop.style.maxHeight = `${Math.floor(room / z)}px`;
       }
       const overflowRight = r.left + pop.offsetWidth - window.innerWidth + 8;
       pop.style.left = overflowRight > 0 ? `${-overflowRight}px` : '0';
@@ -578,6 +583,10 @@
 
     showTab(name, focus = true, persist = true) {
       const tab = name || '';
+      // Compact (S) hides every body section except the character and status, so a user
+      // click on a tab would look like a no-op. Grow to M only for that click, not when
+      // restoring a saved tab (persist=false), so the compact default stays intact.
+      if (tab && persist && this.card.dataset.size === 'S') this.onSetting('hudSize', 'M');
       this.card.dataset.tab = tab;
       for (const t of this.root.querySelectorAll('.tabs [data-tab]')) t.setAttribute('aria-selected', String(!!tab && t.dataset.tab === tab));
       for (const p of this.root.querySelectorAll('[data-panel]')) p.hidden = !tab || p.dataset.panel !== tab;
@@ -590,8 +599,11 @@
     setSocial(on) {
       this.#tabButton('social').hidden = !on;
       this.#tabButton('ask').hidden = on;
+      const scene = this.root.querySelector('.scene-box');
+      if (scene) scene.hidden = !on;
       this.caption.dataset.placeholder = on ? Vern.t('socialPlaceholder', 'Tap 🎭 Summarize on a post.') : this.caption.dataset.placeholder;
       // Restore the saved tab, or a compact empty state if that tab isn't on this site.
+      // The writers' room stays visible on social sites even if Listen is open or every tab is closed.
       this.showTab(this.#availableTab(Vern.settings.values.hudTab || ''), false, false);
     }
 

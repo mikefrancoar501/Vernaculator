@@ -20,13 +20,15 @@ const assert = (cond, msg) => {
 };
 
 (async () => {
-  const ctx = await chromium.launchPersistentContext('', {
+  const launch = {
     headless: process.env.HEADED ? false : true,
-    channel: 'chromium',
     args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, '--autoplay-policy=no-user-gesture-required'],
     acceptDownloads: true,
-    viewport: { width: 1200, height: 800 },
-  });
+    viewport: { width: 1200, height: 1200 },
+  };
+  if (process.env.CHROME_PATH) launch.executablePath = process.env.CHROME_PATH;
+  else launch.channel = 'chromium';
+  const ctx = await chromium.launchPersistentContext('', launch);
   let [sw] = ctx.serviceWorkers();
   sw ??= await ctx.waitForEvent('serviceworker');
   // Let onInstalled seed defaults first so it can't overwrite our test settings.
@@ -262,10 +264,25 @@ const assert = (cond, msg) => {
   await sleep(300);
 
   console.log('Tab toggles');
+  // Size S hides the tab panels and the bottom Make video button; go back to M to check toggles.
+  await inExt(`Vern.settings.save({ hudSize: 'M' }).then(() => true)`);
+  await sleep(300);
+  const listenOn = await inExt(`Vern.debug.hud.activeTab()`);
+  if (listenOn !== 'listen') await inExt(`Vern.debug.hud.showTab('listen', false, true), true`);
+  await sleep(200);
   assert(await inExt(`Vern.debug.hud.activeTab() === 'listen'`), 'Listen is on by default');
   await inExt(`Vern.debug.hud.root.querySelector('.tabs [data-tab="listen"]').click(), true`);
   await sleep(200);
   assert(await inExt(`Vern.debug.hud.activeTab() === '' && Vern.debug.hud.root.querySelector('[data-panel="listen"]').hidden`), 'clicking Listen again closes it');
+  const bottomVideoVis = `(() => { const el = Vern.debug.hud.root.querySelector('.bottom-video [data-action="makeVideo"]'); const r = el && el.getBoundingClientRect(); return !!(el && !el.hidden && getComputedStyle(el).display !== 'none' && r.height > 0); })()`;
+  assert(await inExt(bottomVideoVis), 'Make video stays visible at the bottom when Listen is closed');
+  // Let the closed-tab setting settle so a late storage event cannot reopen Listen.
+  for (let i = 0; i < 20 && (await inExt(`Vern.settings.values.hudTab || ''`)) !== ''; i++) await sleep(100);
+  assert(await inExt(`Vern.debug.hud.activeTab() === '' && (Vern.settings.values.hudTab || '') === ''`), 'Listen stays closed after the tab setting settles');
+  // Cancel any earlier utterance still streaming (expound, etc.) so leftover current/session
+  // state cannot look like a new auto-read.
+  await inExt(`Vern.debug.hud.onAction('stop'), true`);
+  await sleep(300);
   const beforeOff = await inExt(`Vern.debug.lastSession?.text || ''`);
   await inExt(`Vern.settings.save({ autoRead: true }).then(() => true)`);
   await page.evaluate(() => window.streamReply('This reply should stay quiet because the Listen tab is off.', { delay: 2 }));
@@ -275,6 +292,7 @@ const assert = (cond, msg) => {
   await inExt(`Vern.debug.hud.root.querySelector('.tabs [data-tab="listen"]').click(), true`);
   await sleep(200);
   assert(await inExt(`Vern.debug.hud.activeTab() === 'listen'`), 'clicking Listen opens it again');
+  assert(await inExt(bottomVideoVis), 'Make video stays visible at the bottom when Listen is open');
 
   console.log('Town panel');
   await inExt(`Vern.settings.save({ hudSize: 'M', personaId: 'big_sal', accent: 'none', autoRead: true, paraphrase: false, townEnabled: true, townMembers: ['big_sal', 'professor_pip', 'sir_reginald_ledger'] }).then(() => true)`);
@@ -326,27 +344,38 @@ const assert = (cond, msg) => {
   await sleep(200);
   assert(await inX(`Vern.debug.hud.activeTab() === 'social'`), 'clicking Post opens the Post tab');
   const postUi = await inX(`(() => {
-    const p = Vern.debug.hud.root.querySelector('[data-panel="social"]');
-    const vis = (sel) => { const el = p.querySelector(sel); return !!(el && !el.hidden && getComputedStyle(el).display !== 'none'); };
+    const root = Vern.debug.hud.root;
+    const p = root.querySelector('[data-panel="social"]');
+    const sceneBox = root.querySelector('.scene-box');
+    const visIn = (node, sel) => { const el = node.querySelector(sel); return !!(el && !el.hidden && getComputedStyle(el).display !== 'none'); };
+    const visEl = (el) => !!(el && !el.hidden && getComputedStyle(el).display !== 'none');
     return {
       hidden: p.hidden,
       hint: p.querySelector('.hint')?.textContent || '',
-      video: vis('[data-action="postVideo"]'),
-      scene: vis('[data-action="scene"]'),
-      angle: vis('form.angle'),
-      reply: vis('[data-action="reply"]'),
+      video: visIn(sceneBox, '[data-action="postVideo"]'),
+      scene: visIn(sceneBox, '[data-action="scene"]'),
+      sceneBox: visEl(sceneBox),
+      angle: visIn(p, 'form.angle'),
+      reply: visIn(p, '[data-action="reply"]'),
       crib: p.querySelector('[data-action="crib"]').hidden,
       hot: p.querySelector('.hot-box').hidden,
-      videoFirst: p.querySelector('.scene-box button')?.dataset.action,
+      videoFirst: sceneBox.querySelector('button')?.dataset.action,
+      cast: [...sceneBox.querySelectorAll('[data-scene-member]:checked')].map((i) => i.dataset.sceneMember),
+      director: sceneBox.querySelector('[data-setting="sceneDirector"]')?.value,
     };
   })()`);
-  assert(!postUi.hidden && postUi.video && postUi.scene && postUi.angle && postUi.reply, "Post tab shows writers' room, Make video, Draft reply and Your angle before a post is tapped");
+  assert(!postUi.hidden && postUi.video && postUi.scene && postUi.sceneBox && postUi.angle && postUi.reply, "Post tab shows writers' room, Make video, Draft reply and Your angle before a post is tapped");
   assert(/Summarize/.test(postUi.hint), 'Post tab hints to tap 🎭 Summarize on a post');
   assert(postUi.crib && postUi.hot, "widget Summarize button and What's hot stay hidden");
   assert(postUi.videoFirst === 'postVideo', "Make video sits at the top of the writers' room section");
+  assert(postUi.cast.length === 4 && postUi.director === 'big_sal', `writers' room has the core four and Big Sal as director (${postUi.cast.join(', ')} · ${postUi.director})`);
+  const xBottomVideoPresent = `(() => { const el = Vern.debug.hud.root.querySelector('.bottom-video [data-action="makeVideo"]'); return !!(el && !el.hidden && el.dataset.action === 'makeVideo'); })()`;
+  assert(await inX(xBottomVideoPresent), 'Make video is in the bottom row when the Post tab is open');
   await inX(`Vern.debug.hud.root.querySelector('.tabs [data-tab="social"]').click(), true`);
   await sleep(200);
   assert(await inX(`Vern.debug.hud.activeTab() === ''`), 'clicking Post again closes it');
+  assert(await inX(xBottomVideoPresent), 'Make video is in the bottom row when the Post tab is closed');
+  assert(await inX(`!Vern.debug.hud.root.querySelector('.scene-box').hidden`), "writers' room stays on the widget when the Post tab is closed");
 
 
   const art = await xp.locator('article').first().boundingBox();
@@ -366,10 +395,26 @@ const assert = (cond, msg) => {
   }
   assert(crib && /^Summarize: Big news/.test(crib.text), `summary for the tapped post ("${crib?.text.slice(0, 60)}...")`);
   assert(crib.who === 'big_sal', 'summary uses the same chosen character as Listen (Big Sal)');
-  const ui = await inX(`({ out: Vern.debug.hud.socialOut.hidden, size: Vern.debug.hud.card.dataset.size, copy: Vern.debug.hud.root.querySelector('[data-action="copyText"]').hidden, paste: Vern.debug.hud.root.querySelector('[data-action="openReply"]').hidden, videoFirst: Vern.debug.hud.root.querySelector('.scene-box button')?.dataset.action, pick: Vern.debug.hud.root.querySelector('.character-pick [data-setting="personaId"]').value, capSel: getComputedStyle(Vern.debug.hud.caption).userSelect })`);
+  const ui = await inX(`({ out: Vern.debug.hud.socialOut.hidden, size: Vern.debug.hud.card.dataset.size, copy: Vern.debug.hud.root.querySelector('[data-action="copyText"]').hidden, paste: Vern.debug.hud.root.querySelector('[data-action="openReply"]').hidden, videoFirst: Vern.debug.hud.root.querySelector('.scene-box button')?.dataset.action, pick: Vern.debug.hud.root.querySelector('.character-pick [data-setting="personaId"]').value, capSel: getComputedStyle(Vern.debug.hud.caption).userSelect, bottomVideo: (() => { const el = Vern.debug.hud.root.querySelector('.bottom-video [data-action="makeVideo"]'); const r = el && el.getBoundingClientRect(); return !!(el && !el.hidden && getComputedStyle(el).display !== 'none' && r.height > 0); })() })`);
   assert(ui.size === 'M', 'HUD grows from compact so the draft is readable');
   assert(ui.out && ui.copy && ui.paste, 'bottom Copy / Paste / extra Make video strip stays hidden');
   assert(ui.videoFirst === 'postVideo', 'Make video sits at the top of the writers\' room section');
+  assert(ui.bottomVideo, 'Make video stays visible at the bottom of the widget after a summary');
+  await inX(`Vern.debug.hud.root.querySelector('.tabs [data-tab="listen"]').click(), true`);
+  await sleep(200);
+  const roomWhileListen = await inX(`(() => {
+    const box = Vern.debug.hud.root.querySelector('.scene-box');
+    const r = box && box.getBoundingClientRect();
+    return {
+      tab: Vern.debug.hud.activeTab(),
+      visible: !!(box && !box.hidden && getComputedStyle(box).display !== 'none' && r.height > 0),
+      scene: !box.querySelector('[data-action="scene"]').hidden,
+      checked: [...box.querySelectorAll('[data-scene-member]:checked')].map((i) => i.dataset.sceneMember),
+    };
+  })()`);
+  assert(roomWhileListen.tab === 'listen' && roomWhileListen.visible && roomWhileListen.scene && roomWhileListen.checked.length === 4, "writers' room stays visible with its 4-person cast when Listen is open");
+  await inX(`Vern.debug.hud.root.querySelector('.tabs [data-tab="listen"]').click(), true`);
+  await sleep(200);
   assert(ui.pick === 'big_sal', 'one character picker shows the chosen character');
   assert(/text/i.test(ui.capSel), 'draft caption stays selectable so you can copy it by hand');
   await sleep(500);
