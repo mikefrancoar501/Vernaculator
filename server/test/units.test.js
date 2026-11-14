@@ -334,3 +334,20 @@ test('mini-assistant finds comedians by Comic name or first name', () => {
   assert.equal(ruleAssistant('Winnie please', personas).action.personaId, 'winnie_brightwater');
   assert.equal(ruleAssistant('switch to Big Sal', personas).action.personaId, 'big_sal', '"comic" alone is not a name match');
 });
+
+test('a saved Fish key turns real voices on even without TTS_PROVIDER (no more babble beeps)', () => {
+  const keep = { TTS_PROVIDER: process.env.TTS_PROVIDER, FISH_API_KEY: process.env.FISH_API_KEY, LLM_PROVIDER: process.env.LLM_PROVIDER, ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY };
+  try {
+    for (const k of Object.keys(keep)) delete process.env[k];
+    assert.equal(loadConfig().tts.provider, 'mock');
+    assert.equal(loadConfig().llm.provider, 'mock');
+    process.env.FISH_API_KEY = 'test-fish-key';
+    process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
+    assert.equal(loadConfig().tts.provider, 'fish');
+    assert.equal(loadConfig().llm.provider, 'anthropic');
+    process.env.TTS_PROVIDER = 'mock'; // an explicit choice still wins
+    assert.equal(loadConfig().tts.provider, 'mock');
+  } finally {
+    for (const [k, v] of Object.entries(keep)) if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
+});

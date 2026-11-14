@@ -11,13 +11,19 @@
   let seqCounter = Math.floor(Math.random() * 1e6);
   let current = null; // { seq, sourceId, persona, sprites }
   let lastSession = null; // { chunks, text, persona, sprites } for replay/export
+  // The server has no Fish Audio key: it streams the mock "babble" (beeps), not words.
+  let testVoices = false;
+  const testVoicesNote = () => Vern.t('statusTestVoices', 'Test voices: you will hear beeps, not words. Save your Fish Audio key with fancybot-keys.bat, then rerun fancybot-setup.bat.');
 
   const player = new Vern.StreamPlayer({ onState: onPlayerState });
   const conn = new Vern.Connection({
     onMessage: onServerMessage,
     onAudio: (seq, bytes) => player.push(seq, bytes),
-    onStatus: (s) => {
-      if (s === 'connected') hud.setStatus('Connected', 'ok');
+    onStatus: (s, info) => {
+      if (s === 'connected') {
+        testVoices = info?.voices === 'test';
+        hud.setStatus(testVoices ? testVoicesNote() : 'Connected', testVoices ? 'busy' : 'ok');
+      }
       else if (s === 'connecting') hud.setStatus('Connecting...', 'busy');
       else hud.dot.dataset.tone = 'idle'; // keep any error text visible
     },
@@ -356,7 +362,7 @@
         if (msg.script) current.segments.forEach((seg, i) => { seg.line = msg.script[i]?.line || ''; });
         lastSession = { chunks: player.chunks, text: msg.text, persona: current.persona, sprites: current.sprites, segments: current.segments, task: current.task };
         if (['crib', 'reply', 'scene'].includes(current.task)) hud.setSocialResult(true);
-        hud.setStatus((() => { const n = msg.usage.remainingChars.toLocaleString(); const left = Vern.t('statusCharsLeft', `${n} characters left this month`, [n]); return current.notice ? `${current.notice} · ${left}` : left; })(), current.notice ? 'busy' : 'ok');
+        hud.setStatus((() => { const n = msg.usage.remainingChars.toLocaleString(); const left = Vern.t('statusCharsLeft', `${n} characters left this month`, [n]); const note = [current.notice, testVoices && testVoicesNote()].filter(Boolean).join(' · '); return note ? `${note} · ${left}` : left; })(), current.notice || testVoices ? 'busy' : 'ok');
         break;
       case 'utterance.cancelled':
         if (msg.reason !== 'superseded' && msg.reason !== 'client') hud.setStatus(`Stopped (${msg.reason})`, 'idle');

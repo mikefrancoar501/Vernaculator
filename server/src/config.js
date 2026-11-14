@@ -22,7 +22,8 @@ export function loadConfig(overrides = {}) {
       pro: int(env.QUOTA_PRO, 500000),
     },
     llm: {
-      provider: env.LLM_PROVIDER || 'mock',
+      // A saved key turns the real service on even when *_PROVIDER is missing (a hand-written keys.env).
+      provider: env.LLM_PROVIDER || (env.ANTHROPIC_API_KEY ? 'anthropic' : 'mock'),
       apiKey: env.ANTHROPIC_API_KEY || '',
       model: env.LLM_MODEL || 'claude-opus-5-5',
       effort: env.LLM_EFFORT || 'low',
@@ -31,7 +32,9 @@ export function loadConfig(overrides = {}) {
     // Per-user limits on social generations (crib notes, replies, writers' room scenes).
     socialRate: { perMinute: int(env.SOCIAL_RATE_PER_MIN, 6), perDay: int(env.SOCIAL_RATE_PER_DAY, 120) },
     tts: {
-      provider: env.TTS_PROVIDER || 'mock',
+      // Without this, a Fish key with no TTS_PROVIDER=fish left every character on the mock
+      // "babble" (sliding beeps, no words).
+      provider: env.TTS_PROVIDER || (env.FISH_API_KEY ? 'fish' : 'mock'),
       apiKey: env.FISH_API_KEY || '',
       wsUrl: env.FISH_WS_URL || 'wss://api.fish.audio/v1/tts/live',
       model: env.FISH_MODEL || 's2.1-pro',
