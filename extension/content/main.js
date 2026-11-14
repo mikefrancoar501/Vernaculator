@@ -124,13 +124,19 @@
 
   const townIds = () => (Vern.settings.values.townMembers || []).filter((id) => personas.some((p) => p.id === id));
   const townOn = () => Vern.settings.values.townEnabled && townIds().length >= 2;
+  const layoutStrip = () => {
+    if (!town.host) return;
+    town.clearOf(hud.host.getBoundingClientRect());
+  };
   async function refreshTown() {
     const members = await Promise.all(townIds().map(async (id) => {
       const p = personas.find((x) => x.id === id);
       return { id, name: Vern.personaName(p), sprites: await spritesFor(p) };
     }));
-    town.setMembers(members);
-    town.setVisible(townOn());
+    town.setMembers(members, Vern.settings.values.personaId);
+    // Only show the page-top face row when that optional setting is on and the strip was mounted.
+    town.setVisible(!!Vern.settings.values.townStrip && townOn());
+    layoutStrip();
   }
 
   async function loadPersonas() {
@@ -341,8 +347,9 @@
           sceneStrip = true;
           Promise.all(msg.members.map(async (p) => ({ id: p.id, name: Vern.personaName(p), sprites: await spritesFor(p) }))).then((members) => {
             if (!sceneStrip) return;
-            town.setMembers(members);
-            town.setVisible(true);
+            town.setMembers(members, Vern.settings.values.personaId);
+            town.setVisible(!!Vern.settings.values.townStrip && !!town.host);
+            layoutStrip();
           });
         }
         break;
@@ -567,15 +574,20 @@
   Vern.settings.onChange((patch) => {
     hud.applySettings(patch);
     if ('muted' in patch) player.audio.muted = !!patch.muted;
-    if ('townEnabled' in patch || 'townMembers' in patch) refreshTown();
+    if ('townEnabled' in patch || 'townMembers' in patch || 'townStrip' in patch) refreshTown();
     if ('whatsHot' in patch || patch.hudTab === 'social') refreshHot();
     if ('replaceCompanion' in patch) companion.sync();
     if ('backendUrl' in patch || 'token' in patch) {
       conn.reset();
       loadPersonas();
     }
-    if ('personaId' in patch && !current) showPersona(personas.find((p) => p.id === patch.personaId) || null);
+    if ('personaId' in patch) {
+      if (town.host) town.setMembers(town.allMembers || town.members, patch.personaId);
+      if (!current) showPersona(personas.find((p) => p.id === patch.personaId) || null);
+    }
+    if ('hudPos' in patch || 'hudSize' in patch || 'hudScale' in patch || 'hudCollapsed' in patch) layoutStrip();
   });
+  window.addEventListener('resize', layoutStrip);
 
   // Exposed for debugging from DevTools (isolated world): Vern.debug.speak('hello')
   Vern.debug = { speak, player, conn, observer, hud, get lastSession() { return lastSession; }, get current() { return current; }, get lastAssistant() { return lastAssistant; }, town, social, get lastPost() { return lastPost; } };

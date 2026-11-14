@@ -1,7 +1,49 @@
 // Town panel strip: the chosen town members sit along the top of the screen. The one
 // speaking is highlighted and their mouth moves; tap a member to make them your main character.
 // Mobile-friendly: compact avatars, horizontal scroll, respects the notch/safe area.
+// The visible row stays at 4 faces (the intended size). Extra town members remain
+// selectable in the Town panel. The row is shifted or narrowed so it never covers
+// the widget's collapse button or other header controls.
 (() => {
+  const MAX_STRIP_FACES = 4;
+  const STRIP_GAP = 8;
+
+  /** Keep the first `max` members; if a preferred id would be dropped, swap it into the last slot. */
+  function pickStripMembers(members, preferredId, max = MAX_STRIP_FACES) {
+    const list = Array.isArray(members) ? members.filter(Boolean) : [];
+    if (list.length <= max) return list;
+    const shown = list.slice(0, max);
+    if (preferredId && !shown.some((m) => m.id === preferredId)) {
+      const pref = list.find((m) => m.id === preferredId);
+      if (pref) shown[max - 1] = pref;
+    }
+    return shown;
+  }
+
+  /**
+   * Place a top-of-page strip so it stays clear of a HUD rect in the top band.
+   * Returns { left, maxWidth, transform } in CSS pixels.
+   */
+  function placeStrip({ viewportWidth, hud, gap = STRIP_GAP, topBand = 96 } = {}) {
+    const vw = Number(viewportWidth) || 0;
+    const maxAll = Math.max(80, vw - 16);
+    const centered = { left: vw / 2, maxWidth: maxAll, transform: 'translateX(-50%)' };
+    if (!vw) return centered;
+    if (!hud || !(hud.bottom > 0) || hud.top >= topBand) return centered;
+    const leftBound = 8;
+    const rightBound = vw - 8;
+    const spaceLeft = hud.left - gap - leftBound;
+    const spaceRight = rightBound - (hud.right + gap);
+    if (spaceLeft >= spaceRight && spaceLeft >= 80) {
+      return { left: leftBound, maxWidth: spaceLeft, transform: 'none' };
+    }
+    if (spaceRight >= 80) {
+      return { left: hud.right + gap, maxWidth: spaceRight, transform: 'none' };
+    }
+    if (spaceLeft >= spaceRight) return { left: leftBound, maxWidth: Math.max(64, spaceLeft), transform: 'none' };
+    return { left: hud.right + gap, maxWidth: Math.max(64, spaceRight), transform: 'none' };
+  }
+
   const STYLE = `
     :host { all: initial; }
     .strip {
@@ -49,12 +91,15 @@
     setVisible(v) {
       if (!this.host) return;
       this.host.style.display = v && this.members.length ? '' : 'none';
+      if (v && this.lastHud) this.clearOf(this.lastHud);
     }
 
-    setMembers(members) {
-      this.members = members;
+    setMembers(members, preferredId) {
+      this.allMembers = members;
+      this.preferredId = preferredId !== undefined ? preferredId : this.preferredId;
+      this.members = pickStripMembers(members, this.preferredId || this.active);
       if (!this.strip) return;
-      this.strip.replaceChildren(...members.map((m) => {
+      this.strip.replaceChildren(...this.members.map((m) => {
         const b = document.createElement('button');
         b.dataset.id = m.id;
         b.title = m.name;
@@ -66,6 +111,7 @@
         return b;
       }));
       this.setActive(this.active);
+      if (this.lastHud) this.clearOf(this.lastHud);
     }
 
     setActive(id) {
@@ -94,7 +140,20 @@
     rect() {
       return this.host ? this.host.getBoundingClientRect() : DOMRect.fromRect({ x: 0, y: 0, width: 0, height: 0 });
     }
+
+    /** Keep the face row clear of the widget header (especially the collapse button). */
+    clearOf(hudRect) {
+      if (!this.host || !this.strip) return;
+      if (hudRect) this.lastHud = hudRect;
+      const place = placeStrip({ viewportWidth: window.innerWidth, hud: this.lastHud });
+      this.host.style.left = `${Math.round(place.left)}px`;
+      this.host.style.transform = place.transform;
+      this.strip.style.maxWidth = `${Math.floor(place.maxWidth)}px`;
+    }
   }
 
   Vern.TownStrip = TownStrip;
+  Vern.pickStripMembers = pickStripMembers;
+  Vern.placeStrip = placeStrip;
+  Vern.MAX_STRIP_FACES = MAX_STRIP_FACES;
 })();
