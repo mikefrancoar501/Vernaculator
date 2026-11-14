@@ -49,6 +49,7 @@
         "content/meme.js",
         "content/social.js",
         "content/town.js",
+        "content/picker.js",
         "content/hud.js",
         "content/main.js"
       ],

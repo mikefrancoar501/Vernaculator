@@ -114,6 +114,24 @@ chrome.runtime.onMessage.addListener((m, _sender, reply) => {
     chrome.runtime.openOptionsPage();
     return false;
   }
+  if (m.op === 'fetchAudio') {
+    // Short voice preview clip (character picker). Same middleware-only rule as fetchJson.
+    allowed(m.url)
+      .then((ok) => {
+        if (!ok) throw new Error('URL is not the configured middleware');
+        return fetch(m.url, { headers: m.headers || {} });
+      })
+      .then(async (r) => {
+        if (!r.ok) {
+          const body = await r.json().catch(() => ({}));
+          return reply({ ok: false, status: r.status, error: body.error || `HTTP ${r.status}`, retryAfterMs: body.retryAfterMs });
+        }
+        const type = r.headers.get('content-type') || 'audio/mpeg';
+        reply({ ok: true, type, source: r.headers.get('x-preview-source') || '', b64: bytesToB64(await r.arrayBuffer()) });
+      })
+      .catch((err) => reply({ ok: false, error: err.message }));
+    return true;
+  }
   if (m.op !== 'fetchJson') return false;
   allowed(m.url)
     .then((ok) => {

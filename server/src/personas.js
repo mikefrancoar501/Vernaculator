@@ -26,12 +26,26 @@ export function loadPersonas(file) {
       if (!ok) errors.push(`${c.id}.visemeAssets.${k} is not a plain URL or bundled asset path: ${url}`);
     }
   }
+  // Optional picker metadata (schema v2): categories for the dropdown, tags for search.
+  const categories = Array.isArray(raw.categories) ? raw.categories : [];
+  const catIds = new Set(categories.map((c) => c?.id));
+  for (const [i, cat] of categories.entries()) {
+    if (typeof cat?.id !== 'string' || !/^[a-z][a-z0-9_]*$/.test(cat.id) || typeof cat.label !== 'string') errors.push(`categories[${i}] needs a lowercase id and a label`);
+  }
+  for (const c of raw.characters || []) {
+    if (c.category != null && (typeof c.category !== 'string' || (categories.length && !catIds.has(c.category)))) errors.push(`${c.id}.category "${c.category}" is not a known category`);
+    if (c.tags != null && (!Array.isArray(c.tags) || c.tags.some((t) => typeof t !== 'string'))) errors.push(`${c.id}.tags must be a list of words`);
+    if (c.accent != null && typeof c.accent !== 'string') errors.push(`${c.id}.accent must be text`);
+    if (c.previewLine != null && (typeof c.previewLine !== 'string' || c.previewLine.length > 200)) errors.push(`${c.id}.previewLine must be text up to 200 characters`);
+  }
   if (!raw.characters?.length) errors.push('no characters defined');
   if (errors.length) throw new Error(`Invalid personas.json:\n  ${errors.join('\n  ')}`);
 
   const byId = new Map(raw.characters.map((c) => [c.id, c]));
   return {
     defaults: raw.defaults || {},
+    categories,
+    categoryGroups: raw.categoryGroups || {},
     list: raw.characters,
     get: (id) => byId.get(id) || null,
     defaultPersona: () => byId.get(raw.defaults?.personaId) || raw.characters[0],
@@ -46,6 +60,10 @@ export function publicPersona(p) {
     archetype: p.archetype,
     vocabularyComplexity: p.vocabularyComplexity ?? 3,
     visemeAssets: p.visemeAssets,
+    // Picker metadata (older extensions ignore these).
+    category: p.category || '',
+    accent: p.accent || '',
+    tags: p.tags || [],
   };
 }
 

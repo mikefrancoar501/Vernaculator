@@ -135,6 +135,7 @@
     try {
       const data = await Vern.fetchJson(`${Vern.settings.values.backendUrl.replace(/\/+$/, '')}/v1/personas`);
       personas = data.characters;
+      Vern.personaCatalog = { categories: data.categories || [], categoryGroups: data.categoryGroups || {} };
       hud.setStyleCatalog(data.styles);
       hud.setPersonas(personas, Vern.settings.values.personaId);
       refreshTown();
