@@ -11,17 +11,19 @@ import { Utterance } from './pipeline.js';
 import { styleCatalog } from './styles.js';
 import { parseTask, SOCIAL_TASKS } from './tasks.js';
 import { runAssistant } from './assistant.js';
+import { VoicePreviews } from './preview.js';
 
 const AUTH_TIMEOUT_MS = 10_000;
 const MAX_JSON_BYTES = 64 * 1024;
 
-export function createApp(cfg, { store, llm } = {}) {
+export function createApp(cfg, { store, llm, fetchImpl, synthesize } = {}) {
   store ??= new JsonStore(cfg.dataFile);
   const gateway = new Gateway(store, cfg.quotas, cfg.socialRate);
   const personas = loadPersonas(cfg.personasFile);
   const coreValues = JSON.parse(fs.readFileSync(cfg.coreValuesFile, 'utf8')).values;
   llm ??= createLLM(cfg);
   const deps = { cfg, personas, coreValues, llm, gateway };
+  const previews = new VoicePreviews(cfg, { gateway, fetchImpl, synthesize });
 
   const originAllowed = (origin) => {
     if (!origin) return true; // non-browser clients (curl, tests)
@@ -46,12 +48,27 @@ export function createApp(cfg, { store, llm } = {}) {
         return json(res, 200, { ok: true, llm: cfg.llm.provider, tts: cfg.tts.provider });
       }
       if (req.method === 'GET' && url.pathname === '/v1/personas') {
-        return json(res, 200, { defaultPersonaId: personas.defaultPersona().id, characters: personas.list.map(publicPersona), styles: styleCatalog() });
+        return json(res, 200, {
+          defaultPersonaId: personas.defaultPersona().id,
+          characters: personas.list.map(publicPersona),
+          categories: personas.categories,
+          categoryGroups: personas.categoryGroups,
+          styles: styleCatalog(),
+        });
       }
 
       const user = gateway.authenticate(bearer(req));
       if (url.pathname.startsWith('/v1/') && !user) return json(res, 401, { error: 'unauthorized' });
 
+      const previewMatch = req.method === 'GET' && /^\/v1\/personas\/([a-z0-9_]{1,64})\/preview$/.exec(url.pathname);
+      if (previewMatch) {
+        const persona = personas.get(previewMatch[1]);
+        if (!persona) return json(res, 404, { error: 'unknown_persona' });
+        const out = await previews.get(user, persona);
+        if (out.error) return json(res, out.status, { error: out.error, ...(out.retryAfterMs ? { retryAfterMs: out.retryAfterMs } : {}) });
+        res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': out.audio.length, 'Cache-Control': 'private, max-age=3600', 'X-Preview-Source': out.source });
+        return res.end(out.audio);
+      }
       if (req.method === 'GET' && url.pathname === '/v1/usage') {
         return json(res, 200, gateway.usage(user));
       }
