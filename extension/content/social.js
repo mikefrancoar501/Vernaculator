@@ -121,6 +121,9 @@
       this.#place();
     }
 
+    // Sit to the left of the post's ••• / More menu (and Grok or other header
+    // icons), so the site's own menu stays clickable. If the header is too
+    // crowded, drop to just above the like/reply bar on the right instead.
     #place() {
       if (!this.post) return;
       const r = this.post.getBoundingClientRect();
@@ -130,9 +133,130 @@
         return;
       }
       const w = this.host.offsetWidth || 110;
-      const x = Math.min(Math.max(8, r.right - w - 8), innerWidth - w - 8);
-      const y = Math.min(Math.max(8, r.top + 8), innerHeight - 40);
+      const h = this.host.offsetHeight || 28;
+      const { x, y } = this.#pillPos(r, w, h);
       this.host.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+    }
+
+    #pillPos(r, w, h) {
+      const gap = 10;
+      const minX = Math.max(8, r.left + 8);
+      const maxX = Math.min(innerWidth - 8, r.right - 8) - w;
+      const clamp = (x, y) => ({
+        x: Math.min(Math.max(minX, x), Math.max(minX, maxX)),
+        y: Math.min(Math.max(8, y), innerHeight - h - 8),
+      });
+
+      const cluster = this.#headerCluster(r);
+      if (cluster) {
+        const x = cluster.left - gap - w;
+        const y = cluster.top + (cluster.height - h) / 2;
+        if (x >= this.#headerLeftBound(r) + gap) return clamp(x, y);
+      } else {
+        // No menu found: inset ~140px from the right, clearing a typical ••• + Grok cluster.
+        const x = r.right - w - 140;
+        const y = r.top + 8;
+        if (x >= this.#headerLeftBound(r) + gap) return clamp(x, y);
+      }
+
+      // Header is crowded: sit just above the action bar, right-aligned.
+      const bar = this.#actionBarBox(r);
+      if (bar && bar.top - gap - h >= r.top + 24) {
+        return clamp(Math.min(r.right - 8 - w, bar.right - w), bar.top - gap - h);
+      }
+      // Last resort: top-left of the post content, under the header row.
+      return clamp(minX, r.top + 44);
+    }
+
+    /** The post's More/caret button, if it sits in the header (top-right). */
+    #moreButton(r) {
+      const sel = [
+        '[data-testid="caret"]',
+        'button[aria-label="More" i]',
+        '[aria-label="More options" i]',
+        '[aria-label="Actions for this post" i]',
+        '[aria-label*="More" i]',
+      ].join(', ');
+      const postSel = this.platform.postSelector;
+      const hits = [...this.post.querySelectorAll(sel)].filter((el) => {
+        if (el.closest(postSel) !== this.post) return false;
+        const b = el.getBoundingClientRect();
+        return b.width > 0 && b.height > 0 && b.top >= r.top - 4 && b.top <= r.top + 80
+          && b.right > r.left + r.width * 0.45;
+      });
+      hits.sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right);
+      return hits[0] || null;
+    }
+
+    /** Box of the More button plus any Grok/other icons sharing its header cluster. */
+    #headerCluster(r) {
+      const more = this.#moreButton(r);
+      const extras = [...this.post.querySelectorAll(
+        '[aria-label="Grok actions" i], [data-testid="grokTweet"], [aria-label*="Grok" i]',
+      )].filter((el) => {
+        if (el.closest(this.platform.postSelector) !== this.post) return false;
+        const b = el.getBoundingClientRect();
+        return b.width > 0 && b.height > 0 && b.top >= r.top - 4 && b.top <= r.top + 80;
+      });
+      if (!more && !extras.length) return null;
+      const boxes = [];
+      if (more) {
+        boxes.push(more.getBoundingClientRect());
+        const group = more.parentElement;
+        if (group) {
+          const gb = group.getBoundingClientRect();
+          // Tight right-aligned group (not the whole header row).
+          if (gb.width > 0 && gb.width < r.width * 0.45 && gb.right > r.right - 100) boxes.push(gb);
+          for (const child of group.children) {
+            const b = child.getBoundingClientRect();
+            if (b.width > 0 && b.height > 0 && Math.abs(b.top - boxes[0].top) < 24) boxes.push(b);
+          }
+        }
+      }
+      for (const el of extras) boxes.push(el.getBoundingClientRect());
+      const left = Math.min(...boxes.map((b) => b.left));
+      const right = Math.max(...boxes.map((b) => b.right));
+      const top = Math.min(...boxes.map((b) => b.top));
+      const bottom = Math.max(...boxes.map((b) => b.bottom));
+      return { left, right, top, bottom, width: right - left, height: bottom - top };
+    }
+
+    /** Right edge of the name/avatar in the header, so the pill doesn't cover them. */
+    #headerLeftBound(r) {
+      const postSel = this.platform.postSelector;
+      const sel = '[data-testid="User-Name"], [data-testid="Tweet-User-Avatar"], time, h2, h3';
+      let bound = r.left + 8;
+      for (const el of this.post.querySelectorAll(sel)) {
+        if (el.closest(postSel) !== this.post) continue;
+        const b = el.getBoundingClientRect();
+        if (b.width < 1 || b.height < 1) continue;
+        if (b.top > r.top + 72 || b.left > r.left + r.width * 0.65) continue;
+        bound = Math.max(bound, b.right);
+      }
+      return bound;
+    }
+
+    /** The like/reply/repost row, used when the header has no room for the pill. */
+    #actionBarBox(r) {
+      const postSel = this.platform.postSelector;
+      const seed = [this.platform.replySelector, '[data-testid="like"]', '[data-testid="retweet"]', '[role="group"]']
+        .filter(Boolean).join(', ');
+      if (!seed) return null;
+      for (const el of this.post.querySelectorAll(seed)) {
+        if (el.closest(postSel) !== this.post) continue;
+        const b = el.getBoundingClientRect();
+        if (b.width < 1 || b.height < 1) continue;
+        let box = b;
+        for (let n = el, i = 0; i < 6 && n && n !== this.post; i++, n = n.parentElement) {
+          const pb = n.getBoundingClientRect();
+          if (pb.width >= r.width * 0.55 && pb.height <= 80 && pb.top > r.top + 36) {
+            box = pb;
+            break;
+          }
+        }
+        if (box.top > r.top + 36 && box.bottom <= r.bottom + 12) return box;
+      }
+      return null;
     }
 
     /** The post taking up the most of the viewport (for the HUD's "post on screen" button). */

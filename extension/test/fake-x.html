@@ -7,7 +7,10 @@
   body { font: 15px/1.4 system-ui, sans-serif; margin: 0; background: #fff; color: #0f1419; }
   main { max-width: 600px; margin: 0 auto; border-inline: 1px solid #eff3f4; padding-top: 90px; }
   article { padding: 14px 16px; border-bottom: 1px solid #eff3f4; min-height: 160px; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .who { font-weight: 700; } .handle { color: #536471; font-weight: 400; }
+  .head-actions { display: flex; align-items: center; margin-left: auto; flex-shrink: 0; }
+  .head-actions button { background: none; border: 0; cursor: pointer; font: 16px/1 sans-serif; padding: 4px 8px; color: #536471; }
   .actions { display: flex; gap: 40px; color: #536471; margin-top: 10px; }
   .actions button { background: none; border: 0; color: inherit; cursor: pointer; font: inherit; }
   .composer { display: none; margin-top: 10px; } .composer.open { display: block; }
@@ -17,18 +20,36 @@
 <body>
 <main>
   <article data-testid="tweet" role="article">
-    <div class="who">Town Hall Watch <span class="handle">@townhallwatch</span></div>
+    <div class="head">
+      <div class="who" data-testid="User-Name">Town Hall Watch <span class="handle">@townhallwatch</span> <time>2h</time></div>
+      <div class="head-actions">
+        <button type="button" aria-label="Grok actions">✨</button>
+        <button type="button" data-testid="caret" aria-label="More">•••</button>
+      </div>
+    </div>
     <div data-testid="tweetText">Big news from last night's city council meeting. After three hours of debate, the council voted 5 to 2 to replace every streetlight in town with LEDs this spring. The project will cost 2 million dollars, paid from the infrastructure fund. Supporters say lower power bills mean it pays for itself in about six years, and the new lights can dim late at night to cut light pollution. Opponents worried about the up-front cost and asked for a pilot on two streets first. Work starts in March, one neighborhood at a time.</div>
     <div class="actions"><button data-testid="reply" aria-label="Reply" onclick="this.closest('article').querySelector('.composer').classList.add('open'); window.__replyClicked = true;">💬 12</button><button>🔁 30</button><button>♥ 210</button></div>
     <div class="composer"><textarea placeholder="Post your reply"></textarea></div>
   </article>
   <article data-testid="tweet" role="article">
-    <div class="who">Someone Else <span class="handle">@someone</span></div>
+    <div class="head">
+      <div class="who" data-testid="User-Name">Someone Else <span class="handle">@someone</span> <time>2h</time></div>
+      <div class="head-actions">
+        <button type="button" aria-label="Grok actions">✨</button>
+        <button type="button" data-testid="caret" aria-label="More">•••</button>
+      </div>
+    </div>
     <div data-testid="tweetText">Second post, further down the timeline. My cat learned to open the fridge. Send help.</div>
     <div class="actions"><button data-testid="reply" aria-label="Reply">💬 3</button></div>
   </article>
   <article data-testid="tweet" role="article">
-    <div class="who">Local Paper <span class="handle">@localpaper</span></div>
+    <div class="head">
+      <div class="who" data-testid="User-Name">Local Paper <span class="handle">@localpaper</span> <time>2h</time></div>
+      <div class="head-actions">
+        <button type="button" aria-label="Grok actions">✨</button>
+        <button type="button" data-testid="caret" aria-label="More">•••</button>
+      </div>
+    </div>
     <div data-testid="tweetText">Council streetlight vote: residents line up to ask whether the new LED streetlights will be too bright for bedrooms. The council says every light can dim after midnight.</div>
     <div class="actions"><button data-testid="reply" aria-label="88 Replies. Reply">💬 88</button><button aria-label="400 reposts">🔁 400</button><button aria-label="1.2K Likes. Like">♥ 1.2K</button></div>
   </article>

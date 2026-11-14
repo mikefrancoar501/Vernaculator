@@ -309,7 +309,11 @@ const assert = (cond, msg) => {
   await xp.mouse.move(art.x + 200, art.y + 60);
   await sleep(300);
   const pill = await xp.locator('#vernaculator-crib').boundingBox();
-  assert(pill && pill.y >= art.y && pill.x + pill.width <= art.x + art.width + 1, 'Crib notes pill appears on the hovered post');
+  const more = await xp.locator('article').first().locator('[data-testid="caret"]').boundingBox();
+  const grok = await xp.locator('article').first().locator('[aria-label="Grok actions"]').boundingBox();
+  assert(pill && pill.y >= art.y - 2 && pill.x + pill.width <= art.x + art.width + 1, 'Crib notes pill appears on the hovered post');
+  assert(more && pill.x + pill.width <= more.x - 4, 'Crib notes pill sits to the left of the More menu');
+  assert(grok && pill.x + pill.width <= grok.x - 4, 'Crib notes pill does not cover the Grok icon');
   await xp.mouse.click(pill.x + pill.width / 2, pill.y + pill.height / 2);
   let crib = null;
   for (let i = 0; i < 100 && !crib; i++) {
